@@ -15,7 +15,7 @@ keywords = ["logging"]
 publish = false # this branch contains breaking changes
 
 [dependencies]
-log = { version = "0.3", path = ".." }
+log = { git = "https://github.com/rust-lang-nursery/log.git" }
 regex = { version = "0.2", optional = true }
 
 [[test]]
