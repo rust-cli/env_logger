@@ -9,7 +9,8 @@
 // except according to those terms.
 
 //! A logger configured via an environment variable which writes to standard
-//! error.
+//! error, for use with the logging facade exposed by the
+//! [`log` crate][log-crate-url].
 //!
 //! ## Example
 //!
@@ -69,7 +70,8 @@
 //! INFO:main: the answer was: 12
 //! ```
 //!
-//! See the documentation for the log crate for more information about its API.
+//! See the documentation for the [`log` crate][log-crate-url] for more
+//! information about its API.
 //!
 //! ## Enabling logging
 //!
@@ -124,6 +126,8 @@
 //! * `error,hello=warn/[0-9] scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
+//!
+//! [log-crate-url]: https://docs.rs/log/
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
