@@ -109,7 +109,7 @@
 //!
 //! ## Filtering results
 //!
-//! A RUST_LOG directive may include a regex filter. The syntax is to append `/`
+//! A `RUST_LOG` directive may include a regex filter. The syntax is to append `/`
 //! followed by a regex. Each message is checked against the regex, and is only
 //! logged if it matches. Note that the matching is done after formatting the
 //! log string but before adding any logging meta-data. There is a single filter
@@ -258,7 +258,7 @@ impl Builder {
         self
     }
 
-    /// Parses the directives string in the same form as the RUST_LOG
+    /// Parses the directives string in the same form as the `RUST_LOG`
     /// environment variable.
     ///
     /// See the module documentation for more details.
