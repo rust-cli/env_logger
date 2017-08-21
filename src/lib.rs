@@ -163,7 +163,26 @@ pub enum Target {
     Stderr,
 }
 
-/// The logger.
+/// The env logger.
+///
+/// This struct implements the `Log` trait from the [`log` crate][log-crate-url],
+/// which allows it to act as a logger.
+///
+/// The [`init()`], [`try_init()`], [`Builder::init()`] and [`Builder::try_init()`]
+/// methods will each construct a `Logger` and immediately initialize it as the
+/// default global logger.
+///
+/// If you'd instead need access to the constructed `Logger`, you can use
+/// [`Logger::new()`] or the associated [`Builder`] and install it with the
+/// [`log` crate][log-crate-url] directly.
+///
+/// [log-crate-url]: https://docs.rs/log/
+/// [`init()`]: fn.init.html
+/// [`try_init()`]: fn.try_init.html
+/// [`Builder::init()`]: struct.Builder.html#method.init
+/// [`Builder::try_init()`]: struct.Builder.html#method.try_init
+/// [`Logger::new()`]: #method.new
+/// [`Builder`]: struct.Builder.html
 pub struct Logger {
     directives: Vec<Directive>,
     filter: Option<filter::Filter>,
@@ -335,6 +354,33 @@ impl Builder {
 }
 
 impl Logger {
+    /// Creates a new env logger by parsing the `RUST_LOG` environment variable.
+    ///
+    /// The returned logger can be passed to the [`log` crate](https://docs.rs/log/)
+    /// for initialization as a global logger.
+    ///
+    /// If you do not need to interact directly with the `Logger`, you should
+    /// prefer the [`init()`] or [`try_init()`] methods, which
+    /// construct a `Logger` and configure it as the default logger.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use std::env;
+    /// use env_logger::Logger;
+    ///
+    /// fn main() {
+    ///     let logger = Box::new(Logger::new());
+    ///     let filter = logger.filter();
+    ///     log::set_logger(logger, filter);
+    /// }
+    /// ```
+    ///
+    /// [`init()`]: fn.init.html
+    /// [`try_init()`]: fn.try_init.html
     pub fn new() -> Logger {
         let mut builder = Builder::new();
 
@@ -345,6 +391,27 @@ impl Logger {
         builder.build()
     }
 
+    /// Returns the maximum `LevelFilter` that this env logger instance is
+    /// configured to output.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// fn main() {
+    ///     let mut builder = Builder::new();
+    ///     builder.filter(Some("module1"), LevelFilter::Info);
+    ///     builder.filter(Some("module2"), LevelFilter::Error);
+    ///
+    ///     let logger = builder.build();
+    ///     assert_eq!(logger.filter(), LevelFilter::Info);
+    /// }
+    /// ```
     pub fn filter(&self) -> LevelFilter {
         self.directives.iter()
             .map(|d| d.level).max()
