@@ -195,8 +195,8 @@ pub struct Logger {
 ///     let mut builder = Builder::new();
 ///     builder.format(format).filter(None, LevelFilter::Info);
 ///
-///     if env::var("RUST_LOG").is_ok() {
-///        builder.parse(&env::var("RUST_LOG").unwrap());
+///     if let Ok(rust_log) = env::var("RUST_LOG") {
+///        builder.parse(&rust_log);
 ///     }
 ///
 ///     builder.init();
