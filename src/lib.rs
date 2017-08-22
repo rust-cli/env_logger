@@ -145,6 +145,7 @@ use std::env;
 use std::io::prelude::*;
 use std::io;
 use std::mem;
+use std::fmt;
 
 use log::{Log, Level, LevelFilter, Record, SetLoggerError, Metadata};
 
@@ -459,6 +460,19 @@ impl Log for Logger {
     fn flush(&self) {}
 }
 
+impl fmt::Debug for Logger{
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result{
+        write!(f,"Logger{{directives:{:?}, filter:{:?}, target:{:?} }}", self.directives, self.filter, self.target)
+    }
+}
+
+impl fmt::Debug for Builder{
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result{
+        write!(f,"Logger{{directives:{:?}, filter:{:?}, target:{:?} }}", self.directives, self.filter, self.target)
+    }
+}
+
+#[derive(Debug)]
 struct Directive {
     name: Option<String>,
     level: LevelFilter,

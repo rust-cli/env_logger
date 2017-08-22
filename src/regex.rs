@@ -4,6 +4,7 @@ use std::fmt;
 
 use self::regex::Regex;
 
+#[derive(Debug)]
 pub struct Filter {
     inner: Regex,
 }
