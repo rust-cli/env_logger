@@ -9,7 +9,8 @@
 // except according to those terms.
 
 //! A logger configured via an environment variable which writes to standard
-//! error.
+//! error, for use with the logging facade exposed by the
+//! [`log` crate][log-crate-url].
 //!
 //! ## Example
 //!
@@ -69,7 +70,8 @@
 //! INFO:main: the answer was: 12
 //! ```
 //!
-//! See the documentation for the log crate for more information about its API.
+//! See the documentation for the [`log` crate][log-crate-url] for more
+//! information about its API.
 //!
 //! ## Enabling logging
 //!
@@ -107,7 +109,7 @@
 //!
 //! ## Filtering results
 //!
-//! A RUST_LOG directive may include a regex filter. The syntax is to append `/`
+//! A `RUST_LOG` directive may include a regex filter. The syntax is to append `/`
 //! followed by a regex. Each message is checked against the regex, and is only
 //! logged if it matches. Note that the matching is done after formatting the
 //! log string but before adding any logging meta-data. There is a single filter
@@ -124,6 +126,8 @@
 //! * `error,hello=warn/[0-9] scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
+//!
+//! [log-crate-url]: https://docs.rs/log/
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
@@ -159,7 +163,26 @@ pub enum Target {
     Stderr,
 }
 
-/// The logger.
+/// The env logger.
+///
+/// This struct implements the `Log` trait from the [`log` crate][log-crate-url],
+/// which allows it to act as a logger.
+///
+/// The [`init()`], [`try_init()`], [`Builder::init()`] and [`Builder::try_init()`]
+/// methods will each construct a `Logger` and immediately initialize it as the
+/// default global logger.
+///
+/// If you'd instead need access to the constructed `Logger`, you can use
+/// [`Logger::new()`] or the associated [`Builder`] and install it with the
+/// [`log` crate][log-crate-url] directly.
+///
+/// [log-crate-url]: https://docs.rs/log/
+/// [`init()`]: fn.init.html
+/// [`try_init()`]: fn.try_init.html
+/// [`Builder::init()`]: struct.Builder.html#method.init
+/// [`Builder::try_init()`]: struct.Builder.html#method.try_init
+/// [`Logger::new()`]: #method.new
+/// [`Builder`]: struct.Builder.html
 pub struct Logger {
     directives: Vec<Directive>,
     filter: Option<filter::Filter>,
@@ -167,7 +190,8 @@ pub struct Logger {
     target: Target,
 }
 
-/// Builder acts as builder for initializing the Logger.
+/// `Builder` acts as builder for initializing a `Logger`.
+///
 /// It can be used to customize the log format, change the enviromental variable used
 /// to provide the logging directives and also set the default log level filter.
 ///
@@ -190,8 +214,8 @@ pub struct Logger {
 ///     let mut builder = Builder::new();
 ///     builder.format(format).filter(None, LevelFilter::Info);
 ///
-///     if env::var("RUST_LOG").is_ok() {
-///        builder.parse(&env::var("RUST_LOG").unwrap());
+///     if let Ok(rust_log) = env::var("RUST_LOG") {
+///        builder.parse(&rust_log);
 ///     }
 ///
 ///     builder.init();
@@ -254,7 +278,7 @@ impl Builder {
         self
     }
 
-    /// Parses the directives string in the same form as the RUST_LOG
+    /// Parses the directives string in the same form as the `RUST_LOG`
     /// environment variable.
     ///
     /// See the module documentation for more details.
@@ -269,11 +293,15 @@ impl Builder {
         self
     }
 
-    /// Initializes the global logger with an env logger.
+    /// Initializes the global logger with the built env logger.
     ///
-    /// This should be called early in the execution of a Rust program, and the
-    /// global logger may only be initialized once. Future initialization
-    /// attempts will return error.
+    /// This should be called early in the execution of a Rust program. Any log
+    /// events that occur before initialization will be ignored.
+    ///
+    /// # Errors
+    ///
+    /// This function will fail if it is called more than once, or if another
+    /// library has already initialized a global logger.
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
         log::try_set_logger(|max_level| {
             let logger = self.build();
@@ -282,11 +310,15 @@ impl Builder {
         })
     }
 
-    /// Initializes the global logger with an env logger.
+    /// Initializes the global logger with the built env logger.
     ///
-    /// This should be called early in the execution of a Rust program, and the
-    /// global logger may only be initialized once. Future initialization
-    /// attempts will panic.
+    /// This should be called early in the execution of a Rust program. Any log
+    /// events that occur before initialization will be ignored.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if it is called more than once, or if another
+    /// library has already initialized a global logger.
     pub fn init(&mut self) {
         let logger = self.build();
         let filter = logger.filter();
@@ -322,6 +354,33 @@ impl Builder {
 }
 
 impl Logger {
+    /// Creates a new env logger by parsing the `RUST_LOG` environment variable.
+    ///
+    /// The returned logger can be passed to the [`log` crate](https://docs.rs/log/)
+    /// for initialization as a global logger.
+    ///
+    /// If you do not need to interact directly with the `Logger`, you should
+    /// prefer the [`init()`] or [`try_init()`] methods, which
+    /// construct a `Logger` and configure it as the default logger.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use std::env;
+    /// use env_logger::Logger;
+    ///
+    /// fn main() {
+    ///     let logger = Box::new(Logger::new());
+    ///     let filter = logger.filter();
+    ///     log::set_logger(logger, filter);
+    /// }
+    /// ```
+    ///
+    /// [`init()`]: fn.init.html
+    /// [`try_init()`]: fn.try_init.html
     pub fn new() -> Logger {
         let mut builder = Builder::new();
 
@@ -332,6 +391,27 @@ impl Logger {
         builder.build()
     }
 
+    /// Returns the maximum `LevelFilter` that this env logger instance is
+    /// configured to output.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// fn main() {
+    ///     let mut builder = Builder::new();
+    ///     builder.filter(Some("module1"), LevelFilter::Info);
+    ///     builder.filter(Some("module2"), LevelFilter::Error);
+    ///
+    ///     let logger = builder.build();
+    ///     assert_eq!(logger.filter(), LevelFilter::Info);
+    /// }
+    /// ```
     pub fn filter(&self) -> LevelFilter {
         self.directives.iter()
             .map(|d| d.level).max()
@@ -386,9 +466,13 @@ struct Directive {
 
 /// Initializes the global logger with an env logger.
 ///
-/// This should be called early in the execution of a Rust program, and the
-/// global logger may only be initialized once. Future initialization attempts
-/// will return an error.
+/// This should be called early in the execution of a Rust program. Any log
+/// events that occur before initialization will be ignored.
+///
+/// # Errors
+///
+/// This function will fail if it is called more than once, or if another
+/// library has already initialized a global logger.
 pub fn try_init() -> Result<(), SetLoggerError> {
     let mut builder = Builder::new();
 
@@ -401,9 +485,13 @@ pub fn try_init() -> Result<(), SetLoggerError> {
 
 /// Initializes the global logger with an env logger.
 ///
-/// This should be called early in the execution of a Rust program, and the
-/// global logger may only be initialized once. Future initialization attempts
-/// will panic.
+/// This should be called early in the execution of a Rust program. Any log
+/// events that occur before initialization will be ignored.
+///
+/// # Panics
+///
+/// This function will panic if it is called more than once, or if another
+/// library has already initialized a global logger.
 pub fn init() {
     let mut builder = Builder::new();
 
