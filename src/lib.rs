@@ -462,7 +462,11 @@ impl Log for Logger {
 
 impl fmt::Debug for Logger{
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result{
-        write!(f,"Logger{{directives:{:?}, filter:{:?}, target:{:?} }}", self.directives, self.filter, self.target)
+        f.debug_struct("Logger")
+            .field("directives", &self.directives)
+            .field("filter", &self.filter)
+            .field("target", &self.target)
+            .finish()
     }
 }
 
