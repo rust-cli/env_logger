@@ -186,7 +186,7 @@ pub enum Target {
 pub struct Logger {
     directives: Vec<Directive>,
     filter: Option<filter::Filter>,
-    format: Box<Fn(&Record) -> String + Sync + Send>,
+    format: Box<Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send>,
     target: Target,
 }
 
@@ -203,12 +203,13 @@ pub struct Logger {
 /// extern crate env_logger;
 ///
 /// use std::env;
+/// use std::io;
 /// use log::{Record, LevelFilter};
 /// use env_logger::Builder;
 ///
 /// fn main() {
-///     let format = |record: &Record| {
-///         format!("{} - {}", record.level(), record.args())
+///     let format = |buf: &mut io::Write, record: &Record| {
+///         writeln!(buf, "{} - {}", record.level(), record.args())
 ///     };
 ///
 ///     let mut builder = Builder::new();
@@ -227,7 +228,7 @@ pub struct Logger {
 pub struct Builder {
     directives: Vec<Directive>,
     filter: Option<filter::Filter>,
-    format: Box<Fn(&Record) -> String + Sync + Send>,
+    format: Box<Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send>,
     target: Target,
 }
 
@@ -237,9 +238,9 @@ impl Builder {
         Builder {
             directives: Vec::new(),
             filter: None,
-            format: Box::new(|record: &Record| {
-                format!("{}:{}: {}", record.level(),
-                        record.module_path(), record.args())
+            format: Box::new(|buf: &mut Write, record: &Record| {
+                writeln!(buf, "{}:{}: {}", record.level(),
+                         record.module_path(), record.args())
             }),
             target: Target::Stderr,
         }
@@ -261,10 +262,20 @@ impl Builder {
 
     /// Sets the format function for formatting the log output.
     ///
-    /// This function is called on each record logged to produce a string which
-    /// is actually printed out.
+    /// This function is called on each record logged and should format the
+    /// log record and output it to the given [`Write`] trait object.
+    ///
+    /// The format function is expected to output the string directly to the
+    /// [`Write`] trait object (rather than returning a [`String`]), so that
+    /// implementations can use the [`std::fmt`] macros to format and output
+    /// without intermediate heap allocations. The default `env_logger`
+    /// formatter takes advantage of this.
+    ///
+    /// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
+    /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
+    /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
-        where F: Fn(&Record) -> String + Sync + Send
+        where F: Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send
     {
         self.format = Box::new(format);
         self
@@ -347,7 +358,7 @@ impl Builder {
         Logger {
             directives: mem::replace(&mut self.directives, Vec::new()),
             filter: mem::replace(&mut self.filter, None),
-            format: mem::replace(&mut self.format, Box::new(|_| String::new())),
+            format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
             target: mem::replace(&mut self.target, Target::Stderr),
         }
     }
@@ -448,11 +459,9 @@ impl Log for Logger {
             }
         }
 
-        match self.target {
-            Target::Stdout => println!("{}", (self.format)(record)),
-            Target::Stderr => {
-                let _ = writeln!(&mut io::stderr(), "{}", (self.format)(record));
-            },
+        let _ = match self.target {
+            Target::Stdout => (self.format)(&mut io::stdout(), record),
+            Target::Stderr => (self.format)(&mut io::stderr(), record),
         };
     }
 
