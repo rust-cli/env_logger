@@ -158,7 +158,7 @@ mod filter;
 mod filter;
 
 /// Log target, either stdout or stderr.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
     Stdout,
     Stderr,
