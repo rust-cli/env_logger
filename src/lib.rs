@@ -127,6 +127,55 @@
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
 //!
+//! ## Using `env_logger` in your own logger
+//!
+//! You can use `env_logger`'s filtering functionality with your own logger by
+//! calling [`Logger::matches`](struct.Logger.html#method.matches).
+//!
+//! ```
+//! extern crate log;
+//! extern crate env_logger;
+//! use env_logger::Logger as EnvLogger;
+//! use log::{Log, Metadata, Record};
+//!
+//! struct MyLogger {
+//!     filter: EnvLogger
+//! }
+//!
+//! impl MyLogger {
+//!     fn new() -> MyLogger {
+//!         use env_logger::{Builder, Target};
+//!         let mut builder = Builder::new();
+//!         builder.target(Target::Silent);
+//!
+//!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
+//!            builder.parse(filter);
+//!         }
+//!
+//!         MyLogger {
+//!             filter: builder.build()
+//!         }
+//!     }
+//! }
+//!
+//! impl Log for MyLogger {
+//!     fn enabled(&self, metadata: &Metadata) -> bool {
+//!         self.filter.enabled(metadata)
+//!     }
+//!
+//!     fn log(&self, record: &Record) {
+//!         if !self.filter.matches(record) {
+//!             return;
+//!         }
+//!
+//!         println!("{:?}", record)
+//!     }
+//!
+//!     fn flush(&self) {}
+//! }
+//! # fn main() {}
+//! ```
+//!
 //! [log-crate-url]: https://docs.rs/log/
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
@@ -162,6 +211,7 @@ mod filter;
 pub enum Target {
     Stdout,
     Stderr,
+    Silent,
 }
 
 /// The env logger.
@@ -430,6 +480,21 @@ impl Logger {
             .unwrap_or(LevelFilter::Off)
     }
 
+    /// Checks if this record matches the configured filter.
+    pub fn matches(&self, record: &Record) -> bool {
+        if !Log::enabled(self, record.metadata()) {
+            return false;
+        }
+
+        if let Some(filter) = self.filter.as_ref() {
+            if !filter.is_match(&*record.args().to_string()) {
+                return false;
+            }
+        }
+
+        true
+    }
+
     fn enabled(&self, level: Level, target: &str) -> bool {
         // Search for the longest match, the vector is assumed to be pre-sorted.
         for directive in self.directives.iter().rev() {
@@ -450,19 +515,10 @@ impl Log for Logger {
     }
 
     fn log(&self, record: &Record) {
-        if !Log::enabled(self, record.metadata()) {
-            return;
-        }
-
-        if let Some(filter) = self.filter.as_ref() {
-            if !filter.is_match(&*record.args().to_string()) {
-                return;
-            }
-        }
-
         let _ = match self.target {
-            Target::Stdout => (self.format)(&mut io::stdout(), record),
-            Target::Stderr => (self.format)(&mut io::stderr(), record),
+            Target::Stdout if self.matches(record) => (self.format)(&mut io::stdout(), record),
+            Target::Stderr if self.matches(record) => (self.format)(&mut io::stderr(), record),
+            _ => Ok(()),
         };
     }
 
