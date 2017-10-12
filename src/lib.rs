@@ -188,6 +188,8 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
+#![deny(missing_debug_implementations, missing_docs, warnings)]
+
 extern crate log;
 
 use std::env;
@@ -209,8 +211,11 @@ mod filter;
 /// Log target, either stdout or stderr.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
+    /// Logs will be sent to standard output.
     Stdout,
+    /// Logs will be sent to standard error.
     Stderr,
+    /// Logs will be silenced.
     Silent,
 }
 
