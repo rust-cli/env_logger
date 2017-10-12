@@ -365,7 +365,7 @@ impl Builder {
     /// This function will fail if it is called more than once, or if another
     /// library has already initialized a global logger.
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
-        log::try_set_logger(|max_level| {
+        log::set_boxed_logger(|max_level| {
             let logger = self.build();
             max_level.set(logger.filter());
             Box::new(logger)
@@ -382,10 +382,7 @@ impl Builder {
     /// This function will panic if it is called more than once, or if another
     /// library has already initialized a global logger.
     pub fn init(&mut self) {
-        let logger = self.build();
-        let filter = logger.filter();
-        let logger = Box::new(logger);
-        log::set_logger(logger, filter);
+        self.try_init().unwrap();
     }
 
     /// Build an env logger.
@@ -435,9 +432,11 @@ impl Logger {
     /// use env_logger::Logger;
     ///
     /// fn main() {
-    ///     let logger = Box::new(Logger::new());
-    ///     let filter = logger.filter();
-    ///     log::set_logger(logger, filter);
+    ///     log::set_boxed_logger(|max_level| {
+    ///         let logger = Logger::new();
+    ///         max_level.set(logger.filter());
+    ///         Box::new(logger)
+    ///     });
     /// }
     /// ```
     ///
