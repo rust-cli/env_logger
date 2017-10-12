@@ -448,9 +448,43 @@ impl Logger {
     /// [`init()`]: fn.init.html
     /// [`try_init()`]: fn.try_init.html
     pub fn new() -> Logger {
+        Self::from_env("RUST_LOG")
+    }
+
+    /// Creates a new env logger by parsing the environment variable with the
+    /// given name.
+    ///
+    /// This is identical to the [`new()`] constructor, except it allows the
+    /// name of the environment variable to be customized. For additional
+    /// customization, use the [`Builder`] type instead.
+    ///
+    /// The returned logger can be passed to the [`log` crate](https://docs.rs/log/)
+    /// for initialization as a global logger.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use std::env;
+    /// use env_logger::Logger;
+    ///
+    /// fn main() {
+    ///     log::set_boxed_logger(|max_level| {
+    ///         let logger = Logger::from_env("MY_LOG");
+    ///         max_level.set(logger.filter());
+    ///         Box::new(logger)
+    ///     });
+    /// }
+    /// ```
+    ///
+    /// [`new()`]: #method.new
+    /// [`Builder`]: struct.Builder.html
+    pub fn from_env(env: &str) -> Logger {
         let mut builder = Builder::new();
 
-        if let Ok(s) = env::var("RUST_LOG") {
+        if let Ok(s) = env::var(env) {
             builder.parse(&s);
         }
 
@@ -551,7 +585,7 @@ struct Directive {
     level: LevelFilter,
 }
 
-/// Initializes the global logger with an env logger.
+/// Attempts to initialize the global logger with an env logger.
 ///
 /// This should be called early in the execution of a Rust program. Any log
 /// events that occur before initialization will be ignored.
@@ -561,13 +595,7 @@ struct Directive {
 /// This function will fail if it is called more than once, or if another
 /// library has already initialized a global logger.
 pub fn try_init() -> Result<(), SetLoggerError> {
-    let mut builder = Builder::new();
-
-    if let Ok(s) = env::var("RUST_LOG") {
-        builder.parse(&s);
-    }
-
-    builder.try_init()
+    try_init_from_env("RUST_LOG")
 }
 
 /// Initializes the global logger with an env logger.
@@ -580,13 +608,41 @@ pub fn try_init() -> Result<(), SetLoggerError> {
 /// This function will panic if it is called more than once, or if another
 /// library has already initialized a global logger.
 pub fn init() {
+    try_init().unwrap();
+}
+
+/// Attempts to initialize the global logger with an env logger from the given
+/// environment variable.
+///
+/// This should be called early in the execution of a Rust program. Any log
+/// events that occur before initialization will be ignored.
+///
+/// # Errors
+///
+/// This function will fail if it is called more than once, or if another
+/// library has already initialized a global logger.
+pub fn try_init_from_env(env: &str) -> Result<(), SetLoggerError> {
     let mut builder = Builder::new();
 
-    if let Ok(s) = env::var("RUST_LOG") {
+    if let Ok(s) = env::var(env) {
         builder.parse(&s);
     }
 
-    builder.init()
+    builder.try_init()
+}
+
+/// Initializes the global logger with an env logger from the given environment
+/// variable.
+///
+/// This should be called early in the execution of a Rust program. Any log
+/// events that occur before initialization will be ignored.
+///
+/// # Panics
+///
+/// This function will panic if it is called more than once, or if another
+/// library has already initialized a global logger.
+pub fn init_from_env(env: &str) {
+    try_init_from_env(env).unwrap();
 }
 
 /// Parse a logging specification string (e.g: "crate1,crate2::mod3,crate3::x=error/foo")
