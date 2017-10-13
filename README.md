@@ -1,4 +1,4 @@
-env_logger
+env_logger [![Build Status](https://travis-ci.org/sebasmagri/env_logger.svg?branch=master)](https://travis-ci.org/sebasmagri/env_logger)
 ==========
 
 Implements a logger that can be configured via an environment variable.
