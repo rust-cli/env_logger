@@ -514,7 +514,8 @@ impl Logger {
     /// ```
     pub fn filter(&self) -> LevelFilter {
         self.directives.iter()
-            .map(|d| d.level).max()
+            .map(|d| d.level)
+            .max()
             .unwrap_or(LevelFilter::Off)
     }
 
