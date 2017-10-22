@@ -123,7 +123,7 @@
 //!   'f1o', 'fao', etc.
 //! * `hello=debug/foo*foo` turns on debug logging for 'hello' where the log
 //!   message includes 'foofoo' or 'fofoo' or 'fooooooofoo', etc.
-//! * `error,hello=warn/[0-9] scopes` turn on global error logging and also
+//! * `error,hello=warn/[0-9]scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
 //!
@@ -289,7 +289,7 @@ pub struct Builder {
 }
 
 impl Builder {
-    /// Initializes the log builder with defaults
+    /// Initializes the log builder with defaults.
     pub fn new() -> Builder {
         Builder {
             directives: Vec::new(),
@@ -302,7 +302,7 @@ impl Builder {
         }
     }
 
-    /// Adds filters to the logger
+    /// Adds filters to the logger.
     ///
     /// The given module (if any) will log at most the specified level provided.
     /// If no module is provided then the filter will apply to all log messages.
