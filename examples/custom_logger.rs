@@ -13,18 +13,17 @@ If you only want to change the way logs are formatted, look at the `custom_forma
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-use env_logger::Logger as EnvLogger;
+use env_logger::filter::Filter;
 use log::{Log, Metadata, Record, SetLoggerError};
 
 struct MyLogger {
-    inner: EnvLogger
+    inner: Filter
 }
 
 impl MyLogger {
     fn new() -> MyLogger {
-        use env_logger::{Builder, Target};
+        use env_logger::filter::Builder;
         let mut builder = Builder::new();
-        builder.target(Target::Silent);
 
         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
            builder.parse(filter);
@@ -55,9 +54,7 @@ impl Log for MyLogger {
         }
     }
 
-    fn flush(&self) {
-        self.inner.flush()
-    }
+    fn flush(&self) { }
 }
 
 fn main() {
