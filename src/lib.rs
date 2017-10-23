@@ -482,15 +482,11 @@ impl Logger {
     pub fn matches(&self, record: &Record) -> bool {
         self.filter.matches(record)
     }
-
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        self.filter.enabled(metadata)
-    }
 }
 
 impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        self.enabled(metadata)
+        self.filter.enabled(metadata)
     }
 
     fn log(&self, record: &Record) {
