@@ -8,8 +8,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A logger configured via an environment variable which writes to standard
-//! error, for use with the logging facade exposed by the
+//! A simple logger configured via an environment variable which writes 
+//! to stdout or stderr, for use with the logging facade exposed by the
 //! [`log` crate][log-crate-url].
 //!
 //! ## Example
@@ -126,54 +126,6 @@
 //! * `error,hello=warn/[0-9]scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
-//!
-//! ## Using `env_logger` in your own logger
-//!
-//! You can use `env_logger`'s filtering functionality with your own logger by
-//! calling [`Logger::matches`](struct.Logger.html#method.matches).
-//!
-//! ```
-//! extern crate log;
-//! extern crate env_logger;
-//! use env_logger::filter::Filter;
-//! use log::{Log, Metadata, Record};
-//!
-//! struct MyLogger {
-//!     filter: Filter
-//! }
-//!
-//! impl MyLogger {
-//!     fn new() -> MyLogger {
-//!         use env_logger::filter::Builder;
-//!         let mut builder = Builder::new();
-//!
-//!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
-//!            builder.parse(filter);
-//!         }
-//!
-//!         MyLogger {
-//!             filter: builder.build()
-//!         }
-//!     }
-//! }
-//!
-//! impl Log for MyLogger {
-//!     fn enabled(&self, metadata: &Metadata) -> bool {
-//!         self.filter.enabled(metadata)
-//!     }
-//!
-//!     fn log(&self, record: &Record) {
-//!         if !self.filter.matches(record) {
-//!             return;
-//!         }
-//!
-//!         println!("{:?}", record)
-//!     }
-//!
-//!     fn flush(&self) {}
-//! }
-//! # fn main() {}
-//! ```
 //!
 //! [log-crate-url]: https://docs.rs/log/
 

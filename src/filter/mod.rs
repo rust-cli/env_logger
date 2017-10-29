@@ -1,4 +1,63 @@
 //! Filtering for log records.
+//! 
+//! This module contains the log filtering used by `env_logger` to match records.
+//! You can use the `Filter` type in your own logger implementation to use the same 
+//! filter parsing and matching as `env_logger`. For more details about the format 
+//! for directive strings see [Enabling Logging].
+//! 
+//! ## Using `env_logger` in your own logger
+//!
+//! You can use `env_logger`'s filtering functionality with your own logger.
+//! Call [`Builder::parse`] to parse directives from a string when constructing 
+//! your logger. Call [`Filter::matches`] to check whether a record should be 
+//! logged based on the parsed filters when log records are received.
+//!
+//! ```
+//! extern crate log;
+//! extern crate env_logger;
+//! use env_logger::filter::Filter;
+//! use log::{Log, Metadata, Record};
+//!
+//! struct MyLogger {
+//!     filter: Filter
+//! }
+//!
+//! impl MyLogger {
+//!     fn new() -> MyLogger {
+//!         use env_logger::filter::Builder;
+//!         let mut builder = Builder::new();
+//!
+//!         // Parse a directives string from an environment variable
+//!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
+//!            builder.parse(filter);
+//!         }
+//!
+//!         MyLogger {
+//!             filter: builder.build()
+//!         }
+//!     }
+//! }
+//!
+//! impl Log for MyLogger {
+//!     fn enabled(&self, metadata: &Metadata) -> bool {
+//!         self.filter.enabled(metadata)
+//!     }
+//!
+//!     fn log(&self, record: &Record) {
+//!         // Check if the record is matched by the filter
+//!         if self.filter.matches(record) {
+//!             println!("{:?}", record);
+//!         }
+//!     }
+//!
+//!     fn flush(&self) {}
+//! }
+//! # fn main() {}
+//! ```
+//! 
+//! [Enabling Logging]: ../index.html#enabling-logging
+//! [`Builder::parse`]: struct.Builder.html#method.parse
+//! [`Filter::matches`]: struct.Filter.html#method.matches
 
 use std::mem;
 use std::fmt;
@@ -13,7 +72,47 @@ mod inner;
 mod inner;
 
 /// A log filter.
+/// 
+/// This struct can be used to determine whether or not a log record
+/// should be written to the output.
+/// Use the [`Builder`] type to parse and construct a `Filter`.
+/// 
+/// [`Builder`]: struct.Builder.html
 pub struct Filter {
+    directives: Vec<Directive>,
+    filter: Option<inner::Filter>,
+}
+
+/// A builder for a log filter.
+/// 
+/// It can be used to parse a set of directives from a string before building
+/// a [`Filter`] instance.
+/// 
+/// ## Example
+///
+/// ```
+/// #[macro_use]
+/// extern crate log;
+/// extern crate env_logger;
+///
+/// use std::env;
+/// use std::io;
+/// use env_logger::filter::Builder;
+///
+/// fn main() {
+///     let mut builder = Builder::new();
+///
+///     // Parse a logging filter from an environment variable.
+///     if let Ok(rust_log) = env::var("RUST_LOG") {
+///        builder.parse(&rust_log);
+///     }
+///
+///     let filter = builder.build();
+/// }
+/// ```
+/// 
+/// [`Filter`]: struct.Filter.html
+pub struct Builder {
     directives: Vec<Directive>,
     filter: Option<inner::Filter>,
 }
@@ -25,7 +124,7 @@ struct Directive {
 }
 
 impl Filter {
-    /// Returns the maximum `LevelFilter` that this env logger instance is
+    /// Returns the maximum `LevelFilter` that this filter instance is
     /// configured to output.
     ///
     /// # Example
@@ -68,7 +167,7 @@ impl Filter {
         true
     }
 
-    /// Check if stuff is enabled.
+    /// Determines if a log message with the specified metadata would be logged.
     pub fn enabled(&self, metadata: &Metadata) -> bool {
         let level = metadata.level();
         let target = metadata.target();
@@ -77,14 +176,8 @@ impl Filter {
     }
 }
 
-/// A builder for a log filter.
-pub struct Builder {
-    directives: Vec<Directive>,
-    filter: Option<inner::Filter>,
-}
-
 impl Builder {
-    /// Initializes the log builder with defaults.
+    /// Initializes the filter builder with defaults.
     pub fn new() -> Builder {
         Builder {
             directives: Vec::new(),
@@ -92,7 +185,7 @@ impl Builder {
         }
     }
 
-    /// Adds filters to the logger.
+    /// Adds a directive to the filter.
     ///
     /// The given module (if any) will log at most the specified level provided.
     /// If no module is provided then the filter will apply to all log messages.
@@ -106,10 +199,11 @@ impl Builder {
         self
     }
 
-    /// Parses the directives string in the same form as the `RUST_LOG`
-    /// environment variable.
+    /// Parses the directives string.
     ///
-    /// See the module documentation for more details.
+    /// See the [Enabling Logging] section for more details.
+    /// 
+    /// [Enabling Logging]: ../index.html#enabling-logging
     pub fn parse(&mut self, filters: &str) -> &mut Self {
         let (directives, filter) = parse_spec(filters);
 
@@ -121,7 +215,7 @@ impl Builder {
         self
     }
 
-    /// Build an env logger filter.
+    /// Build a log filter.
     pub fn build(&mut self) -> Filter {
         if self.directives.is_empty() {
             // Adds the default filter if none exist

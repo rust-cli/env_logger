@@ -25,6 +25,8 @@ impl MyLogger {
         use env_logger::filter::Builder;
         let mut builder = Builder::new();
 
+        // Parse a directives string from an environment variable
+        // This uses the same format as `env_logger::Logger`
         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
            builder.parse(filter);
         }
@@ -49,6 +51,7 @@ impl Log for MyLogger {
     }
 
     fn log(&self, record: &Record) {
+        // Check if the record is matched by the logger before logging
         if self.inner.matches(record) {
             println!("{} - {}", record.level(), record.args());
         }
