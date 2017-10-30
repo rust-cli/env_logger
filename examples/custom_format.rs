@@ -16,9 +16,10 @@ extern crate env_logger;
 
 use std::env;
 
-fn main() {
+fn init_logger() {
     let mut builder = env_logger::Builder::new();
 
+    // Use a different format for writing log records
     builder.format(|buf, record| {
         writeln!(buf, "My formatted log: {}", record.args())
     });
@@ -28,6 +29,10 @@ fn main() {
     }
 
     builder.init();
+}
+
+fn main() {
+    init_logger();
 
     info!("a log from `MyLogger`");
 }
