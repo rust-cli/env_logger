@@ -15,6 +15,7 @@ extern crate log;
 extern crate env_logger;
 
 use std::env;
+use std::io::Write;
 
 fn init_logger() {
     let mut builder = env_logger::Builder::new();

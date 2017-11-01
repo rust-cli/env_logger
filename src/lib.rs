@@ -142,16 +142,21 @@
 #![deny(missing_debug_implementations, missing_docs, warnings)]
 
 extern crate log;
+extern crate termcolor;
 
 use std::env;
 use std::io::prelude::*;
 use std::io;
 use std::mem;
-use std::fmt;
+use std::cell::RefCell;
 
-use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
+use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
+use termcolor::{ColorChoice, Color, BufferWriter};
 
 pub mod filter;
+pub mod fmt;
+
+use self::fmt::Formatter;
 
 /// Log target, either stdout or stderr.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -183,9 +188,9 @@ pub enum Target {
 /// [`Logger::new()`]: #method.new
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
+    writer: BufferWriter,
     filter: filter::Filter,
-    format: Box<Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send>,
-    target: Target,
+    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
 /// `Builder` acts as builder for initializing a `Logger`.
@@ -201,17 +206,15 @@ pub struct Logger {
 /// extern crate env_logger;
 ///
 /// use std::env;
-/// use std::io;
-/// use log::{Record, LevelFilter};
+/// use std::io::Write;
+/// use log::LevelFilter;
 /// use env_logger::Builder;
 ///
 /// fn main() {
-///     let format = |buf: &mut io::Write, record: &Record| {
-///         writeln!(buf, "{} - {}", record.level(), record.args())
-///     };
-///
 ///     let mut builder = Builder::new();
-///     builder.format(format).filter(None, LevelFilter::Info);
+/// 
+///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
+///            .filter(None, LevelFilter::Info);
 ///
 ///     if let Ok(rust_log) = env::var("RUST_LOG") {
 ///        builder.parse(&rust_log);
@@ -225,7 +228,7 @@ pub struct Logger {
 /// ```
 pub struct Builder {
     filter: filter::Builder,
-    format: Box<Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send>,
+    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
     target: Target,
 }
 
@@ -234,9 +237,20 @@ impl Builder {
     pub fn new() -> Builder {
         Builder {
             filter: filter::Builder::new(),
-            format: Box::new(|buf: &mut Write, record: &Record| {
-                writeln!(buf, "{}:{}: {}", record.level(),
-                         record.module_path(), record.args())
+            format: Box::new(|buf, record| {
+                let level = record.level();
+                let level_color = match level {
+                    Level::Trace => Color::White,
+                    Level::Debug => Color::Blue,
+                    Level::Info => Color::Green,
+                    Level::Warn => Color::Yellow,
+                    Level::Error => Color::Red,
+                };
+
+                let write_level = write!(buf.color(level_color), "{}:", level);
+                let write_args = writeln!(buf, "{}: {}", record.module_path(), record.args());
+
+                write_level.and(write_args)
             }),
             target: Target::Stderr,
         }
@@ -256,19 +270,18 @@ impl Builder {
     /// Sets the format function for formatting the log output.
     ///
     /// This function is called on each record logged and should format the
-    /// log record and output it to the given [`Write`] trait object.
+    /// log record and output it to the given [`Formatter`].
     ///
     /// The format function is expected to output the string directly to the
-    /// [`Write`] trait object (rather than returning a [`String`]), so that
-    /// implementations can use the [`std::fmt`] macros to format and output
-    /// without intermediate heap allocations. The default `env_logger`
-    /// formatter takes advantage of this.
+    /// `Formatter` so that implementations can use the [`std::fmt`] macros 
+    /// to format and output without intermediate heap allocations. The default 
+    /// `env_logger` formatter takes advantage of this.
     ///
-    /// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
+    /// [`Formatter`]: struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
-        where F: Fn(&mut Write, &Record) -> io::Result<()> + Sync + Send
+        where F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send
     {
         self.format = Box::new(format);
         self
@@ -323,10 +336,15 @@ impl Builder {
 
     /// Build an env logger.
     pub fn build(&mut self) -> Logger {
+        let writer = match self.target {
+            Target::Stderr => BufferWriter::stderr(ColorChoice::Always),
+            Target::Stdout => BufferWriter::stdout(ColorChoice::Always),
+        };
+
         Logger {
+            writer: writer,
             filter: self.filter.build(),
             format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
-            target: mem::replace(&mut self.target, Target::Stderr),
         }
     }
 }
@@ -434,6 +452,10 @@ impl Logger {
     pub fn matches(&self, record: &Record) -> bool {
         self.filter.matches(record)
     }
+
+    fn print(&self, formatter: &Formatter) -> io::Result<()> {
+        self.writer.print(formatter.as_ref())
+    }
 }
 
 impl Log for Logger {
@@ -442,31 +464,56 @@ impl Log for Logger {
     }
 
     fn log(&self, record: &Record) {
-        let _ = match self.target {
-            Target::Stdout if self.matches(record) => (self.format)(&mut io::stdout(), record),
-            Target::Stderr if self.matches(record) => (self.format)(&mut io::stderr(), record),
-            _ => Ok(()),
-        };
+        if self.matches(record) {
+            // Log records are written to a thread-local buffer before being printed
+            // to the terminal. We clear these buffers afterwards, but they aren't shrinked
+            // so will always at least have capacity for the largest log record formatted
+            // on that thread.
+
+            thread_local! {
+                static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
+            }
+
+            FORMATTER.with(|tl_buf| {
+                let mut tl_buf = tl_buf.borrow_mut();
+
+                if tl_buf.is_none() {
+                    *tl_buf = Some(Formatter::new(self.writer.buffer()));
+                }
+
+                // The format is guaranteed to be `Some` by this point
+                let mut formatter = tl_buf.as_mut().unwrap();
+
+                let _ = (self.format)(&mut formatter, record).and_then(|_| self.print(formatter));
+
+                // Always clear the buffer afterwards
+                formatter.clear();
+            });
+        }
     }
 
     fn flush(&self) {}
 }
 
-impl fmt::Debug for Logger{
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Logger")
+mod std_fmt_impls {
+    use std::fmt;
+    use super::*;
+
+    impl fmt::Debug for Logger{
+        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+            f.debug_struct("Logger")
+                .field("filter", &self.filter)
+                .finish()
+        }
+    }
+
+    impl fmt::Debug for Builder{
+        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+            f.debug_struct("Logger")
             .field("filter", &self.filter)
             .field("target", &self.target)
             .finish()
-    }
-}
-
-impl fmt::Debug for Builder{
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Logger")
-         .field("filter", &self.filter)
-         .field("target", &self.target)
-         .finish()
+        }
     }
 }
 
