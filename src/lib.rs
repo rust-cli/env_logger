@@ -148,13 +148,15 @@ use std::env;
 use std::io::prelude::*;
 use std::io;
 use std::mem;
-use std::fmt;
 use std::cell::RefCell;
 
 use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
-use termcolor::{ColorChoice, Color, ColorSpec, BufferWriter, Buffer, WriteColor};
+use termcolor::{ColorChoice, Color, BufferWriter};
 
 pub mod filter;
+pub mod fmt;
+
+use self::fmt::Formatter;
 
 /// Log target, either stdout or stderr.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -191,21 +193,6 @@ pub struct Logger {
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
-/// A formatter to write logs into.
-/// 
-/// `Formatter` implements the standard [`Write`] trait for writing log records.
-/// It also supports terminal colors, but this is currently private.
-/// 
-/// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
-pub struct Formatter {
-    buf: Buffer,
-}
-
-struct StyledFormatter<W> {
-    buf: W,
-    spec: ColorSpec,
-}
-
 /// `Builder` acts as builder for initializing a `Logger`.
 ///
 /// It can be used to customize the log format, change the enviromental variable used
@@ -220,16 +207,14 @@ struct StyledFormatter<W> {
 ///
 /// use std::env;
 /// use std::io::Write;
-/// use log::{Record, LevelFilter};
-/// use env_logger::{Formatter, Builder};
+/// use log::LevelFilter;
+/// use env_logger::Builder;
 ///
 /// fn main() {
-///     let format = |buf: &mut Formatter, record: &Record| {
-///         writeln!(buf, "{} - {}", record.level(), record.args())
-///     };
-///
 ///     let mut builder = Builder::new();
-///     builder.format(format).filter(None, LevelFilter::Info);
+/// 
+///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
+///            .filter(None, LevelFilter::Info);
 ///
 ///     if let Ok(rust_log) = env::var("RUST_LOG") {
 ///        builder.parse(&rust_log);
@@ -262,8 +247,10 @@ impl Builder {
                     Level::Error => Color::Red,
                 };
 
-                write!(buf.color(level_color), "{}:", level)?;
-                writeln!(buf, "{}: {}", record.module_path(), record.args())
+                let write_level = write!(buf.color(level_color), "{}:", level);
+                let write_args = writeln!(buf, "{}: {}", record.module_path(), record.args());
+
+                write_level.and(write_args)
             }),
             target: Target::Stderr,
         }
@@ -465,6 +452,10 @@ impl Logger {
     pub fn matches(&self, record: &Record) -> bool {
         self.filter.matches(record)
     }
+
+    fn print(&self, formatter: &Formatter) -> io::Result<()> {
+        self.writer.print(formatter.as_ref())
+    }
 }
 
 impl Log for Logger {
@@ -493,13 +484,10 @@ impl Log for Logger {
                 // The format is guaranteed to be `Some` by this point
                 let mut formatter = tl_buf.as_mut().unwrap();
 
-                let _ = (self.format)(&mut formatter, record)
-                    .and_then(|_| {
-                        let printed = self.writer.print(&formatter.buf);
-                        formatter.buf.clear();
+                let _ = (self.format)(&mut formatter, record).and_then(|_| self.print(formatter));
 
-                        printed
-                    });
+                // Always clear the buffer afterwards
+                formatter.clear();
             });
         }
     }
@@ -507,70 +495,25 @@ impl Log for Logger {
     fn flush(&self) {}
 }
 
-impl Formatter {
-    fn new(buf: Buffer) -> Self {
-        Formatter {
-            buf: buf,
+mod std_fmt_impls {
+    use std::fmt;
+    use super::*;
+
+    impl fmt::Debug for Logger{
+        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+            f.debug_struct("Logger")
+                .field("filter", &self.filter)
+                .finish()
         }
     }
 
-    fn color(&mut self, color: Color) -> StyledFormatter<&mut Buffer> {
-        let mut spec = ColorSpec::new();
-        spec.set_fg(Some(color));
-
-        StyledFormatter {
-            buf: &mut self.buf,
-            spec: spec
-        }
-    }
-}
-
-impl Write for Formatter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buf.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.buf.flush()
-    }
-}
-
-impl<W> Write for StyledFormatter<W>
-    where W: WriteColor
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buf.set_color(&self.spec)?;
-        let write = self.buf.write(buf);
-        self.buf.reset()?;
-
-        write
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.buf.flush()
-    }
-}
-
-impl fmt::Debug for Logger{
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Logger")
+    impl fmt::Debug for Builder{
+        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+            f.debug_struct("Logger")
             .field("filter", &self.filter)
+            .field("target", &self.target)
             .finish()
-    }
-}
-
-impl fmt::Debug for Builder{
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Logger")
-         .field("filter", &self.filter)
-         .field("target", &self.target)
-         .finish()
-    }
-}
-
-impl fmt::Debug for Formatter{
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Formatter").finish()
+        }
     }
 }
 
