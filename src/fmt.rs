@@ -11,8 +11,11 @@
 use std::io::prelude::*;
 use std::io;
 use std::fmt;
+use std::mem;
 
 use termcolor::{Color, ColorSpec, Buffer, WriteColor};
+use chrono::Utc;
+use chrono::format::{Item, Fixed, DelayedFormat};
 
 /// A formatter to write logs into.
 /// 
@@ -32,6 +35,27 @@ pub(crate) struct StyledFormatter<W> {
     spec: ColorSpec,
 }
 
+/// An RFC3339 formatted timestamp.
+pub(crate) struct Timestamp(DelayedFormat<Rfc3339>);
+
+// This struct avoids a temporary `String` when formatting a
+// `DateTime<Utc>` using the rfc3339 format. 
+#[derive(Clone)]
+struct Rfc3339(Option<Fixed>);
+impl Rfc3339 {
+    fn new() -> Self {
+        Rfc3339(Some(Fixed::RFC3339))
+    }
+}
+
+impl Iterator for Rfc3339 {
+    type Item = Item<'static>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        mem::replace(&mut self.0, None).map(|fixed| Item::Fixed(fixed))
+    }
+}
+
 impl Formatter {
     pub(crate) fn new(buf: Buffer) -> Self {
         Formatter {
@@ -47,6 +71,10 @@ impl Formatter {
             buf: &mut self.buf,
             spec: spec
         }
+    }
+
+    pub(crate) fn timestamp(&self) -> Timestamp {
+        Timestamp(Utc::now().format_with_items(Rfc3339::new()))
     }
 
     pub(crate) fn as_ref(&self) -> &Buffer {
@@ -89,5 +117,11 @@ impl<W> Write for StyledFormatter<W>
 impl fmt::Debug for Formatter{
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
         f.debug_struct("Formatter").finish()
+    }
+}
+
+impl fmt::Display for Timestamp{
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        self.0.fmt(f)
     }
 }

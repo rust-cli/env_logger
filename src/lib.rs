@@ -37,37 +37,37 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=error ./main
-//! ERROR:main: this is printed by default
+//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
-//! ERROR:main: this is printed by default
-//! INFO:main: the answer was: 12
+//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
-//! DEBUG:main: this is a debug message
-//! ERROR:main: this is printed by default
-//! INFO:main: the answer was: 12
+//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
+//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
-//! ERROR:main: this is printed by default
-//! INFO:main: the answer was: 12
+//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
 //! ```
 //!
 //! And enable all logging:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main ./main
-//! DEBUG:main: this is a debug message
-//! ERROR:main: this is printed by default
-//! INFO:main: the answer was: 12
+//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
+//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
 //! ```
 //!
 //! See the documentation for the [`log` crate][log-crate-url] for more
@@ -143,6 +143,7 @@
 
 extern crate log;
 extern crate termcolor;
+extern crate chrono;
 
 use std::env;
 use std::io::prelude::*;
@@ -238,6 +239,7 @@ impl Builder {
         Builder {
             filter: filter::Builder::new(),
             format: Box::new(|buf, record| {
+                let ts = buf.timestamp();
                 let level = record.level();
                 let level_color = match level {
                     Level::Trace => Color::White,
@@ -248,7 +250,7 @@ impl Builder {
                 };
 
                 let write_level = write!(buf.color(level_color), "{}:", level);
-                let write_args = writeln!(buf, "{}: {}", record.module_path(), record.args());
+                let write_args = writeln!(buf, " {}: {}: {}", ts, record.module_path(), record.args());
 
                 write_level.and(write_args)
             }),
