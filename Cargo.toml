@@ -18,6 +18,7 @@ publish = false # this branch contains breaking changes
 log = { git = "https://github.com/rust-lang-nursery/log.git", features = ["std"] }
 regex = { version = "0.2", optional = true }
 termcolor = "0.3"
+chrono = "0.4"
 
 [[test]]
 name = "regexp_filter"
