@@ -1,65 +1,48 @@
 //! Formatting for log records.
-//! 
+//!
 //! This module contains a [`Formatter`] that can be used to format log records
 //! into without needing temporary allocations. Usually you won't need to worry
 //! about the contents of this module and can use the `Formatter` like an ordinary
 //! [`Write`].
-//! 
+//!
 //! [`Formatter`]: struct.Formatter.html
 //! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 
 use std::io::prelude::*;
 use std::io;
 use std::fmt;
-use std::mem;
 
 use termcolor::{Color, ColorSpec, Buffer, WriteColor};
 use chrono::Utc;
-use chrono::format::{Item, Fixed, DelayedFormat};
+use chrono::format::{DelayedFormat, StrftimeItems};
 
 /// A formatter to write logs into.
-/// 
+///
 /// `Formatter` implements the standard [`Write`] trait for writing log records.
 /// It also supports terminal colors, but this is currently private.
-/// 
+///
 /// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 pub struct Formatter {
     buf: Buffer,
+    timestamp_format: StrftimeItems<'static>
 }
 
 /// A formatter with a particular style.
-/// 
+///
 /// Each call to `write` will apply the style before writing the output.
 pub(crate) struct StyledFormatter<W> {
     buf: W,
     spec: ColorSpec,
 }
 
-/// An RFC3339 formatted timestamp.
-pub(crate) struct Timestamp(DelayedFormat<Rfc3339>);
-
-// This struct avoids a temporary `String` when formatting a
-// `DateTime<Utc>` using the rfc3339 format. 
-#[derive(Clone)]
-struct Rfc3339(Option<Fixed>);
-impl Rfc3339 {
-    fn new() -> Self {
-        Rfc3339(Some(Fixed::RFC3339))
-    }
-}
-
-impl Iterator for Rfc3339 {
-    type Item = Item<'static>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        mem::replace(&mut self.0, None).map(|fixed| Item::Fixed(fixed))
-    }
-}
+/// A formatted timestamp.
+pub(crate) struct Timestamp(DelayedFormat<StrftimeItems<'static>>);
 
 impl Formatter {
-    pub(crate) fn new(buf: Buffer) -> Self {
+    pub(crate) fn new(buf: Buffer, timestamp_format: StrftimeItems<'static>) -> Self {
         Formatter {
-            buf: buf,
+            buf,
+            timestamp_format,
         }
     }
 
@@ -74,7 +57,7 @@ impl Formatter {
     }
 
     pub(crate) fn timestamp(&self) -> Timestamp {
-        Timestamp(Utc::now().format_with_items(Rfc3339::new()))
+        Timestamp(Utc::now().format_with_items(self.timestamp_format.clone()))
     }
 
     pub(crate) fn as_ref(&self) -> &Buffer {
