@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A simple logger configured via an environment variable which writes 
+//! A simple logger configured via an environment variable which writes
 //! to stdout or stderr, for use with the logging facade exposed by the
 //! [`log` crate][log-crate-url].
 //!
@@ -37,37 +37,37 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=error ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! ERROR: 2017-11-01T21:37:57+00:00: main: this is printed by default
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! ERROR: 2017-11-01T21:37:57+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57+00:00: main: the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
-//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! DEBUG: 2017-11-01T21:37:57+00:00: main: this is a debug message
+//! ERROR: 2017-11-01T21:37:57+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57+00:00: main: the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! ERROR: 2017-11-01T21:37:57+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57+00:00: main: the answer was: 12
 //! ```
 //!
 //! And enable all logging:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main ./main
-//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! DEBUG: 2017-11-01T21:37:57+00:00: main: this is a debug message
+//! ERROR: 2017-11-01T21:37:57+00:00: main: this is printed by default
+//! INFO: 2017-11-01T21:37:57+00:00: main: the answer was: 12
 //! ```
 //!
 //! See the documentation for the [`log` crate][log-crate-url] for more
@@ -151,6 +151,7 @@ use std::io;
 use std::mem;
 use std::cell::RefCell;
 
+use chrono::format::strftime::StrftimeItems;
 use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
 use termcolor::{ColorChoice, Color, BufferWriter};
 
@@ -192,6 +193,7 @@ pub struct Logger {
     writer: BufferWriter,
     filter: filter::Filter,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+    timestamp_format: StrftimeItems<'static>,
 }
 
 /// `Builder` acts as builder for initializing a `Logger`.
@@ -213,7 +215,7 @@ pub struct Logger {
 ///
 /// fn main() {
 ///     let mut builder = Builder::new();
-/// 
+///
 ///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
 ///            .filter(None, LevelFilter::Info);
 ///
@@ -231,6 +233,7 @@ pub struct Builder {
     filter: filter::Builder,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
     target: Target,
+    timestamp_format: &'static str,
 }
 
 impl Builder {
@@ -255,6 +258,7 @@ impl Builder {
                 write_level.and(write_args)
             }),
             target: Target::Stderr,
+            timestamp_format: "%Y-%m-%dT%H:%M:%S%:z",
         }
     }
 
@@ -275,8 +279,8 @@ impl Builder {
     /// log record and output it to the given [`Formatter`].
     ///
     /// The format function is expected to output the string directly to the
-    /// `Formatter` so that implementations can use the [`std::fmt`] macros 
-    /// to format and output without intermediate heap allocations. The default 
+    /// `Formatter` so that implementations can use the [`std::fmt`] macros
+    /// to format and output without intermediate heap allocations. The default
     /// `env_logger` formatter takes advantage of this.
     ///
     /// [`Formatter`]: struct.Formatter.html
@@ -294,6 +298,15 @@ impl Builder {
     /// Env logger can log to either stdout or stderr. The default is stderr.
     pub fn target(&mut self, target: Target) -> &mut Self {
         self.target = target;
+        self
+    }
+
+    /// Sets the format that the timestamp will be displayed in
+    ///
+    /// This should be a `&'static str` in the format parsed by
+    /// [`chrono::format::strftime`].
+    pub fn timestamp_format(&mut self, format: &'static str) -> &mut Self {
+        self.timestamp_format = format;
         self
     }
 
@@ -347,6 +360,7 @@ impl Builder {
             writer: writer,
             filter: self.filter.build(),
             format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
+            timestamp_format: StrftimeItems::new(self.timestamp_format),
         }
     }
 }
@@ -480,7 +494,7 @@ impl Log for Logger {
                 let mut tl_buf = tl_buf.borrow_mut();
 
                 if tl_buf.is_none() {
-                    *tl_buf = Some(Formatter::new(self.writer.buffer()));
+                    *tl_buf = Some(Formatter::new(self.writer.buffer(), self.timestamp_format.clone()));
                 }
 
                 // The format is guaranteed to be `Some` by this point

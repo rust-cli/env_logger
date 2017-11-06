@@ -95,11 +95,11 @@ $ RUST_LOG=my_lib=info cargo test
      Running target/debug/my_lib-...
 
 running 2 tests
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib::tests: logging from another test
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib: add_one called with -8
+INFO: 2017-11-01T21:37:57+00:00: my_lib::tests: logging from another test
+INFO: 2017-11-01T21:37:57+00:00: my_lib: add_one called with -8
 test tests::it_handles_negative_numbers ... ok
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib::tests: can log from the test too
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib: add_one called with 2
+INFO: 2017-11-01T21:37:57+00:00: my_lib::tests: can log from the test too
+INFO: 2017-11-01T21:37:57+00:00: my_lib: add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
@@ -117,8 +117,8 @@ $ RUST_LOG=my_lib=info cargo test it_adds_one
      Running target/debug/my_lib-...
 
 running 1 test
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib::tests: can log from the test too
-INFO: 2017-11-01T21:37:57.073523133+00:00: my_lib: add_one called with 2
+INFO: 2017-11-01T21:37:57+00:00: my_lib::tests: can log from the test too
+INFO: 2017-11-01T21:37:57+00:00: my_lib: add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured
