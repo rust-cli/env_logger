@@ -11,11 +11,10 @@
 use std::io::prelude::*;
 use std::io;
 use std::fmt;
-use std::mem;
 
 use termcolor::{Color, ColorSpec, Buffer, WriteColor};
-use chrono::Utc;
-use chrono::format::{Item, Fixed, DelayedFormat};
+use chrono::{DateTime, Utc};
+use chrono::format::Item;
 
 /// A formatter to write logs into.
 /// 
@@ -36,25 +35,7 @@ pub(crate) struct StyledFormatter<W> {
 }
 
 /// An RFC3339 formatted timestamp.
-pub(crate) struct Timestamp(DelayedFormat<Rfc3339>);
-
-// This struct avoids a temporary `String` when formatting a
-// `DateTime<Utc>` using the rfc3339 format. 
-#[derive(Clone)]
-struct Rfc3339(Option<Fixed>);
-impl Rfc3339 {
-    fn new() -> Self {
-        Rfc3339(Some(Fixed::RFC3339))
-    }
-}
-
-impl Iterator for Rfc3339 {
-    type Item = Item<'static>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        mem::replace(&mut self.0, None).map(|fixed| Item::Fixed(fixed))
-    }
-}
+pub(crate) struct Timestamp(DateTime<Utc>);
 
 impl Formatter {
     pub(crate) fn new(buf: Buffer) -> Self {
@@ -74,7 +55,7 @@ impl Formatter {
     }
 
     pub(crate) fn timestamp(&self) -> Timestamp {
-        Timestamp(Utc::now().format_with_items(Rfc3339::new()))
+        Timestamp(Utc::now())
     }
 
     pub(crate) fn as_ref(&self) -> &Buffer {
@@ -122,6 +103,28 @@ impl fmt::Debug for Formatter{
 
 impl fmt::Display for Timestamp{
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        self.0.fmt(f)
+        const ITEMS: &'static [Item<'static>] = {
+            use chrono::format::Item::*;
+            use chrono::format::Numeric::*;
+            use chrono::format::Fixed::*;
+            use chrono::format::Pad::*;
+
+            &[
+                Numeric(Year, Zero),
+                Literal("-"),
+                Numeric(Month, Zero),
+                Literal("-"),
+                Numeric(Day, Zero),
+                Literal("T"),
+                Numeric(Hour, Zero),
+                Literal(":"),
+                Numeric(Minute, Zero),
+                Literal(":"),
+                Numeric(Second, Zero),
+                Fixed(TimezoneOffsetZ),
+            ]
+        };
+
+        self.0.format_with_items(ITEMS.iter().cloned()).fmt(f)
     }
 }
