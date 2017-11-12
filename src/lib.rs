@@ -37,37 +37,37 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=error ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
+//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
-//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! DEBUG: 2017-11-09T02:12:24Z: main: this is a debug message
+//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
 //! And enable all logging:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main ./main
-//! DEBUG: 2017-11-01T21:37:57.073523133+00:00: main: this is a debug message
-//! ERROR: 2017-11-01T21:37:57.073523133+00:00: main: this is printed by default
-//! INFO: 2017-11-01T21:37:57.073523133+00:00: main: the answer was: 12
+//! DEBUG: 2017-11-09T02:12:24Z: main: this is a debug message
+//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
 //! See the documentation for the [`log` crate][log-crate-url] for more
