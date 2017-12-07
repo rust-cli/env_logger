@@ -37,11 +37,10 @@ impl MyLogger {
     }
 
     fn init() -> Result<(), SetLoggerError> {
-        log::set_boxed_logger(|max_level| {
-            let logger = Self::new();
-            max_level.set(logger.inner.filter());
-            Box::new(logger)
-        })
+        let logger = Self::new();
+
+        log::set_max_level(logger.inner.filter());
+        log::set_boxed_logger(Box::new(logger))
     }
 }
 

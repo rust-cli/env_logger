@@ -375,11 +375,10 @@ impl Logger {
     /// use env_logger::Logger;
     ///
     /// fn main() {
-    ///     log::set_boxed_logger(|max_level| {
-    ///         let logger = Logger::new();
-    ///         max_level.set(logger.filter());
-    ///         Box::new(logger)
-    ///     });
+    ///     let logger = Logger::new();
+    /// 
+    ///     log::set_max_level(logger.filter());
+    ///     log::set_boxed_logger(Box::new(logger));
     /// }
     /// ```
     ///
@@ -409,11 +408,10 @@ impl Logger {
     /// use env_logger::Logger;
     ///
     /// fn main() {
-    ///     log::set_boxed_logger(|max_level| {
-    ///         let logger = Logger::from_env("MY_LOG");
-    ///         max_level.set(logger.filter());
-    ///         Box::new(logger)
-    ///     });
+    ///     let logger = Logger::from_env("MY_LOG");
+    /// 
+    ///     log::set_max_level(logger.filter());
+    ///     log::set_boxed_logger(Box::new(logger));
     /// }
     /// ```
     ///
