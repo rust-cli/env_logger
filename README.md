@@ -3,7 +3,7 @@ env_logger [![Build Status](https://travis-ci.org/sebasmagri/env_logger.svg?bran
 
 Implements a logger that can be configured via an environment variable.
 
-* [`env_logger` documentation](https://doc.rust-lang.org/log/env_logger)
+* [`env_logger` documentation](https://docs.rs/env_logger)
 
 ## Usage
 
