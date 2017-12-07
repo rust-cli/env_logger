@@ -249,7 +249,7 @@ impl Builder {
                     Level::Error => Color::Red,
                 };
 
-                let write_level = write!(buf.color(level_color), "{}:", level);
+                let write_level = write!(buf.color(level_color), "{:>5}:", level);
                 let write_args = if let Some(module_path) = record.module_path() {
                     writeln!(buf, " {}: {}: {}", ts, module_path, record.args())
                 }
