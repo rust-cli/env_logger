@@ -131,7 +131,7 @@
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.4.3")]
+       html_root_url = "https://docs.rs/env_logger/0.5.0-rc.1")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -250,7 +250,12 @@ impl Builder {
                 };
 
                 let write_level = write!(buf.color(level_color), "{}:", level);
-                let write_args = writeln!(buf, " {}: {}: {}", ts, record.module_path(), record.args());
+                let write_args = if let Some(module_path) = record.module_path() {
+                    writeln!(buf, " {}: {}: {}", ts, module_path, record.args())
+                }
+                else {
+                    writeln!(buf, " {}: {}", ts, record.args())
+                };
 
                 write_level.and(write_args)
             }),
@@ -316,11 +321,10 @@ impl Builder {
     /// This function will fail if it is called more than once, or if another
     /// library has already initialized a global logger.
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
-        log::set_boxed_logger(|max_level| {
-            let logger = self.build();
-            max_level.set(logger.filter());
-            Box::new(logger)
-        })
+        let logger = self.build();
+
+        log::set_max_level(logger.filter());
+        log::set_boxed_logger(Box::new(logger))
     }
 
     /// Initializes the global logger with the built env logger.
