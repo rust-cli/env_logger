@@ -196,7 +196,7 @@ pub struct Logger {
 
 /// `Builder` acts as builder for initializing a `Logger`.
 ///
-/// It can be used to customize the log format, change the enviromental variable used
+/// It can be used to customize the log format, change the environment variable used
 /// to provide the logging directives and also set the default log level filter.
 ///
 /// ## Example
