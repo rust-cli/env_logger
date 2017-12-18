@@ -152,12 +152,12 @@ use std::mem;
 use std::cell::RefCell;
 
 use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
-use termcolor::{ColorChoice, Color, BufferWriter};
+use termcolor::{ColorChoice, BufferWriter};
 
 pub mod filter;
 pub mod fmt;
 
-use self::fmt::Formatter;
+use self::fmt::{Formatter, Color};
 
 /// Log target, either stdout or stderr.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -241,23 +241,22 @@ impl Builder {
             format: Box::new(|buf, record| {
                 let ts = buf.timestamp();
                 let level = record.level();
-                let level_color = match level {
-                    Level::Trace => Color::White,
-                    Level::Debug => Color::Blue,
-                    Level::Info => Color::Green,
-                    Level::Warn => Color::Yellow,
-                    Level::Error => Color::Red,
+                let mut level_style = buf.style();
+
+                match level {
+                    Level::Trace => level_style.set_color(Color::White),
+                    Level::Debug => level_style.set_color(Color::Blue),
+                    Level::Info => level_style.set_color(Color::Green),
+                    Level::Warn => level_style.set_color(Color::Yellow),
+                    Level::Error => level_style.set_color(Color::Red).set_bold(true),
                 };
 
-                let write_level = write!(buf.color(level_color), "{:>5}:", level);
-                let write_args = if let Some(module_path) = record.module_path() {
-                    writeln!(buf, " {}: {}: {}", ts, module_path, record.args())
+                if let Some(module_path) = record.module_path() {
+                    writeln!(buf, "{:>5} {}: {}: {}", level_style.value(level), ts, module_path, record.args())
                 }
                 else {
-                    writeln!(buf, " {}: {}", ts, record.args())
-                };
-
-                write_level.and(write_args)
+                    writeln!(buf, "{:>5} {}: {}", level_style.value(level), ts, record.args())
+                }
             }),
             target: Target::Stderr,
         }
@@ -456,10 +455,6 @@ impl Logger {
     pub fn matches(&self, record: &Record) -> bool {
         self.filter.matches(record)
     }
-
-    fn print(&self, formatter: &Formatter) -> io::Result<()> {
-        self.writer.print(formatter.as_ref())
-    }
 }
 
 impl Log for Logger {
@@ -488,7 +483,7 @@ impl Log for Logger {
                 // The format is guaranteed to be `Some` by this point
                 let mut formatter = tl_buf.as_mut().unwrap();
 
-                let _ = (self.format)(&mut formatter, record).and_then(|_| self.print(formatter));
+                let _ = (self.format)(&mut formatter, record).and_then(|_| formatter.print(&self.writer));
 
                 // Always clear the buffer afterwards
                 formatter.clear();

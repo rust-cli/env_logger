@@ -17,12 +17,19 @@ extern crate env_logger;
 use std::env;
 use std::io::Write;
 
+use env_logger::{Builder, fmt};
+
 fn init_logger() {
-    let mut builder = env_logger::Builder::new();
+    let mut builder = Builder::new();
 
     // Use a different format for writing log records
     builder.format(|buf, record| {
-        writeln!(buf, "My formatted log: {}", record.args())
+        let mut style = buf.style();
+        style.set_bg(fmt::Color::Yellow).set_bold(true);
+
+        let timestamp = buf.timestamp();
+
+        writeln!(buf, "My formatted log ({}): {}", timestamp, style.value(record.args()))
     });
 
     if let Ok(s) = env::var("MY_LOG_LEVEL") {
