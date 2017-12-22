@@ -7,6 +7,12 @@ Before running this example, try setting the `MY_LOG_LEVEL` environment variable
 $ export MY_LOG_LEVEL = 'info'
 ```
 
+Also try setting the `RUST_LOG_STYLE` environment variable to `0` to disable colors:
+
+```no_run,shell
+$ export RUST_LOG_STYLE = 0
+```
+
 If you only want to change the way logs are formatted, look at the `custom_format` example.
 */
 
@@ -23,13 +29,7 @@ struct MyLogger {
 impl MyLogger {
     fn new() -> MyLogger {
         use env_logger::filter::Builder;
-        let mut builder = Builder::new();
-
-        // Parse a directives string from an environment variable
-        // This uses the same format as `env_logger::Logger`
-        if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
-           builder.parse(filter);
-        }
+        let mut builder = Builder::from_env("MY_LOG_LEVEL");
 
         MyLogger {
             inner: builder.build()
