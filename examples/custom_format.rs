@@ -4,13 +4,13 @@ Changing the default logging format.
 Before running this example, try setting the `MY_LOG_LEVEL` environment variable to `info`:
 
 ```no_run,shell
-$ export MY_LOG_LEVEL = 'info'
+$ export MY_LOG_LEVEL='info'
 ```
 
 Also try setting the `MY_LOG_STYLE` environment variable to `0` to disable colors:
 
 ```no_run,shell
-$ export MY_LOG_STYLE = 0
+$ export MY_LOG_STYLE=0
 ```
 
 If you want to control the logging output completely, see the `custom_logger` example.
