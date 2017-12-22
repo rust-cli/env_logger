@@ -114,6 +114,11 @@
 //! logged if it matches. Note that the matching is done after formatting the
 //! log string but before adding any logging meta-data. There is a single filter
 //! for all modules.
+//! 
+//! ## Disabling colors
+//! 
+//! Colors and other styles can be disabled by setting the `RUST_LOG_STYLE`
+//! environment variable to `0`.
 //!
 //! Some examples:
 //!
@@ -146,6 +151,7 @@ extern crate termcolor;
 extern crate chrono;
 
 use std::env;
+use std::borrow::Cow;
 use std::io::prelude::*;
 use std::io;
 use std::mem;
@@ -158,6 +164,16 @@ pub mod filter;
 pub mod fmt;
 
 use self::fmt::{Formatter, Color};
+
+const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
+const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+
+/// Set of environment variables to configure from.
+#[derive(Debug)]
+pub struct Env<'a> {
+    filter: Cow<'a, str>,
+    write_style: Cow<'a, str>,
+}
 
 /// Log target, either stdout or stderr.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -190,6 +206,7 @@ pub enum Target {
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
     writer: BufferWriter,
+    write_style: bool,
     filter: filter::Filter,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
@@ -229,6 +246,7 @@ pub struct Logger {
 /// ```
 pub struct Builder {
     filter: filter::Builder,
+    write_style: bool,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
     target: Target,
 }
@@ -238,6 +256,7 @@ impl Builder {
     pub fn new() -> Builder {
         Builder {
             filter: filter::Builder::new(),
+            write_style: true,
             format: Box::new(|buf, record| {
                 let ts = buf.timestamp();
                 let level = record.level();
@@ -260,6 +279,25 @@ impl Builder {
             }),
             target: Target::Stderr,
         }
+    }
+
+    /// Initializes the log builder from the environment.
+    pub fn from_env<'a, E>(env: E) -> Self
+    where
+        E: Into<Env<'a>>
+    {
+        let mut builder = Builder::new();
+        let Env { filter, write_style } = env.into();
+
+        if let Ok(s) = env::var(&*filter) {
+            builder.parse(&s);
+        }
+
+        if let Ok(s) = env::var(&*write_style) {
+            builder.parse_write_style(&s);
+        }
+
+        builder
     }
 
     /// Adds filters to the logger.
@@ -301,6 +339,15 @@ impl Builder {
         self
     }
 
+    /// Sets whether or not styles will be written.
+    /// 
+    /// This can be useful in environments that don't support control characters
+    /// for setting colors.
+    pub fn write_style(&mut self, yes: bool) -> &mut Self {
+        self.write_style = yes;
+        self
+    }
+
     /// Parses the directives string in the same form as the `RUST_LOG`
     /// environment variable.
     ///
@@ -308,6 +355,14 @@ impl Builder {
     pub fn parse(&mut self, filters: &str) -> &mut Self {
         self.filter.parse(filters);
         self
+    }
+
+    /// Parses whether or not to write styles.
+    /// 
+    /// A value of `0` will ignore styles.
+    /// Any other value will include styles.
+    pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
+        self.write_style(parse_write_style_spec(write_style))
     }
 
     /// Initializes the global logger with the built env logger.
@@ -347,7 +402,8 @@ impl Builder {
         };
 
         Logger {
-            writer: writer,
+            writer,
+            write_style: self.write_style,
             filter: self.filter.build(),
             format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
         }
@@ -384,7 +440,7 @@ impl Logger {
     /// [`init()`]: fn.init.html
     /// [`try_init()`]: fn.try_init.html
     pub fn new() -> Logger {
-        Self::from_env("RUST_LOG")
+        Self::from_env(Env::default())
     }
 
     /// Creates a new env logger by parsing the environment variable with the
@@ -398,8 +454,11 @@ impl Logger {
     /// for initialization as a global logger.
     ///
     /// # Example
+    /// 
+    /// Initialise the logger using the given environment variable for filtering
+    /// and the default environment variables for other properties.
     ///
-    /// ```rust
+    /// ```
     /// extern crate log;
     /// extern crate env_logger;
     ///
@@ -413,15 +472,34 @@ impl Logger {
     ///     log::set_boxed_logger(Box::new(logger));
     /// }
     /// ```
+    /// 
+    /// Specify the environment variable for filtering and whether or not to
+    /// write styles:
+    /// 
+    /// ```
+    /// extern crate log;
+    /// extern crate env_logger;
+    ///
+    /// use std::env;
+    /// use env_logger::{Env, Logger};
+    ///
+    /// fn main() {
+    ///     let logger = Logger::from_env(Env::default()
+    ///         .filter("MY_LOG")
+    ///         .write_style("MY_LOG_STYLE"));
+    /// 
+    ///     log::set_max_level(logger.filter());
+    ///     log::set_boxed_logger(Box::new(logger));
+    /// }
+    /// ```
     ///
     /// [`new()`]: #method.new
     /// [`Builder`]: struct.Builder.html
-    pub fn from_env(env: &str) -> Logger {
-        let mut builder = Builder::new();
-
-        if let Ok(s) = env::var(env) {
-            builder.parse(&s);
-        }
+    pub fn from_env<'a, E>(env: E) -> Logger
+    where
+        E: Into<Env<'a>>
+    {
+        let mut builder = Builder::from_env(env);
 
         builder.build()
     }
@@ -477,7 +555,7 @@ impl Log for Logger {
                 let mut tl_buf = tl_buf.borrow_mut();
 
                 if tl_buf.is_none() {
-                    *tl_buf = Some(Formatter::new(self.writer.buffer()));
+                    *tl_buf = Some(Formatter::new(self.writer.buffer(), self.write_style));
                 }
 
                 // The format is guaranteed to be `Some` by this point
@@ -492,6 +570,49 @@ impl Log for Logger {
     }
 
     fn flush(&self) {}
+}
+
+impl<'a> Env<'a> {
+    /// Get a default set of environment variables.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Specify an environment variable to read the filter from.
+    pub fn filter<E>(mut self, filter_env: E) -> Self
+    where
+        E: Into<Cow<'a, str>>
+    {
+        self.filter = filter_env.into();
+        self
+    }
+
+    /// Specify an environment variable to read the style from.
+    pub fn write_style<E>(mut self, write_style_env: E) -> Self
+    where
+        E: Into<Cow<'a, str>>
+    {
+        self.write_style = write_style_env.into();
+        self
+    }
+}
+
+impl<'a, T> From<T> for Env<'a>
+where
+    T: Into<Cow<'a, str>>
+{
+    fn from(filter_env: T) -> Self {
+        Env::default().filter(filter_env.into())
+    }
+}
+
+impl<'a> Default for Env<'a> {
+    fn default() -> Self {
+        Env {
+            filter: DEFAULT_FILTER_ENV.into(),
+            write_style: DEFAULT_WRITE_STYLE_ENV.into()
+        }
+    }
 }
 
 mod std_fmt_impls {
@@ -526,7 +647,7 @@ mod std_fmt_impls {
 /// This function will fail if it is called more than once, or if another
 /// library has already initialized a global logger.
 pub fn try_init() -> Result<(), SetLoggerError> {
-    try_init_from_env("RUST_LOG")
+    try_init_from_env(Env::default())
 }
 
 /// Initializes the global logger with an env logger.
@@ -552,12 +673,11 @@ pub fn init() {
 ///
 /// This function will fail if it is called more than once, or if another
 /// library has already initialized a global logger.
-pub fn try_init_from_env(env: &str) -> Result<(), SetLoggerError> {
-    let mut builder = Builder::new();
-
-    if let Ok(s) = env::var(env) {
-        builder.parse(&s);
-    }
+pub fn try_init_from_env<'a, E>(env: E) -> Result<(), SetLoggerError>
+where
+    E: Into<Env<'a>>
+{
+    let mut builder = Builder::from_env(env);
 
     builder.try_init()
 }
@@ -572,6 +692,42 @@ pub fn try_init_from_env(env: &str) -> Result<(), SetLoggerError> {
 ///
 /// This function will panic if it is called more than once, or if another
 /// library has already initialized a global logger.
-pub fn init_from_env(env: &str) {
+pub fn init_from_env<'a, E>(env: E)
+where
+    E: Into<Env<'a>>
+{
     try_init_from_env(env).unwrap();
+}
+
+// Parse a `write_style` environment value.
+// The output will be `true` unless a value of `0` is given
+fn parse_write_style_spec(spec: &str) -> bool {
+    match spec {
+        "0" => false,
+        _ => true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_write_style_valid_false() {
+        assert_eq!(false, parse_write_style_spec("0"));
+    }
+
+    #[test]
+    fn parse_write_style_invalid() {
+        let inputs = vec![
+            "1",
+            "false",
+            "true",
+            "please write me some styles"
+        ];
+
+        for input in inputs {
+            assert_eq!(true, parse_write_style_spec(input));
+        }
+    }
 }

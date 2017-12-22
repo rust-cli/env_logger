@@ -42,6 +42,7 @@ pub use termcolor::Color;
 /// [`style`]: #method.style
 pub struct Formatter {
     buf: Rc<RefCell<Buffer>>,
+    write_style: bool
 }
 
 /// A set of styles to apply to the terminal output.
@@ -99,6 +100,7 @@ pub struct Formatter {
 #[derive(Clone)]
 pub struct Style {
     buf: Rc<RefCell<Buffer>>,
+    write_style: bool,
     spec: ColorSpec,
 }
 
@@ -232,9 +234,10 @@ impl Style {
 pub struct Timestamp(DateTime<Utc>);
 
 impl Formatter {
-    pub(crate) fn new(buf: Buffer) -> Self {
+    pub(crate) fn new(buf: Buffer, write_style: bool) -> Self {
         Formatter {
             buf: Rc::new(RefCell::new(buf)),
+            write_style
         }
     }
 
@@ -265,6 +268,7 @@ impl Formatter {
     pub fn style(&self) -> Style {
         Style {
             buf: self.buf.clone(),
+            write_style: self.write_style,
             spec: ColorSpec::new(),
         }
     }
@@ -316,6 +320,11 @@ impl<'a, T> StyledValue<'a, T> {
     where
         F: FnOnce() -> fmt::Result,
     {
+        if !self.style.write_style {
+            // Ignore styles and just run the format function
+            return f()
+        }
+
         self.style.buf.borrow_mut().set_color(&self.style.spec).map_err(|_| fmt::Error)?;
 
         // Always try to reset the terminal style, even if writing failed
