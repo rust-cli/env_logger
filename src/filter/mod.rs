@@ -59,6 +59,7 @@
 //! [`Builder::parse`]: struct.Builder.html#method.parse
 //! [`Filter::matches`]: struct.Filter.html#method.matches
 
+use std::env;
 use std::mem;
 use std::fmt;
 use log::{Level, LevelFilter, Record, Metadata};
@@ -183,6 +184,17 @@ impl Builder {
             directives: Vec::new(),
             filter: None,
         }
+    }
+
+    /// Initializes the filter builder from an environment.
+    pub fn from_env(env: &str) -> Builder {
+        let mut builder = Builder::new();
+
+        if let Ok(s) = env::var(env) {
+            builder.parse(&s);
+        }
+
+        builder
     }
 
     /// Adds a directive to the filter.

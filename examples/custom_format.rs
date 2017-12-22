@@ -20,7 +20,6 @@ If you want to control the logging output completely, see the `custom_logger` ex
 extern crate log;
 extern crate env_logger;
 
-use std::env;
 use std::io::Write;
 
 use env_logger::{Env, Builder, fmt};
