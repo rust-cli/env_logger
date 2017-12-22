@@ -114,11 +114,6 @@
 //! logged if it matches. Note that the matching is done after formatting the
 //! log string but before adding any logging meta-data. There is a single filter
 //! for all modules.
-//! 
-//! ## Disabling colors
-//! 
-//! Colors and other styles can be disabled by setting the `RUST_LOG_STYLE`
-//! environment variable to `0`.
 //!
 //! Some examples:
 //!
@@ -131,6 +126,11 @@
 //! * `error,hello=warn/[0-9]scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
+//! 
+//! ## Disabling colors
+//! 
+//! Colors and other styles can be disabled by setting the `RUST_LOG_STYLE`
+//! environment variable to `0`.
 //!
 //! [log-crate-url]: https://docs.rs/log/
 
