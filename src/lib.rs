@@ -169,6 +169,13 @@ const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
+/// 
+/// By default, the `Env` will read the following environment variables:
+/// 
+/// - `RUST_LOG`: the level filter
+/// - `RUST_LOG_STYLE`: whether or not to print styles with records.
+/// 
+/// These sources can be configured using the builder methods on `Env`.
 #[derive(Debug)]
 pub struct Env<'a> {
     filter: Cow<'a, str>,
@@ -395,7 +402,11 @@ impl Builder {
     }
 
     /// Build an env logger.
-    pub fn build(&mut self) -> Logger {
+    /// 
+    /// This method is kept private because the only way we support building
+    /// loggers is by installing them as the single global logger for the
+    /// `log` crate.
+    fn build(&mut self) -> Logger {
         let writer = match self.target {
             Target::Stderr => BufferWriter::stderr(ColorChoice::Always),
             Target::Stdout => BufferWriter::stdout(ColorChoice::Always),
@@ -411,120 +422,8 @@ impl Builder {
 }
 
 impl Logger {
-    /// Creates a new env logger by parsing the `RUST_LOG` environment variable.
-    ///
-    /// The returned logger can be passed to the [`log` crate](https://docs.rs/log/)
-    /// for initialization as a global logger.
-    ///
-    /// If you do not need to interact directly with the `Logger`, you should
-    /// prefer the [`init()`] or [`try_init()`] methods, which
-    /// construct a `Logger` and configure it as the default logger.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// extern crate log;
-    /// extern crate env_logger;
-    ///
-    /// use std::env;
-    /// use env_logger::Logger;
-    ///
-    /// fn main() {
-    ///     let logger = Logger::new();
-    /// 
-    ///     log::set_max_level(logger.filter());
-    ///     log::set_boxed_logger(Box::new(logger));
-    /// }
-    /// ```
-    ///
-    /// [`init()`]: fn.init.html
-    /// [`try_init()`]: fn.try_init.html
-    pub fn new() -> Logger {
-        Self::from_env(Env::default())
-    }
-
-    /// Creates a new env logger by parsing the environment variable with the
-    /// given name.
-    ///
-    /// This is identical to the [`new()`] constructor, except it allows the
-    /// name of the environment variable to be customized. For additional
-    /// customization, use the [`Builder`] type instead.
-    ///
-    /// The returned logger can be passed to the [`log` crate](https://docs.rs/log/)
-    /// for initialization as a global logger.
-    ///
-    /// # Example
-    /// 
-    /// Initialise the logger using the given environment variable for filtering
-    /// and the default environment variables for other properties.
-    ///
-    /// ```
-    /// extern crate log;
-    /// extern crate env_logger;
-    ///
-    /// use std::env;
-    /// use env_logger::Logger;
-    ///
-    /// fn main() {
-    ///     let logger = Logger::from_env("MY_LOG");
-    /// 
-    ///     log::set_max_level(logger.filter());
-    ///     log::set_boxed_logger(Box::new(logger));
-    /// }
-    /// ```
-    /// 
-    /// Specify the environment variable for filtering and whether or not to
-    /// write styles:
-    /// 
-    /// ```
-    /// extern crate log;
-    /// extern crate env_logger;
-    ///
-    /// use std::env;
-    /// use env_logger::{Env, Logger};
-    ///
-    /// fn main() {
-    ///     let logger = Logger::from_env(Env::default()
-    ///         .filter("MY_LOG")
-    ///         .write_style("MY_LOG_STYLE"));
-    /// 
-    ///     log::set_max_level(logger.filter());
-    ///     log::set_boxed_logger(Box::new(logger));
-    /// }
-    /// ```
-    ///
-    /// [`new()`]: #method.new
-    /// [`Builder`]: struct.Builder.html
-    pub fn from_env<'a, E>(env: E) -> Logger
-    where
-        E: Into<Env<'a>>
-    {
-        let mut builder = Builder::from_env(env);
-
-        builder.build()
-    }
-
     /// Returns the maximum `LevelFilter` that this env logger instance is
     /// configured to output.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// extern crate log;
-    /// extern crate env_logger;
-    ///
-    /// use log::LevelFilter;
-    /// use env_logger::Builder;
-    ///
-    /// fn main() {
-    ///     let mut builder = Builder::new();
-    ///     builder.filter(Some("module1"), LevelFilter::Info);
-    ///     builder.filter(Some("module2"), LevelFilter::Error);
-    ///
-    ///     let logger = builder.build();
-    ///     assert_eq!(logger.filter(), LevelFilter::Info);
-    /// }
-    /// ```
     pub fn filter(&self) -> LevelFilter {
         self.filter.filter()
     }
@@ -546,6 +445,12 @@ impl Log for Logger {
             // to the terminal. We clear these buffers afterwards, but they aren't shrinked
             // so will always at least have capacity for the largest log record formatted
             // on that thread.
+            // 
+            // Because these buffers are tied to a particular logger, we don't let callers
+            // create instances of `Logger` themselves, or they'll race to configure the
+            // thread local buffer with their own configuration. This is still potentially
+            // an issue if a caller attempts to set and use the global logger multiple times,
+            // but in that case it's clearer that there's shared state at play.
 
             thread_local! {
                 static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
