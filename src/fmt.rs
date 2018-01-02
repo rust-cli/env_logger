@@ -519,13 +519,27 @@ mod tests {
     #[test]
     fn parse_write_style_valid() {
         let inputs = vec![
-            ("auto", Some(WriteStyle::Auto)),
-            ("always", Some(WriteStyle::Always)),
-            ("never", Some(WriteStyle::Never)),
+            ("auto", WriteStyle::Auto),
+            ("always", WriteStyle::Always),
+            ("never", WriteStyle::Never),
         ];
 
         for (input, expected) in inputs {
-            assert_eq!(expected, WriteStyle::parse(input));
+            assert_eq!(expected, parse_write_style(input));
+        }
+    }
+
+    #[test]
+    fn parse_write_style_invalid() {
+        let inputs = vec![
+            "",
+            "true",
+            "false",
+            "NEVER!!"
+        ];
+
+        for input in inputs {
+            assert_eq!(WriteStyle::Auto, parse_write_style(input));
         }
     }
 }
