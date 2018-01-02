@@ -129,8 +129,13 @@
 //! 
 //! ## Disabling colors
 //! 
-//! Colors and other styles can be disabled by setting the `RUST_LOG_STYLE`
-//! environment variable to `0`.
+//! Colors and other styles can be configured with the `RUST_LOG_STYLE`
+//! environment variable.
+//! It accepts the following values:
+//! 
+//! * `auto` (default) will attempt to print style characters, but don't force the issue.
+//! * `always` will always print style characters even if they aren't supported by the terminal.
+//! * `never` will never print style characters.
 //!
 //! [log-crate-url]: https://docs.rs/log/
 
@@ -158,12 +163,11 @@ use std::mem;
 use std::cell::RefCell;
 
 use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
-use termcolor::{ColorChoice, BufferWriter};
 
 pub mod filter;
 pub mod fmt;
 
-use self::fmt::{Formatter, Color};
+pub use self::fmt::{Target, WriteStyle, Color, Formatter};
 
 const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
@@ -180,15 +184,6 @@ const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 pub struct Env<'a> {
     filter: Cow<'a, str>,
     write_style: Cow<'a, str>,
-}
-
-/// Log target, either stdout or stderr.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum Target {
-    /// Logs will be sent to standard output.
-    Stdout,
-    /// Logs will be sent to standard error.
-    Stderr,
 }
 
 /// The env logger.
@@ -212,8 +207,7 @@ pub enum Target {
 /// [`Logger::new()`]: #method.new
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
-    writer: BufferWriter,
-    write_style: bool,
+    writer: fmt::Writer,
     filter: filter::Filter,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
@@ -253,17 +247,16 @@ pub struct Logger {
 /// ```
 pub struct Builder {
     filter: filter::Builder,
-    write_style: bool,
+    writer: fmt::Builder,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
-    target: Target,
 }
 
 impl Builder {
     /// Initializes the log builder with defaults.
     pub fn new() -> Builder {
         Builder {
-            filter: filter::Builder::new(),
-            write_style: true,
+            filter: Default::default(),
+            writer: Default::default(),
             format: Box::new(|buf, record| {
                 let ts = buf.timestamp();
                 let level = record.level();
@@ -284,7 +277,6 @@ impl Builder {
                     writeln!(buf, "{:>5} {}: {}", level_style.value(level), ts, record.args())
                 }
             }),
-            target: Target::Stderr,
         }
     }
 
@@ -294,13 +286,13 @@ impl Builder {
         E: Into<Env<'a>>
     {
         let mut builder = Builder::new();
-        let Env { filter, write_style } = env.into();
+        let env = env.into();
 
-        if let Ok(s) = env::var(&*filter) {
+        if let Some(s) = env.get_filter() {
             builder.parse(&s);
         }
 
-        if let Ok(s) = env::var(&*write_style) {
+        if let Some(s) = env.get_write_style() {
             builder.parse_write_style(&s);
         }
 
@@ -341,8 +333,8 @@ impl Builder {
     /// Sets the target for the log output.
     ///
     /// Env logger can log to either stdout or stderr. The default is stderr.
-    pub fn target(&mut self, target: Target) -> &mut Self {
-        self.target = target;
+    pub fn target(&mut self, target: fmt::Target) -> &mut Self {
+        self.writer.target(target);
         self
     }
 
@@ -350,8 +342,8 @@ impl Builder {
     /// 
     /// This can be useful in environments that don't support control characters
     /// for setting colors.
-    pub fn write_style(&mut self, yes: bool) -> &mut Self {
-        self.write_style = yes;
+    pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
+        self.writer.write_style(write_style);
         self
     }
 
@@ -364,12 +356,13 @@ impl Builder {
         self
     }
 
-    /// Parses whether or not to write styles.
+    /// Parses whether or not to write styles in the same form as the `RUST_LOG_STYLE`
+    /// environment variable.
     /// 
-    /// A value of `0` will ignore styles.
-    /// Any other value will include styles.
+    /// See the module documentation for more details.
     pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
-        self.write_style(parse_write_style_spec(write_style))
+        self.writer.parse(write_style);
+        self
     }
 
     /// Initializes the global logger with the built env logger.
@@ -407,14 +400,8 @@ impl Builder {
     /// loggers is by installing them as the single global logger for the
     /// `log` crate.
     fn build(&mut self) -> Logger {
-        let writer = match self.target {
-            Target::Stderr => BufferWriter::stderr(ColorChoice::Always),
-            Target::Stdout => BufferWriter::stdout(ColorChoice::Always),
-        };
-
         Logger {
-            writer,
-            write_style: self.write_style,
+            writer: self.writer.build(),
             filter: self.filter.build(),
             format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
         }
@@ -460,7 +447,7 @@ impl Log for Logger {
                 let mut tl_buf = tl_buf.borrow_mut();
 
                 if tl_buf.is_none() {
-                    *tl_buf = Some(Formatter::new(self.writer.buffer(), self.write_style));
+                    *tl_buf = Some(Formatter::new(&self.writer));
                 }
 
                 // The format is guaranteed to be `Some` by this point
@@ -492,6 +479,10 @@ impl<'a> Env<'a> {
         self
     }
 
+    fn get_filter(&self) -> Option<String> {
+        env::var(&*self.filter).ok()
+    }
+
     /// Specify an environment variable to read the style from.
     pub fn write_style<E>(mut self, write_style_env: E) -> Self
     where
@@ -499,6 +490,10 @@ impl<'a> Env<'a> {
     {
         self.write_style = write_style_env.into();
         self
+    }
+
+    fn get_write_style(&self) -> Option<String> {
+        env::var(&*self.write_style).ok()
     }
 }
 
@@ -536,7 +531,7 @@ mod std_fmt_impls {
         fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
             f.debug_struct("Logger")
             .field("filter", &self.filter)
-            .field("target", &self.target)
+            .field("writer", &self.writer)
             .finish()
         }
     }
@@ -602,37 +597,4 @@ where
     E: Into<Env<'a>>
 {
     try_init_from_env(env).unwrap();
-}
-
-// Parse a `write_style` environment value.
-// The output will be `true` unless a value of `0` is given
-fn parse_write_style_spec(spec: &str) -> bool {
-    match spec {
-        "0" => false,
-        _ => true
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_write_style_valid_false() {
-        assert_eq!(false, parse_write_style_spec("0"));
-    }
-
-    #[test]
-    fn parse_write_style_invalid() {
-        let inputs = vec![
-            "1",
-            "false",
-            "true",
-            "please write me some styles"
-        ];
-
-        for input in inputs {
-            assert_eq!(true, parse_write_style_spec(input));
-        }
-    }
 }

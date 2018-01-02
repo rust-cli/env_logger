@@ -252,6 +252,12 @@ impl Builder {
     }
 }
 
+impl Default for Builder {
+    fn default() -> Self {
+        Builder::new()
+    }
+}
+
 impl fmt::Debug for Filter {
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
         f.debug_struct("Filter")

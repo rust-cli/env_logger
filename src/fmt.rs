@@ -9,12 +9,11 @@
 //! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 
 use std::io::prelude::*;
-use std::io;
-use std::fmt;
+use std::{io, fmt};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use termcolor::{ColorSpec, Buffer, BufferWriter, WriteColor};
+use termcolor::{ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use chrono::{DateTime, Utc};
 use chrono::format::Item;
 
@@ -42,7 +41,6 @@ pub use termcolor::Color;
 /// [`style`]: #method.style
 pub struct Formatter {
     buf: Rc<RefCell<Buffer>>,
-    write_style: bool
 }
 
 /// A set of styles to apply to the terminal output.
@@ -100,7 +98,6 @@ pub struct Formatter {
 #[derive(Clone)]
 pub struct Style {
     buf: Rc<RefCell<Buffer>>,
-    write_style: bool,
     spec: ColorSpec,
 }
 
@@ -112,6 +109,89 @@ pub struct Style {
 pub struct StyledValue<'a, T> {
     style: &'a Style,
     value: T,
+}
+
+/// Log target, either stdout or stderr.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Target {
+    /// Logs will be sent to standard output.
+    Stdout,
+    /// Logs will be sent to standard error.
+    Stderr,
+}
+
+impl Default for Target {
+    fn default() -> Self {
+        Target::Stderr
+    }
+}
+
+/// Whether or not to print styles to the target.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum WriteStyle {
+    /// Try to print styles, but don't force the issue.
+    Auto,
+    /// Always print styles.
+    Always,
+    /// Never print styles.
+    Never,
+}
+
+impl Default for WriteStyle {
+    fn default() -> Self {
+        WriteStyle::Auto
+    }
+}
+
+pub(crate) struct Writer(BufferWriter);
+
+pub(crate) struct Builder {
+    target: Target,
+    write_style: WriteStyle,
+}
+
+impl Builder {
+    pub fn new() -> Self {
+        Builder {
+            target: Default::default(),
+            write_style: Default::default(),
+        }
+    }
+
+    pub fn target(&mut self, target: Target) -> &mut Self {
+        self.target = target;
+        self
+    }
+
+    pub fn parse(&mut self, write_style: &str) -> &mut Self {
+        self.write_style(parse_write_style(write_style))
+    }
+
+    pub fn write_style(&mut self, write_style: WriteStyle) -> &mut Self {
+        self.write_style = write_style;
+        self
+    }
+
+    pub fn build(&mut self) -> Writer {
+        let color_choice = match self.write_style {
+            WriteStyle::Auto => ColorChoice::Auto,
+            WriteStyle::Always => ColorChoice::Always,
+            WriteStyle::Never => ColorChoice::Never,
+        };
+
+        let writer = match self.target {
+            Target::Stderr => BufferWriter::stderr(color_choice),
+            Target::Stdout => BufferWriter::stdout(color_choice),
+        };
+
+        Writer(writer)
+    }
+}
+
+impl Default for Builder {
+    fn default() -> Self {
+        Builder::new()
+    }
 }
 
 impl Style {
@@ -234,10 +314,9 @@ impl Style {
 pub struct Timestamp(DateTime<Utc>);
 
 impl Formatter {
-    pub(crate) fn new(buf: Buffer, write_style: bool) -> Self {
+    pub(crate) fn new(writer: &Writer) -> Self {
         Formatter {
-            buf: Rc::new(RefCell::new(buf)),
-            write_style
+            buf: Rc::new(RefCell::new(writer.0.buffer())),
         }
     }
 
@@ -268,7 +347,6 @@ impl Formatter {
     pub fn style(&self) -> Style {
         Style {
             buf: self.buf.clone(),
-            write_style: self.write_style,
             spec: ColorSpec::new(),
         }
     }
@@ -296,8 +374,8 @@ impl Formatter {
         Timestamp(Utc::now())
     }
 
-    pub(crate) fn print(&self, writer: &BufferWriter) -> io::Result<()> {
-        writer.print(&self.buf.borrow())
+    pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
+        writer.0.print(&self.buf.borrow())
     }
 
     pub(crate) fn clear(&mut self) {
@@ -320,11 +398,6 @@ impl<'a, T> StyledValue<'a, T> {
     where
         F: FnOnce() -> fmt::Result,
     {
-        if !self.style.write_style {
-            // Ignore styles and just run the format function
-            return f()
-        }
-
         self.style.buf.borrow_mut().set_color(&self.style.spec).map_err(|_| fmt::Error)?;
 
         // Always try to reset the terminal style, even if writing failed
@@ -352,9 +425,24 @@ impl fmt::Debug for Timestamp {
     }
 }
 
+impl fmt::Debug for Writer {
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        f.debug_struct("Writer").finish()
+    }
+}
+
 impl fmt::Debug for Formatter {
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
         f.debug_struct("Formatter").finish()
+    }
+}
+
+impl fmt::Debug for Builder {
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        f.debug_struct("Logger")
+        .field("target", &self.target)
+        .field("write_style", &self.write_style)
+        .finish()
     }
 }
 
@@ -412,5 +500,32 @@ impl fmt::Display for Timestamp {
         };
 
         self.0.format_with_items(ITEMS.iter().cloned()).fmt(f)
+    }
+}
+
+fn parse_write_style(spec: &str) -> WriteStyle {
+    match spec {
+        "auto" => WriteStyle::Auto,
+        "always" => WriteStyle::Always,
+        "never" => WriteStyle::Never,
+        _ => Default::default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_write_style_valid() {
+        let inputs = vec![
+            ("auto", Some(WriteStyle::Auto)),
+            ("always", Some(WriteStyle::Always)),
+            ("never", Some(WriteStyle::Never)),
+        ];
+
+        for (input, expected) in inputs {
+            assert_eq!(expected, WriteStyle::parse(input));
+        }
     }
 }
