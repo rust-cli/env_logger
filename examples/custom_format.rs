@@ -7,10 +7,11 @@ Before running this example, try setting the `MY_LOG_LEVEL` environment variable
 $ export MY_LOG_LEVEL='info'
 ```
 
-Also try setting the `MY_LOG_STYLE` environment variable to `0` to disable colors:
+Also try setting the `MY_LOG_STYLE` environment variable to `never` to disable colors
+or `auto` to enable them:
 
 ```no_run,shell
-$ export MY_LOG_STYLE=0
+$ export MY_LOG_STYLE=never
 ```
 
 If you want to control the logging output completely, see the `custom_logger` example.

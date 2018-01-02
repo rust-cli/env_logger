@@ -130,13 +130,14 @@
 //! ## Disabling colors
 //! 
 //! Colors and other styles can be configured with the `RUST_LOG_STYLE`
-//! environment variable.
-//! It accepts the following values:
+//! environment variable. It accepts the following values:
 //! 
 //! * `auto` (default) will attempt to print style characters, but don't force the issue.
+//! If the console isn't available on Windows, or if TERM=dumb, for example, then don't print colors.
 //! * `always` will always print style characters even if they aren't supported by the terminal.
+//! This includes emitting ANSI colors on Windows if the console API is unavailable.
 //! * `never` will never print style characters.
-//!
+//! 
 //! [log-crate-url]: https://docs.rs/log/
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
@@ -281,6 +282,32 @@ impl Builder {
     }
 
     /// Initializes the log builder from the environment.
+    /// 
+    /// The variables used to read configuration from can be tweaked before
+    /// passing in.
+    /// 
+    /// # Examples
+    /// 
+    /// Initialise a logger using the default environment variables:
+    /// 
+    /// ```
+    /// use env_logger::{Builder, Env};
+    /// 
+    /// let mut builder = Builder::from_env(Env::default());
+    /// builder.init();
+    /// ```
+    /// 
+    /// Initialise a logger using the `MY_LOG` variable for filtering and
+    /// `MY_LOG_STYLE` for whether or not to write styles:
+    /// 
+    /// ```
+    /// use env_logger::{Builder, Env};
+    /// 
+    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    /// 
+    /// let mut builder = Builder::from_env(env);
+    /// builder.init();
+    /// ```
     pub fn from_env<'a, E>(env: E) -> Self
     where
         E: Into<Env<'a>>
@@ -564,10 +591,29 @@ pub fn init() {
 }
 
 /// Attempts to initialize the global logger with an env logger from the given
-/// environment variable.
+/// environment variables.
 ///
 /// This should be called early in the execution of a Rust program. Any log
 /// events that occur before initialization will be ignored.
+/// 
+/// # Examples
+/// 
+/// Initialise a logger using the `MY_LOG` environment variable for filters
+/// and `MY_LOG_STYLE` for writing colors:
+/// 
+/// ```
+/// # extern crate env_logger;
+/// use env_logger::{Builder, Env};
+/// 
+/// # fn run() -> Result<(), Box<::std::error::Error>> {
+/// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+/// 
+/// env_logger::try_init_from_env(env)?;
+/// 
+/// Ok(())
+/// # }
+/// # fn main() { run().unwrap(); }
+/// ```
 ///
 /// # Errors
 ///
@@ -583,10 +629,23 @@ where
 }
 
 /// Initializes the global logger with an env logger from the given environment
-/// variable.
+/// variables.
 ///
 /// This should be called early in the execution of a Rust program. Any log
 /// events that occur before initialization will be ignored.
+/// 
+/// # Examples
+/// 
+/// Initialise a logger using the `MY_LOG` environment variable for filters
+/// and `MY_LOG_STYLE` for writing colors:
+/// 
+/// ```
+/// use env_logger::{Builder, Env};
+/// 
+/// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+/// 
+/// env_logger::init_from_env(env);
+/// ```
 ///
 /// # Panics
 ///

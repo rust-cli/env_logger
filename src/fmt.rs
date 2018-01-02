@@ -5,7 +5,33 @@
 //! about the contents of this module and can use the `Formatter` like an ordinary
 //! [`Write`].
 //! 
+//! # Formatting log records
+//! 
+//! The format used to print log records can be customised using the [`Builder.format`]
+//! method.
+//! Custom formats can apply different color and weight to printed values using
+//! [`Style`] builders.
+//! 
+//! ```
+//! use std::io::Write;
+//! use env_logger::fmt::Color;
+//! 
+//! let mut builder = env_logger::Builder::new();
+//! 
+//! builder.format(|buf, record| {
+//!     let mut level_style = buf.style();
+//! 
+//!     level_style.set_color(Color::Red).set_bold(true);
+//! 
+//!     writeln!(buf, "{}: {}",
+//!         level_style.value(record.level()),
+//!         record.args())
+//! });
+//! ```
+//! 
 //! [`Formatter`]: struct.Formatter.html
+//! [`Style`]: struct.Style.html
+//! [`Builder.format`]: ../struct.Builder.html#method.format
 //! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 
 use std::io::prelude::*;
@@ -111,7 +137,16 @@ pub struct StyledValue<'a, T> {
     value: T,
 }
 
-/// Log target, either stdout or stderr.
+/// An [RFC3339] formatted timestamp.
+/// 
+/// The timestamp implements [`Display`] and can be written to a [`Formatter`].
+/// 
+/// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
+/// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
+/// [`Formatter`]: struct.Formatter.html
+pub struct Timestamp(DateTime<Utc>);
+
+/// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
     /// Logs will be sent to standard output.
@@ -131,7 +166,7 @@ impl Default for Target {
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
     Auto,
-    /// Always print styles.
+    /// Try very hard to print styles.
     Always,
     /// Never print styles.
     Never,
@@ -143,14 +178,19 @@ impl Default for WriteStyle {
     }
 }
 
+/// A terminal target with color awareness.
 pub(crate) struct Writer(BufferWriter);
 
+/// A builder for a terminal writer.
+/// 
+/// The target and style choice can be configured before building.
 pub(crate) struct Builder {
     target: Target,
     write_style: WriteStyle,
 }
 
 impl Builder {
+    /// Initialize the writer builder with defaults.
     pub fn new() -> Self {
         Builder {
             target: Default::default(),
@@ -158,20 +198,28 @@ impl Builder {
         }
     }
 
+    /// Set the target to write to.
     pub fn target(&mut self, target: Target) -> &mut Self {
         self.target = target;
         self
     }
 
+    /// Parses a style choice string.
+    /// 
+    /// See the [Disabling colors] section for more details.
+    /// 
+    /// [Disabling colors]: ../index.html#disabling-colors
     pub fn parse(&mut self, write_style: &str) -> &mut Self {
         self.write_style(parse_write_style(write_style))
     }
 
+    /// Whether or not to print style characters when writing.
     pub fn write_style(&mut self, write_style: WriteStyle) -> &mut Self {
         self.write_style = write_style;
         self
     }
 
+    /// Build a terminal writer.
     pub fn build(&mut self) -> Writer {
         let color_choice = match self.write_style {
             WriteStyle::Auto => ColorChoice::Auto,
@@ -303,15 +351,6 @@ impl Style {
         }
     }
 }
-
-/// An [RFC3339] formatted timestamp.
-/// 
-/// The timestamp implements [`Display`] and can be written to a [`Formatter`].
-/// 
-/// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
-/// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
-/// [`Formatter`]: struct.Formatter.html
-pub struct Timestamp(DateTime<Utc>);
 
 impl Formatter {
     pub(crate) fn new(writer: &Writer) -> Self {
