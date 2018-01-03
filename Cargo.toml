@@ -14,7 +14,7 @@ categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
 
 [dependencies]
-log = { version = "0.4.0-rc.1", features = ["std"] }
+log = { version = "0.4.0", features = ["std"] }
 regex = { version = "0.2", optional = true }
 termcolor = "0.3"
 chrono = "0.4"
