@@ -51,10 +51,10 @@ Tests can use the `env_logger` crate to see log messages generated during that t
 
 ```toml
 [dependencies]
-log = "0.4.0-rc.1"
+log = "0.4.0"
 
 [dev-dependencies]
-env_logger = "0.5.0-rc.1"
+env_logger = "0.5.0-rc.2"
 ```
 
 ```rust
