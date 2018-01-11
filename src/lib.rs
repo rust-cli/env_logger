@@ -473,8 +473,15 @@ impl Log for Logger {
             FORMATTER.with(|tl_buf| {
                 let mut tl_buf = tl_buf.borrow_mut();
 
-                if tl_buf.is_none() {
-                    *tl_buf = Some(Formatter::new(&self.writer));
+                // Check the buffer style. If it's different from the logger's 
+                // style then drop the buffer and recreate it.
+                match *tl_buf {
+                    Some(ref mut formatter) => {
+                        if formatter.write_style() != self.writer.write_style() {
+                            *formatter = Formatter::new(&self.writer)
+                        }
+                    },
+                    ref mut tl_buf => *tl_buf = Some(Formatter::new(&self.writer))
                 }
 
                 // The format is guaranteed to be `Some` by this point

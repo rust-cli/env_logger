@@ -181,6 +181,12 @@ impl Default for WriteStyle {
 /// A terminal target with color awareness.
 pub(crate) struct Writer(BufferWriter);
 
+impl Writer {
+    pub(crate) fn write_style(&self) -> WriteStyle {
+        unimplemented!();
+    }
+}
+
 /// A builder for a terminal writer.
 /// 
 /// The target and style choice can be configured before building.
@@ -357,6 +363,10 @@ impl Formatter {
         Formatter {
             buf: Rc::new(RefCell::new(writer.0.buffer())),
         }
+    }
+
+    pub(crate) fn write_style(&self) -> WriteStyle {
+        unimplemented!();
     }
 
     /// Begin a new [`Style`].
