@@ -67,6 +67,7 @@ pub use termcolor::Color;
 /// [`style`]: #method.style
 pub struct Formatter {
     buf: Rc<RefCell<Buffer>>,
+    write_style: WriteStyle,
 }
 
 /// A set of styles to apply to the terminal output.
@@ -179,11 +180,14 @@ impl Default for WriteStyle {
 }
 
 /// A terminal target with color awareness.
-pub(crate) struct Writer(BufferWriter);
+pub(crate) struct Writer {
+    inner: BufferWriter,
+    write_style: WriteStyle,
+}
 
 impl Writer {
     pub(crate) fn write_style(&self) -> WriteStyle {
-        unimplemented!();
+        self.write_style
     }
 }
 
@@ -238,7 +242,10 @@ impl Builder {
             Target::Stdout => BufferWriter::stdout(color_choice),
         };
 
-        Writer(writer)
+        Writer {
+            inner: writer,
+            write_style: self.write_style,
+        }
     }
 }
 
@@ -361,12 +368,13 @@ impl Style {
 impl Formatter {
     pub(crate) fn new(writer: &Writer) -> Self {
         Formatter {
-            buf: Rc::new(RefCell::new(writer.0.buffer())),
+            buf: Rc::new(RefCell::new(writer.inner.buffer())),
+            write_style: writer.write_style(),
         }
     }
 
     pub(crate) fn write_style(&self) -> WriteStyle {
-        unimplemented!();
+        self.write_style
     }
 
     /// Begin a new [`Style`].
@@ -424,7 +432,7 @@ impl Formatter {
     }
 
     pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
-        writer.0.print(&self.buf.borrow())
+        writer.inner.print(&self.buf.borrow())
     }
 
     pub(crate) fn clear(&mut self) {
