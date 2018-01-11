@@ -426,7 +426,7 @@ impl Builder {
     /// This method is kept private because the only way we support building
     /// loggers is by installing them as the single global logger for the
     /// `log` crate.
-    fn build(&mut self) -> Logger {
+    pub fn build(&mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
