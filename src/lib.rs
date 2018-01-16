@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A simple logger configured via an environment variable which writes 
+//! A simple logger configured via environment variables which writes 
 //! to stdout or stderr, for use with the logging facade exposed by the
 //! [`log` crate][log-crate-url].
 //!
@@ -426,7 +426,7 @@ impl Builder {
     /// This method is kept private because the only way we support building
     /// loggers is by installing them as the single global logger for the
     /// `log` crate.
-    fn build(&mut self) -> Logger {
+    pub fn build(&mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
@@ -460,11 +460,9 @@ impl Log for Logger {
             // so will always at least have capacity for the largest log record formatted
             // on that thread.
             // 
-            // Because these buffers are tied to a particular logger, we don't let callers
-            // create instances of `Logger` themselves, or they'll race to configure the
-            // thread local buffer with their own configuration. This is still potentially
-            // an issue if a caller attempts to set and use the global logger multiple times,
-            // but in that case it's clearer that there's shared state at play.
+            // If multiple `Logger`s are used by the same threads then the thread-local
+            // formatter might have different color support. If this is the case the
+            // formatter and its buffer are discarded and recreated.
 
             thread_local! {
                 static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
@@ -473,8 +471,15 @@ impl Log for Logger {
             FORMATTER.with(|tl_buf| {
                 let mut tl_buf = tl_buf.borrow_mut();
 
-                if tl_buf.is_none() {
-                    *tl_buf = Some(Formatter::new(&self.writer));
+                // Check the buffer style. If it's different from the logger's 
+                // style then drop the buffer and recreate it.
+                match *tl_buf {
+                    Some(ref mut formatter) => {
+                        if formatter.write_style() != self.writer.write_style() {
+                            *formatter = Formatter::new(&self.writer)
+                        }
+                    },
+                    ref mut tl_buf => *tl_buf = Some(Formatter::new(&self.writer))
                 }
 
                 // The format is guaranteed to be `Some` by this point
