@@ -468,7 +468,19 @@ impl Log for Logger {
             }
 
             FORMATTER.with(|tl_buf| {
-                let mut tl_buf = tl_buf.borrow_mut();
+                // It's possible for implementations to sometimes
+                // log-while-logging (e.g. a `std::fmt` implementation logs
+                // internally) but it's super rare. If this happens make sure we
+                // at least don't panic and ship some output to the screen.
+                let mut a;
+                let mut b = None;
+                let tl_buf = match tl_buf.try_borrow_mut() {
+                    Ok(f) => {
+                        a = f;
+                        &mut *a
+                    }
+                    Err(_) => &mut b,
+                };
 
                 // Check the buffer style. If it's different from the logger's 
                 // style then drop the buffer and recreate it.
