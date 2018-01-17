@@ -23,5 +23,9 @@ chrono = "0.4"
 name = "regexp_filter"
 harness = false
 
+[[test]]
+name = "log-in-log"
+harness = false
+
 [features]
 default = ["regex"]
