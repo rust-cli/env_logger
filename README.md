@@ -73,14 +73,14 @@ mod tests {
 
     #[test]
     fn it_adds_one() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         info!("can log from the test too");
         assert_eq!(3, add_one(2));
     }
 
     #[test]
     fn it_handles_negative_numbers() {
-        let _ = env_logger::init();
+        let _ = env_logger::try_init();
         info!("logging from another test");
         assert_eq!(-7, add_one(-8));
     }
@@ -105,7 +105,7 @@ test tests::it_adds_one ... ok
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
 ```
 
-Note that `env_logger::init()` needs to be called in each test in which you
+Note that `env_logger::try_init()` needs to be called in each test in which you
 want to enable logging. Additionally, the default behavior of tests to
 run in parallel means that logging output may be interleaved with test output.
 Either run tests in a single thread by specifying `RUST_TEST_THREADS=1` or by
