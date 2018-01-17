@@ -142,7 +142,7 @@
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.5.0-rc.2")]
+       html_root_url = "https://docs.rs/env_logger/0.5.0")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -197,7 +197,7 @@ pub struct Env<'a> {
 /// default global logger.
 ///
 /// If you'd instead need access to the constructed `Logger`, you can use
-/// [`Logger::new()`] or the associated [`Builder`] and install it with the
+/// the associated [`Builder`] and install it with the
 /// [`log` crate][log-crate-url] directly.
 ///
 /// [log-crate-url]: https://docs.rs/log/
@@ -205,7 +205,6 @@ pub struct Env<'a> {
 /// [`try_init()`]: fn.try_init.html
 /// [`Builder::init()`]: struct.Builder.html#method.init
 /// [`Builder::try_init()`]: struct.Builder.html#method.try_init
-/// [`Logger::new()`]: #method.new
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
     writer: fmt::Writer,
@@ -347,7 +346,7 @@ impl Builder {
     /// to format and output without intermediate heap allocations. The default 
     /// `env_logger` formatter takes advantage of this.
     ///
-    /// [`Formatter`]: struct.Formatter.html
+    /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self

@@ -7,7 +7,7 @@
 //! 
 //! # Formatting log records
 //! 
-//! The format used to print log records can be customised using the [`Builder.format`]
+//! The format used to print log records can be customised using the [`Builder::format`]
 //! method.
 //! Custom formats can apply different color and weight to printed values using
 //! [`Style`] builders.
@@ -31,7 +31,7 @@
 //! 
 //! [`Formatter`]: struct.Formatter.html
 //! [`Style`]: struct.Style.html
-//! [`Builder.format`]: ../struct.Builder.html#method.format
+//! [`Builder::format`]: ../struct.Builder.html#method.format
 //! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 
 use std::io::prelude::*;
@@ -72,7 +72,7 @@ pub struct Formatter {
 
 /// A set of styles to apply to the terminal output.
 /// 
-/// Call [`Formatter.style`] to get a `Style` and use the builder methods to 
+/// Call [`Formatter::style`] to get a `Style` and use the builder methods to 
 /// set styling properties, like [color] and [weight].
 /// To print a value using the style, wrap it in a call to [`value`] when the log
 /// record is formatted.
@@ -118,9 +118,9 @@ pub struct Formatter {
 /// });
 /// ```
 /// 
-/// [`Formatter.style`]: struct.Formatter.html#method.style
-/// [color]: #method.color
-/// [weight]: #method.weight
+/// [`Formatter::style`]: struct.Formatter.html#method.style
+/// [color]: #method.set_color
+/// [weight]: #method.set_bold
 /// [`value`]: #method.value
 #[derive(Clone)]
 pub struct Style {
@@ -130,9 +130,9 @@ pub struct Style {
 
 /// A value that can be printed using the given styles.
 /// 
-/// It is the result of calling [`Style.value`].
+/// It is the result of calling [`Style::value`].
 /// 
-/// [`Style.value`]: struct.Style.html#method.value
+/// [`Style::value`]: struct.Style.html#method.value
 pub struct StyledValue<'a, T> {
     style: &'a Style,
     value: T,
