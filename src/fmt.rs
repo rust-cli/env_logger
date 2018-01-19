@@ -42,6 +42,7 @@ use std::cell::RefCell;
 use termcolor::{ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use chrono::{DateTime, Utc};
 use chrono::format::Item;
+use atty;
 
 pub use termcolor::Color;
 
@@ -232,7 +233,16 @@ impl Builder {
     /// Build a terminal writer.
     pub fn build(&mut self) -> Writer {
         let color_choice = match self.write_style {
-            WriteStyle::Auto => ColorChoice::Auto,
+            WriteStyle::Auto => {
+                if atty::is(match self.target {
+                    Target::Stderr => atty::Stream::Stderr,
+                    Target::Stdout => atty::Stream::Stdout,
+                }) {
+                    ColorChoice::Auto
+                } else {
+                    ColorChoice::Never
+                }
+            },
             WriteStyle::Always => ColorChoice::Always,
             WriteStyle::Never => ColorChoice::Never,
         };

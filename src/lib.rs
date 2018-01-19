@@ -155,6 +155,7 @@
 extern crate log;
 extern crate termcolor;
 extern crate chrono;
+extern crate atty;
 
 use std::env;
 use std::borrow::Cow;
