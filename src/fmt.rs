@@ -318,6 +318,33 @@ impl Style {
         self
     }
 
+    /// Set the text intensity.
+    /// 
+    /// If `yes` is true then text will be written in a brighter color.
+    /// If `yes` is false then text will be written in the default color.
+    /// 
+    /// # Examples
+    /// 
+    /// Create a style with intense text:
+    /// 
+    /// ```
+    /// use std::io::Write;
+    /// 
+    /// let mut builder = env_logger::Builder::new();
+    /// 
+    /// builder.format(|buf, record| {
+    ///     let mut style = buf.style();
+    /// 
+    ///     style.set_intense(true);
+    /// 
+    ///     writeln!(buf, "{}", style.value(record.args()))
+    /// });
+    /// ```
+    pub fn set_intense(&mut self, yes: bool) -> &mut Style {
+        self.spec.set_intense(yes);
+        self
+    }
+
     /// Set the background color.
     /// 
     /// # Examples
