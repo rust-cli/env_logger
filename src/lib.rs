@@ -213,6 +213,70 @@ pub struct Logger {
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
+struct Format {
+    default_format_timestamp: bool,
+    default_format_module_path: bool,
+    default_format_level: bool,
+    custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Format {
+            default_format_timestamp: true,
+            default_format_module_path: true,
+            default_format_level: true,
+            custom_format: None,
+        }
+    }
+}
+
+impl Format {
+    fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
+        if let Some(fmt) = self.custom_format {
+            fmt
+        }
+        else {
+            Box::new(move |buf, record| {
+                let write_level = if self.default_format_level {
+                    let level = record.level();
+                    let mut level_style = buf.style();
+
+                    match level {
+                        Level::Trace => level_style.set_color(Color::White),
+                        Level::Debug => level_style.set_color(Color::Blue),
+                        Level::Info => level_style.set_color(Color::Green),
+                        Level::Warn => level_style.set_color(Color::Yellow),
+                        Level::Error => level_style.set_color(Color::Red).set_bold(true),
+                    };
+
+                    write!(buf, "{:>5} ", level_style.value(level))
+                } else {
+                    Ok(())
+                };
+
+                let write_ts = if self.default_format_timestamp {
+                    let ts = buf.timestamp();
+                    write!(buf, "{}: ", ts)
+                } else {
+                    Ok(())
+                };
+
+                let default_format_module_path = (self.default_format_module_path, record.module_path());
+                let write_module_path = if let (true, Some(module_path)) = default_format_module_path {
+                    write!(buf, "{}: ", module_path)
+                } else {
+                    Ok(())
+                };
+
+                let write_args = writeln!(buf, "{}", record.args());
+
+                write_level.and(write_ts).and(write_module_path).and(write_args)
+            })
+        }
+    }
+}
+
 /// `Builder` acts as builder for initializing a `Logger`.
 ///
 /// It can be used to customize the log format, change the environment variable used
@@ -246,39 +310,17 @@ pub struct Logger {
 ///     info!("info message");
 /// }
 /// ```
+#[derive(Default)]
 pub struct Builder {
     filter: filter::Builder,
     writer: fmt::Builder,
-    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+    format: Format,
 }
 
 impl Builder {
     /// Initializes the log builder with defaults.
     pub fn new() -> Builder {
-        Builder {
-            filter: Default::default(),
-            writer: Default::default(),
-            format: Box::new(|buf, record| {
-                let ts = buf.timestamp();
-                let level = record.level();
-                let mut level_style = buf.style();
-
-                match level {
-                    Level::Trace => level_style.set_color(Color::White),
-                    Level::Debug => level_style.set_color(Color::Blue),
-                    Level::Info => level_style.set_color(Color::Green),
-                    Level::Warn => level_style.set_color(Color::Yellow),
-                    Level::Error => level_style.set_color(Color::Red).set_bold(true),
-                };
-
-                if let Some(module_path) = record.module_path() {
-                    writeln!(buf, "{:>5} {}: {}: {}", level_style.value(level), ts, module_path, record.args())
-                }
-                else {
-                    writeln!(buf, "{:>5} {}: {}", level_style.value(level), ts, record.args())
-                }
-            }),
-        }
+        Default::default()
     }
 
     /// Initializes the log builder from the environment.
@@ -353,7 +395,31 @@ impl Builder {
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
         where F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send
     {
-        self.format = Box::new(format);
+        self.format.custom_format = Some(Box::new(format));
+        self
+    }
+
+    /// Use the default format.
+    pub fn default_format(&mut self) -> &mut Self {
+        self.format.custom_format = None;
+        self
+    }
+
+    /// Whether or not to write the level in the default format.
+    pub fn default_format_level(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_level = write;
+        self
+    }
+
+    /// Whether or not to write the module path in the default format.
+    pub fn default_format_module_path(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_module_path = write;
+        self
+    }
+
+    /// Whether or not to write the timestamp in the default format.
+    pub fn default_format_timestamp(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_timestamp = write;
         self
     }
 
@@ -430,7 +496,7 @@ impl Builder {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
+            format: mem::replace(&mut self.format, Default::default()).into_boxed_fn(),
         }
     }
 }
