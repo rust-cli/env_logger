@@ -1,34 +1,34 @@
 //! Formatting for log records.
-//! 
+//!
 //! This module contains a [`Formatter`] that can be used to format log records
 //! into without needing temporary allocations. Usually you won't need to worry
 //! about the contents of this module and can use the `Formatter` like an ordinary
 //! [`Write`].
-//! 
+//!
 //! # Formatting log records
-//! 
+//!
 //! The format used to print log records can be customised using the [`Builder::format`]
 //! method.
 //! Custom formats can apply different color and weight to printed values using
 //! [`Style`] builders.
-//! 
+//!
 //! ```
 //! use std::io::Write;
 //! use env_logger::fmt::Color;
-//! 
+//!
 //! let mut builder = env_logger::Builder::new();
-//! 
+//!
 //! builder.format(|buf, record| {
 //!     let mut level_style = buf.style();
-//! 
+//!
 //!     level_style.set_color(Color::Red).set_bold(true);
-//! 
+//!
 //!     writeln!(buf, "{}: {}",
 //!         level_style.value(record.level()),
 //!         record.args())
 //! });
 //! ```
-//! 
+//!
 //! [`Formatter`]: struct.Formatter.html
 //! [`Style`]: struct.Style.html
 //! [`Builder::format`]: ../struct.Builder.html#method.format
@@ -38,31 +38,31 @@ use std::io::prelude::*;
 use std::{io, fmt};
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::time::SystemTime;
 
 use termcolor::{ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
-use chrono::{DateTime, Utc};
-use chrono::format::Item;
 use atty;
+use humantime::format_rfc3339_seconds;
 
 pub use termcolor::Color;
 
 /// A formatter to write logs into.
-/// 
+///
 /// `Formatter` implements the standard [`Write`] trait for writing log records.
 /// It also supports terminal colors, through the [`style`] method.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Use the [`writeln`] macro to easily format a log record:
-/// 
+///
 /// ```
 /// use std::io::Write;
-/// 
+///
 /// let mut builder = env_logger::Builder::new();
-/// 
+///
 /// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
 /// ```
-/// 
+///
 /// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 /// [`writeln`]: https://doc.rust-lang.org/stable/std/macro.writeln.html
 /// [`style`]: #method.style
@@ -72,53 +72,53 @@ pub struct Formatter {
 }
 
 /// A set of styles to apply to the terminal output.
-/// 
-/// Call [`Formatter::style`] to get a `Style` and use the builder methods to 
+///
+/// Call [`Formatter::style`] to get a `Style` and use the builder methods to
 /// set styling properties, like [color] and [weight].
 /// To print a value using the style, wrap it in a call to [`value`] when the log
 /// record is formatted.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Create a bold, red colored style and use it to print the log level:
-/// 
+///
 /// ```
 /// use std::io::Write;
 /// use env_logger::fmt::Color;
-/// 
+///
 /// let mut builder = env_logger::Builder::new();
-/// 
+///
 /// builder.format(|buf, record| {
 ///     let mut level_style = buf.style();
-/// 
+///
 ///     level_style.set_color(Color::Red).set_bold(true);
-/// 
+///
 ///     writeln!(buf, "{}: {}",
 ///         level_style.value(record.level()),
 ///         record.args())
 /// });
 /// ```
-/// 
+///
 /// Styles can be re-used to output multiple values:
-/// 
+///
 /// ```
 /// use std::io::Write;
 /// use env_logger::fmt::Color;
-/// 
+///
 /// let mut builder = env_logger::Builder::new();
-/// 
+///
 /// builder.format(|buf, record| {
 ///     let mut bold = buf.style();
-/// 
+///
 ///     bold.set_bold(true);
-/// 
+///
 ///     writeln!(buf, "{}: {} {}",
 ///         bold.value(record.level()),
 ///         bold.value("some bold text"),
 ///         record.args())
 /// });
 /// ```
-/// 
+///
 /// [`Formatter::style`]: struct.Formatter.html#method.style
 /// [color]: #method.set_color
 /// [weight]: #method.set_bold
@@ -130,9 +130,9 @@ pub struct Style {
 }
 
 /// A value that can be printed using the given styles.
-/// 
+///
 /// It is the result of calling [`Style::value`].
-/// 
+///
 /// [`Style::value`]: struct.Style.html#method.value
 pub struct StyledValue<'a, T> {
     style: &'a Style,
@@ -140,13 +140,13 @@ pub struct StyledValue<'a, T> {
 }
 
 /// An [RFC3339] formatted timestamp.
-/// 
+///
 /// The timestamp implements [`Display`] and can be written to a [`Formatter`].
-/// 
+///
 /// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
 /// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
 /// [`Formatter`]: struct.Formatter.html
-pub struct Timestamp(DateTime<Utc>);
+pub struct Timestamp(SystemTime);
 
 /// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -193,7 +193,7 @@ impl Writer {
 }
 
 /// A builder for a terminal writer.
-/// 
+///
 /// The target and style choice can be configured before building.
 pub(crate) struct Builder {
     target: Target,
@@ -216,9 +216,9 @@ impl Builder {
     }
 
     /// Parses a style choice string.
-    /// 
+    ///
     /// See the [Disabling colors] section for more details.
-    /// 
+    ///
     /// [Disabling colors]: ../index.html#disabling-colors
     pub fn parse(&mut self, write_style: &str) -> &mut Self {
         self.write_style(parse_write_style(write_style))
@@ -267,22 +267,22 @@ impl Default for Builder {
 
 impl Style {
     /// Set the text color.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a style with red text:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
     /// use env_logger::fmt::Color;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
-    /// 
+    ///
     ///     style.set_color(Color::Red);
-    /// 
+    ///
     ///     writeln!(buf, "{}", style.value(record.args()))
     /// });
     /// ```
@@ -292,24 +292,24 @@ impl Style {
     }
 
     /// Set the text weight.
-    /// 
+    ///
     /// If `yes` is true then text will be written in bold.
     /// If `yes` is false then text will be written in the default weight.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a style with bold text:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
-    /// 
+    ///
     ///     style.set_bold(true);
-    /// 
+    ///
     ///     writeln!(buf, "{}", style.value(record.args()))
     /// });
     /// ```
@@ -319,24 +319,24 @@ impl Style {
     }
 
     /// Set the text intensity.
-    /// 
+    ///
     /// If `yes` is true then text will be written in a brighter color.
     /// If `yes` is false then text will be written in the default color.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a style with intense text:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
-    /// 
+    ///
     ///     style.set_intense(true);
-    /// 
+    ///
     ///     writeln!(buf, "{}", style.value(record.args()))
     /// });
     /// ```
@@ -346,22 +346,22 @@ impl Style {
     }
 
     /// Set the background color.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a style with a yellow background:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
     /// use env_logger::fmt::Color;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
-    /// 
+    ///
     ///     style.set_bg(Color::Yellow);
-    /// 
+    ///
     ///     writeln!(buf, "{}", style.value(record.args()))
     /// });
     /// ```
@@ -371,24 +371,24 @@ impl Style {
     }
 
     /// Wrap a value in the style.
-    /// 
+    ///
     /// The same `Style` can be used to print multiple different values.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a bold, red colored style and use it to print the log level:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
     /// use env_logger::fmt::Color;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
-    /// 
+    ///
     ///     style.set_color(Color::Red).set_bold(true);
-    /// 
+    ///
     ///     writeln!(buf, "{}: {}",
     ///         style.value(record.level()),
     ///         record.args())
@@ -415,28 +415,28 @@ impl Formatter {
     }
 
     /// Begin a new [`Style`].
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Create a bold, red colored style and use it to print the log level:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
     /// use env_logger::fmt::Color;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let mut level_style = buf.style();
-    /// 
+    ///
     ///     level_style.set_color(Color::Red).set_bold(true);
-    /// 
+    ///
     ///     writeln!(buf, "{}: {}",
     ///         level_style.value(record.level()),
     ///         record.args())
     /// });
     /// ```
-    /// 
+    ///
     /// [`Style`]: struct.Style.html
     pub fn style(&self) -> Style {
         Style {
@@ -446,26 +446,26 @@ impl Formatter {
     }
 
     /// Get a [`Timestamp`] for the current date and time in UTC.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Include the current timestamp with the log record:
-    /// 
+    ///
     /// ```
     /// use std::io::Write;
-    /// 
+    ///
     /// let mut builder = env_logger::Builder::new();
-    /// 
+    ///
     /// builder.format(|buf, record| {
     ///     let ts = buf.timestamp();
-    /// 
+    ///
     ///     writeln!(buf, "{}: {}: {}", ts, record.level(), record.args())
     /// });
     /// ```
-    /// 
+    ///
     /// [`Timestamp`]: struct.Timestamp.html
     pub fn timestamp(&self) -> Timestamp {
-        Timestamp(Utc::now())
+        Timestamp(SystemTime::now())
     }
 
     pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
@@ -571,29 +571,7 @@ impl_styled_value_fmt!(
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        const ITEMS: &'static [Item<'static>] = {
-            use chrono::format::Item::*;
-            use chrono::format::Numeric::*;
-            use chrono::format::Fixed::*;
-            use chrono::format::Pad::*;
-
-            &[
-                Numeric(Year, Zero),
-                Literal("-"),
-                Numeric(Month, Zero),
-                Literal("-"),
-                Numeric(Day, Zero),
-                Literal("T"),
-                Numeric(Hour, Zero),
-                Literal(":"),
-                Numeric(Minute, Zero),
-                Literal(":"),
-                Numeric(Second, Zero),
-                Fixed(TimezoneOffsetZ),
-            ]
-        };
-
-        self.0.format_with_items(ITEMS.iter().cloned()).fmt(f)
+        format_rfc3339_seconds(self.0).fmt(f)
     }
 }
 
