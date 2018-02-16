@@ -138,7 +138,34 @@
 //! This includes emitting ANSI colors on Windows if the console API is unavailable.
 //! * `never` will never print style characters.
 //! 
+//! ## Tweaking the default format
+//! 
+//! Parts of the default format can be excluded from the log output using the [`Builder`].
+//! The following example excluding the timestamp from the log output:
+//! 
+//! ```
+//! #[macro_use] extern crate log;
+//! extern crate env_logger;
+//!
+//! use log::Level;
+//!
+//! fn main() {
+//!     env_logger::Builder::from_default_env()
+//!         .default_format_timestamp(false)
+//!         .init();
+//!
+//!     debug!("this is a debug {}", "message");
+//!     error!("this is printed by default");
+//!
+//!     if log_enabled!(Level::Info) {
+//!         let x = 3 * 4; // expensive computation
+//!         info!("the answer was: {}", x);
+//!     }
+//! }
+//! ```
+//! 
 //! [log-crate-url]: https://docs.rs/log/
+//! [`Builder`]: struct.Builder.html
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
@@ -232,6 +259,11 @@ impl Default for Format {
 }
 
 impl Format {
+    /// Convert the format into a callable function.
+    /// 
+    /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
+    /// If the `custom_format` is `None`, then a default format is returned.
+    /// Any `default_format` switches set to `false` won't be written by the format.
     fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
         if let Some(fmt) = self.custom_format {
             fmt
@@ -319,6 +351,15 @@ pub struct Builder {
 
 impl Builder {
     /// Initializes the log builder with defaults.
+    /// 
+    /// **NOTE:** This method won't read from any environment variables.
+    /// Use the [`filter`] and [`write_style`] methods to configure the builder
+    /// or use [`from_env`] or [`from_default_env`] instead.
+    /// 
+    /// [`filter`]: #method.filter
+    /// [`write_style`]: #method.write_style
+    /// [`from_env`]: #method.from_env
+    /// [`from_default_env`]: #method.from_default_env
     pub fn new() -> Builder {
         Default::default()
     }
@@ -330,12 +371,13 @@ impl Builder {
     /// 
     /// # Examples
     /// 
-    /// Initialise a logger using the default environment variables:
+    /// Initialise a logger reading the log filter from an environment variable
+    /// called `MY_LOG`:
     /// 
     /// ```
-    /// use env_logger::{Builder, Env};
+    /// use env_logger::Builder;
     /// 
-    /// let mut builder = Builder::from_env(Env::default());
+    /// let mut builder = Builder::from_env("MY_LOG");
     /// builder.init();
     /// ```
     /// 
@@ -366,6 +408,29 @@ impl Builder {
         }
 
         builder
+    }
+
+    /// Initializes the log builder from the environment using default variable names.
+    /// 
+    /// This method is a convenient way to call `from_env(Env::default())` without
+    /// having to use the `Env` type explicitly. The builder will read the following 
+    /// environment variables:
+    /// 
+    /// - `RUST_LOG`: the level filter
+    /// - `RUST_LOG_STYLE`: whether or not to print styles with records.
+    /// 
+    /// # Examples
+    /// 
+    /// Initialise a logger using the default environment variables:
+    /// 
+    /// ```
+    /// use env_logger::Builder;
+    /// 
+    /// let mut builder = Builder::from_default_env();
+    /// builder.init();
+    /// ```
+    pub fn from_default_env() -> Self {
+        Self::from_env(Env::default())
     }
 
     /// Adds filters to the logger.
