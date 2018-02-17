@@ -418,7 +418,7 @@ impl Builder {
     /// This function will panic if it is called more than once, or if another
     /// library has already initialized a global logger.
     pub fn init(&mut self) {
-        self.try_init().unwrap();
+        self.try_init().expect("init should not be called after logger initialized");
     }
 
     /// Build an env logger.
