@@ -604,7 +604,7 @@ pub fn try_init() -> Result<(), SetLoggerError> {
 /// This function will panic if it is called more than once, or if another
 /// library has already initialized a global logger.
 pub fn init() {
-    try_init().unwrap();
+    try_init().expect("env_logger::init should not be called after logger initialized");
 }
 
 /// Attempts to initialize the global logger with an env logger from the given
