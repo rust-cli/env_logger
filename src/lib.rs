@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A simple logger configured via environment variables which writes 
+//! A simple logger configured via environment variables which writes
 //! to stdout or stderr, for use with the logging facade exposed by the
 //! [`log` crate][log-crate-url].
 //!
@@ -126,18 +126,18 @@
 //! * `error,hello=warn/[0-9]scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
-//! 
+//!
 //! ## Disabling colors
-//! 
+//!
 //! Colors and other styles can be configured with the `RUST_LOG_STYLE`
 //! environment variable. It accepts the following values:
-//! 
+//!
 //! * `auto` (default) will attempt to print style characters, but don't force the issue.
 //! If the console isn't available on Windows, or if TERM=dumb, for example, then don't print colors.
 //! * `always` will always print style characters even if they aren't supported by the terminal.
 //! This includes emitting ANSI colors on Windows if the console API is unavailable.
 //! * `never` will never print style characters.
-//! 
+//!
 //! [log-crate-url]: https://docs.rs/log/
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
@@ -154,7 +154,7 @@
 
 extern crate log;
 extern crate termcolor;
-extern crate chrono;
+extern crate humantime;
 extern crate atty;
 
 use std::env;
@@ -175,12 +175,12 @@ const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
-/// 
+///
 /// By default, the `Env` will read the following environment variables:
-/// 
+///
 /// - `RUST_LOG`: the level filter
 /// - `RUST_LOG_STYLE`: whether or not to print styles with records.
-/// 
+///
 /// These sources can be configured using the builder methods on `Env`.
 #[derive(Debug)]
 pub struct Env<'a> {
@@ -232,7 +232,7 @@ pub struct Logger {
 ///
 /// fn main() {
 ///     let mut builder = Builder::new();
-/// 
+///
 ///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
 ///            .filter(None, LevelFilter::Info);
 ///
@@ -282,29 +282,29 @@ impl Builder {
     }
 
     /// Initializes the log builder from the environment.
-    /// 
+    ///
     /// The variables used to read configuration from can be tweaked before
     /// passing in.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Initialise a logger using the default environment variables:
-    /// 
+    ///
     /// ```
     /// use env_logger::{Builder, Env};
-    /// 
+    ///
     /// let mut builder = Builder::from_env(Env::default());
     /// builder.init();
     /// ```
-    /// 
+    ///
     /// Initialise a logger using the `MY_LOG` variable for filtering and
     /// `MY_LOG_STYLE` for whether or not to write styles:
-    /// 
+    ///
     /// ```
     /// use env_logger::{Builder, Env};
-    /// 
+    ///
     /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
-    /// 
+    ///
     /// let mut builder = Builder::from_env(env);
     /// builder.init();
     /// ```
@@ -343,8 +343,8 @@ impl Builder {
     /// log record and output it to the given [`Formatter`].
     ///
     /// The format function is expected to output the string directly to the
-    /// `Formatter` so that implementations can use the [`std::fmt`] macros 
-    /// to format and output without intermediate heap allocations. The default 
+    /// `Formatter` so that implementations can use the [`std::fmt`] macros
+    /// to format and output without intermediate heap allocations. The default
     /// `env_logger` formatter takes advantage of this.
     ///
     /// [`Formatter`]: fmt/struct.Formatter.html
@@ -366,7 +366,7 @@ impl Builder {
     }
 
     /// Sets whether or not styles will be written.
-    /// 
+    ///
     /// This can be useful in environments that don't support control characters
     /// for setting colors.
     pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
@@ -385,7 +385,7 @@ impl Builder {
 
     /// Parses whether or not to write styles in the same form as the `RUST_LOG_STYLE`
     /// environment variable.
-    /// 
+    ///
     /// See the module documentation for more details.
     pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
         self.writer.parse(write_style);
@@ -422,7 +422,7 @@ impl Builder {
     }
 
     /// Build an env logger.
-    /// 
+    ///
     /// This method is kept private because the only way we support building
     /// loggers is by installing them as the single global logger for the
     /// `log` crate.
@@ -459,7 +459,7 @@ impl Log for Logger {
             // to the terminal. We clear these buffers afterwards, but they aren't shrinked
             // so will always at least have capacity for the largest log record formatted
             // on that thread.
-            // 
+            //
             // If multiple `Logger`s are used by the same threads then the thread-local
             // formatter might have different color support. If this is the case the
             // formatter and its buffer are discarded and recreated.
@@ -483,7 +483,7 @@ impl Log for Logger {
                     Err(_) => &mut b,
                 };
 
-                // Check the buffer style. If it's different from the logger's 
+                // Check the buffer style. If it's different from the logger's
                 // style then drop the buffer and recreate it.
                 match *tl_buf {
                     Some(ref mut formatter) => {
@@ -612,21 +612,21 @@ pub fn init() {
 ///
 /// This should be called early in the execution of a Rust program. Any log
 /// events that occur before initialization will be ignored.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Initialise a logger using the `MY_LOG` environment variable for filters
 /// and `MY_LOG_STYLE` for writing colors:
-/// 
+///
 /// ```
 /// # extern crate env_logger;
 /// use env_logger::{Builder, Env};
-/// 
+///
 /// # fn run() -> Result<(), Box<::std::error::Error>> {
 /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
-/// 
+///
 /// env_logger::try_init_from_env(env)?;
-/// 
+///
 /// Ok(())
 /// # }
 /// # fn main() { run().unwrap(); }
@@ -650,17 +650,17 @@ where
 ///
 /// This should be called early in the execution of a Rust program. Any log
 /// events that occur before initialization will be ignored.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Initialise a logger using the `MY_LOG` environment variable for filters
 /// and `MY_LOG_STYLE` for writing colors:
-/// 
+///
 /// ```
 /// use env_logger::{Builder, Env};
-/// 
+///
 /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
-/// 
+///
 /// env_logger::init_from_env(env);
 /// ```
 ///

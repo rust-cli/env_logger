@@ -17,7 +17,7 @@ keywords = ["logging", "log", "logger"]
 log = { version = "0.4.0", features = ["std"] }
 regex = { version = "0.2", optional = true }
 termcolor = "0.3"
-chrono = "0.4"
+humantime = "1.1.0"
 atty = "0.2"
 
 [[test]]
