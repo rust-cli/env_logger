@@ -137,8 +137,35 @@
 //! * `always` will always print style characters even if they aren't supported by the terminal.
 //! This includes emitting ANSI colors on Windows if the console API is unavailable.
 //! * `never` will never print style characters.
+//! 
+//! ## Tweaking the default format
+//! 
+//! Parts of the default format can be excluded from the log output using the [`Builder`].
+//! The following example excluding the timestamp from the log output:
+//! 
+//! ```
+//! #[macro_use] extern crate log;
+//! extern crate env_logger;
 //!
+//! use log::Level;
+//!
+//! fn main() {
+//!     env_logger::Builder::from_default_env()
+//!         .default_format_timestamp(false)
+//!         .init();
+//!
+//!     debug!("this is a debug {}", "message");
+//!     error!("this is printed by default");
+//!
+//!     if log_enabled!(Level::Info) {
+//!         let x = 3 * 4; // expensive computation
+//!         info!("the answer was: {}", x);
+//!     }
+//! }
+//! ```
+//! 
 //! [log-crate-url]: https://docs.rs/log/
+//! [`Builder`]: struct.Builder.html
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
@@ -213,12 +240,81 @@ pub struct Logger {
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
+struct Format {
+    default_format_timestamp: bool,
+    default_format_module_path: bool,
+    default_format_level: bool,
+    custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Format {
+            default_format_timestamp: true,
+            default_format_module_path: true,
+            default_format_level: true,
+            custom_format: None,
+        }
+    }
+}
+
+impl Format {
+    /// Convert the format into a callable function.
+    /// 
+    /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
+    /// If the `custom_format` is `None`, then a default format is returned.
+    /// Any `default_format` switches set to `false` won't be written by the format.
+    fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
+        if let Some(fmt) = self.custom_format {
+            fmt
+        }
+        else {
+            Box::new(move |buf, record| {
+                let write_level = if self.default_format_level {
+                    let level = record.level();
+                    let mut level_style = buf.style();
+
+                    match level {
+                        Level::Trace => level_style.set_color(Color::White),
+                        Level::Debug => level_style.set_color(Color::Blue),
+                        Level::Info => level_style.set_color(Color::Green),
+                        Level::Warn => level_style.set_color(Color::Yellow),
+                        Level::Error => level_style.set_color(Color::Red).set_bold(true),
+                    };
+
+                    write!(buf, "{:>5} ", level_style.value(level))
+                } else {
+                    Ok(())
+                };
+
+                let write_ts = if self.default_format_timestamp {
+                    let ts = buf.timestamp();
+                    write!(buf, "{}: ", ts)
+                } else {
+                    Ok(())
+                };
+
+                let default_format_module_path = (self.default_format_module_path, record.module_path());
+                let write_module_path = if let (true, Some(module_path)) = default_format_module_path {
+                    write!(buf, "{}: ", module_path)
+                } else {
+                    Ok(())
+                };
+
+                let write_args = writeln!(buf, "{}", record.args());
+
+                write_level.and(write_ts).and(write_module_path).and(write_args)
+            })
+        }
+    }
+}
+
 /// `Builder` acts as builder for initializing a `Logger`.
 ///
 /// It can be used to customize the log format, change the environment variable used
 /// to provide the logging directives and also set the default log level filter.
 ///
-/// ## Example
+/// # Examples
 ///
 /// ```
 /// #[macro_use]
@@ -231,54 +327,55 @@ pub struct Logger {
 /// use env_logger::Builder;
 ///
 /// fn main() {
-///     let mut builder = Builder::new();
+///     let mut builder = Builder::from_default_env();
 ///
 ///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
-///            .filter(None, LevelFilter::Info);
-///
-///     if let Ok(rust_log) = env::var("RUST_LOG") {
-///        builder.parse(&rust_log);
-///     }
-///
-///     builder.init();
+///            .filter(None, LevelFilter::Info)
+///            .init();
 ///
 ///     error!("error message");
 ///     info!("info message");
 /// }
 /// ```
+#[derive(Default)]
 pub struct Builder {
     filter: filter::Builder,
     writer: fmt::Builder,
-    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+    format: Format,
 }
 
 impl Builder {
     /// Initializes the log builder with defaults.
+    /// 
+    /// **NOTE:** This method won't read from any environment variables.
+    /// Use the [`filter`] and [`write_style`] methods to configure the builder
+    /// or use [`from_env`] or [`from_default_env`] instead.
+    /// 
+    /// # Examples
+    /// 
+    /// Create a new builder and configure filters and style:
+    /// 
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::{Builder, WriteStyle};
+    /// 
+    /// let mut builder = Builder::new();
+    /// 
+    /// builder.filter(None, LevelFilter::Info)
+    ///        .write_style(WriteStyle::Always)
+    ///        .init();
+    /// # }
+    /// ```
+    /// 
+    /// [`filter`]: #method.filter
+    /// [`write_style`]: #method.write_style
+    /// [`from_env`]: #method.from_env
+    /// [`from_default_env`]: #method.from_default_env
     pub fn new() -> Builder {
-        Builder {
-            filter: Default::default(),
-            writer: Default::default(),
-            format: Box::new(|buf, record| {
-                let ts = buf.timestamp();
-                let level = record.level();
-                let mut level_style = buf.style();
-
-                match level {
-                    Level::Trace => level_style.set_color(Color::White),
-                    Level::Debug => level_style.set_color(Color::Blue),
-                    Level::Info => level_style.set_color(Color::Green),
-                    Level::Warn => level_style.set_color(Color::Yellow),
-                    Level::Error => level_style.set_color(Color::Red).set_bold(true),
-                };
-
-                if let Some(module_path) = record.module_path() {
-                    writeln!(buf, "{:>5} {}: {}: {}", level_style.value(level), ts, module_path, record.args())
-                }
-                else {
-                    writeln!(buf, "{:>5} {}: {}", level_style.value(level), ts, record.args())
-                }
-            }),
-        }
+        Default::default()
     }
 
     /// Initializes the log builder from the environment.
@@ -287,13 +384,14 @@ impl Builder {
     /// passing in.
     ///
     /// # Examples
-    ///
-    /// Initialise a logger using the default environment variables:
-    ///
+    /// 
+    /// Initialise a logger reading the log filter from an environment variable
+    /// called `MY_LOG`:
+    /// 
     /// ```
-    /// use env_logger::{Builder, Env};
-    ///
-    /// let mut builder = Builder::from_env(Env::default());
+    /// use env_logger::Builder;
+    /// 
+    /// let mut builder = Builder::from_env("MY_LOG");
     /// builder.init();
     /// ```
     ///
@@ -326,15 +424,27 @@ impl Builder {
         builder
     }
 
-    /// Adds filters to the logger.
-    ///
-    /// The given module (if any) will log at most the specified level provided.
-    /// If no module is provided then the filter will apply to all log messages.
-    pub fn filter(&mut self,
-                  module: Option<&str>,
-                  level: LevelFilter) -> &mut Self {
-        self.filter.filter(module, level);
-        self
+    /// Initializes the log builder from the environment using default variable names.
+    /// 
+    /// This method is a convenient way to call `from_env(Env::default())` without
+    /// having to use the `Env` type explicitly. The builder will read the following 
+    /// environment variables:
+    /// 
+    /// - `RUST_LOG`: the level filter
+    /// - `RUST_LOG_STYLE`: whether or not to print styles with records.
+    /// 
+    /// # Examples
+    /// 
+    /// Initialise a logger using the default environment variables:
+    /// 
+    /// ```
+    /// use env_logger::Builder;
+    /// 
+    /// let mut builder = Builder::from_default_env();
+    /// builder.init();
+    /// ```
+    pub fn from_default_env() -> Self {
+        Self::from_env(Env::default())
     }
 
     /// Sets the format function for formatting the log output.
@@ -346,6 +456,19 @@ impl Builder {
     /// `Formatter` so that implementations can use the [`std::fmt`] macros
     /// to format and output without intermediate heap allocations. The default
     /// `env_logger` formatter takes advantage of this.
+    /// 
+    /// # Examples
+    /// 
+    /// Use a custom format to write only the log message:
+    /// 
+    /// ```
+    /// use std::io::Write;
+    /// use env_logger::Builder;
+    /// 
+    /// let mut builder = Builder::new();
+    /// 
+    /// builder.format(|buf, record| write!(buf, "{}", record.args()));
+    /// ```
     ///
     /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
@@ -353,24 +476,61 @@ impl Builder {
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
         where F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send
     {
-        self.format = Box::new(format);
+        self.format.custom_format = Some(Box::new(format));
         self
     }
 
-    /// Sets the target for the log output.
-    ///
-    /// Env logger can log to either stdout or stderr. The default is stderr.
-    pub fn target(&mut self, target: fmt::Target) -> &mut Self {
-        self.writer.target(target);
+    /// Use the default format.
+    /// 
+    /// This method will clear any custom format set on the builder.
+    pub fn default_format(&mut self) -> &mut Self {
+        self.format.custom_format = None;
         self
     }
 
-    /// Sets whether or not styles will be written.
+    /// Whether or not to write the level in the default format.
+    pub fn default_format_level(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_level = write;
+        self
+    }
+
+    /// Whether or not to write the module path in the default format.
+    pub fn default_format_module_path(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_module_path = write;
+        self
+    }
+
+    /// Whether or not to write the timestamp in the default format.
+    pub fn default_format_timestamp(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_timestamp = write;
+        self
+    }
+
+    /// Adds filters to the logger.
     ///
-    /// This can be useful in environments that don't support control characters
-    /// for setting colors.
-    pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
-        self.writer.write_style(write_style);
+    /// The given module (if any) will log at most the specified level provided.
+    /// If no module is provided then the filter will apply to all log messages.
+    /// 
+    /// # Examples
+    /// 
+    /// Only include messages for warning and above for logs in `path::to::module`:
+    /// 
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    /// 
+    /// let mut builder = Builder::new();
+    /// 
+    /// builder.filter(Some("path::to::module"), LevelFilter::Info);
+    /// # }
+    /// ```
+    pub fn filter(&mut self,
+                  module: Option<&str>,
+                  level: LevelFilter) -> &mut Self {
+        self.filter.filter(module, level);
         self
     }
 
@@ -380,6 +540,47 @@ impl Builder {
     /// See the module documentation for more details.
     pub fn parse(&mut self, filters: &str) -> &mut Self {
         self.filter.parse(filters);
+        self
+    }
+
+    /// Sets the target for the log output.
+    ///
+    /// Env logger can log to either stdout or stderr. The default is stderr.
+    /// 
+    /// # Examples
+    /// 
+    /// Write log message to `stdout`:
+    /// 
+    /// ```
+    /// use env_logger::{Builder, Target};
+    /// 
+    /// let mut builder = Builder::new();
+    /// 
+    /// builder.target(Target::Stdout);
+    /// ```
+    pub fn target(&mut self, target: fmt::Target) -> &mut Self {
+        self.writer.target(target);
+        self
+    }
+
+    /// Sets whether or not styles will be written.
+    ///
+    /// This can be useful in environments that don't support control characters
+    /// for setting colors.
+    /// 
+    /// # Examples
+    /// 
+    /// Never attempt to write styles:
+    /// 
+    /// ```
+    /// use env_logger::{Builder, WriteStyle};
+    /// 
+    /// let mut builder = Builder::new();
+    /// 
+    /// builder.write_style(WriteStyle::Never);
+    /// ```
+    pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
+        self.writer.write_style(write_style);
         self
     }
 
@@ -430,7 +631,7 @@ impl Builder {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
+            format: mem::replace(&mut self.format, Default::default()).into_boxed_fn(),
         }
     }
 }

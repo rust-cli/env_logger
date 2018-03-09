@@ -1,5 +1,5 @@
 /*!
-Using `env_logger`.
+Disabling parts of the default format.
 
 Before running this example, try setting the `MY_LOG_LEVEL` environment variable to `info`:
 
@@ -13,24 +13,32 @@ or `auto` to enable them:
 ```no_run,shell
 $ export MY_LOG_STYLE=never
 ```
+
+If you want to control the logging output completely, see the `custom_logger` example.
 */
 
 #[macro_use]
 extern crate log;
 extern crate env_logger;
 
-use env_logger::Env;
+use env_logger::{Env, Builder};
 
-fn main() {
+fn init_logger() {
     let env = Env::default()
         .filter("MY_LOG_LEVEL")
         .write_style("MY_LOG_STYLE");
 
-    env_logger::init_from_env(env);
+    let mut builder = Builder::from_env(env);
 
-    trace!("some trace log");
-    debug!("some debug log");
-    info!("some information log");
-    warn!("some warning log");
-    error!("some error log");
+    builder
+        .default_format_level(false)
+        .default_format_timestamp(false);
+
+    builder.init();
+}
+
+fn main() {
+    init_logger();
+
+    info!("a log from `MyLogger`");
 }
