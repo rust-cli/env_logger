@@ -25,7 +25,8 @@ use env_logger::{Env, Builder};
 
 fn init_logger() {
     let env = Env::default()
-        .filter("MY_LOG_LEVEL");
+        .filter("MY_LOG_LEVEL")
+        .write_style("MY_LOG_STYLE");
 
     let mut builder = Builder::from_env(env);
 

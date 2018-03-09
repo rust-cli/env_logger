@@ -19,8 +19,14 @@ $ export MY_LOG_STYLE=never
 extern crate log;
 extern crate env_logger;
 
+use env_logger::Env;
+
 fn main() {
-    env_logger::init_from_env("MY_LOG_LEVEL");
+    let env = Env::default()
+        .filter("MY_LOG_LEVEL")
+        .write_style("MY_LOG_STYLE");
+
+    env_logger::init_from_env(env);
 
     trace!("some trace log");
     debug!("some debug log");
