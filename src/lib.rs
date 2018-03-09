@@ -270,40 +270,65 @@ impl Format {
         }
         else {
             Box::new(move |buf, record| {
-                let write_level = if self.default_format_level {
+                let mut brace_style = buf.style();
+                brace_style.set_color(Color::Black).set_intense(true);
+
+                // Write the start of a header value
+                let mut written_header_value = false;
+                let write_header_pre = |buf: &mut Formatter, sentinal: &mut bool| {
+                    if !*sentinal {
+                        *sentinal = true;
+                        write!(buf, "{}", brace_style.value("["))
+                    }
+                    else {
+                        write!(buf, " ")
+                    }
+                };
+
+                let mut write = Ok(());
+
+                // Write the record level
+                if self.default_format_level {
+                    write = write.and(write_header_pre(buf, &mut written_header_value));
+
                     let level = record.level();
                     let mut level_style = buf.style();
 
-                    match level {
-                        Level::Trace => level_style.set_color(Color::White),
-                        Level::Debug => level_style.set_color(Color::Blue),
-                        Level::Info => level_style.set_color(Color::Green),
-                        Level::Warn => level_style.set_color(Color::Yellow),
-                        Level::Error => level_style.set_color(Color::Red).set_bold(true),
+                    let level = match level {
+                        Level::Trace => level_style.set_color(Color::White).value("TRC"),
+                        Level::Debug => level_style.set_color(Color::Blue).value("DBG"),
+                        Level::Info => level_style.set_color(Color::Green).value("INF"),
+                        Level::Warn => level_style.set_color(Color::Yellow).value("WRN"),
+                        Level::Error => level_style.set_color(Color::Red).set_bold(true).value("ERR"),
                     };
 
-                    write!(buf, "{:>5} ", level_style.value(level))
-                } else {
-                    Ok(())
-                };
+                    write = write.and(write!(buf, "{}", level));
+                }
 
-                let write_ts = if self.default_format_timestamp {
+                // Write the timestamp
+                if self.default_format_timestamp {
+                    write = write.and(write_header_pre(buf, &mut written_header_value));
+
                     let ts = buf.timestamp();
-                    write!(buf, "{}: ", ts)
-                } else {
-                    Ok(())
-                };
+                    write = write.and(write!(buf, "{}", ts));
+                }
 
+                // Write the module path
                 let default_format_module_path = (self.default_format_module_path, record.module_path());
-                let write_module_path = if let (true, Some(module_path)) = default_format_module_path {
-                    write!(buf, "{}: ", module_path)
-                } else {
-                    Ok(())
-                };
+                if let (true, Some(module_path)) = default_format_module_path {
+                    write = write.and(write_header_pre(buf, &mut written_header_value));
 
-                let write_args = writeln!(buf, "{}", record.args());
+                    write = write.and(write!(buf, "{}", module_path));
+                }
 
-                write_level.and(write_ts).and(write_module_path).and(write_args)
+                if written_header_value {
+                    write = write.and(write!(buf, "{} ", brace_style.value("]")));
+                }
+
+                // Write the record arguments
+                write = write.and(writeln!(buf, "{}", record.args()));
+
+                write
             })
         }
     }
