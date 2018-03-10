@@ -575,6 +575,8 @@ impl fmt::Display for Timestamp {
     }
 }
 
+// The `Color` type is copied from https://github.com/BurntSushi/ripgrep/tree/master/termcolor
+
 /// The set of available colors for the terminal foreground/background.
 ///
 /// The `Ansi256` and `Rgb` colors will only output the correct codes when
