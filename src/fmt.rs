@@ -37,14 +37,14 @@
 use std::io::prelude::*;
 use std::{io, fmt};
 use std::rc::Rc;
+use std::str::FromStr;
+use std::error::Error;
 use std::cell::RefCell;
 use std::time::SystemTime;
 
-use termcolor::{ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
+use termcolor::{self, ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use atty;
 use humantime::format_rfc3339_seconds;
-
-pub use termcolor::Color;
 
 /// A formatter to write logs into.
 ///
@@ -287,7 +287,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_color(&mut self, color: Color) -> &mut Style {
-        self.spec.set_fg(Some(color));
+        self.spec.set_fg(color.to_termcolor());
         self
     }
 
@@ -366,7 +366,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_bg(&mut self, color: Color) -> &mut Style {
-        self.spec.set_bg(Some(color));
+        self.spec.set_bg(color.to_termcolor());
         self
     }
 
@@ -575,6 +575,144 @@ impl fmt::Display for Timestamp {
     }
 }
 
+// The `Color` type is copied from https://github.com/BurntSushi/ripgrep/tree/master/termcolor
+
+/// The set of available colors for the terminal foreground/background.
+///
+/// The `Ansi256` and `Rgb` colors will only output the correct codes when
+/// paired with the `Ansi` `WriteColor` implementation.
+///
+/// The `Ansi256` and `Rgb` color types are not supported when writing colors
+/// on Windows using the console. If they are used on Windows, then they are
+/// silently ignored and no colors will be emitted.
+///
+/// This set may expand over time.
+///
+/// This type has a `FromStr` impl that can parse colors from their human
+/// readable form. The format is as follows:
+///
+/// 1. Any of the explicitly listed colors in English. They are matched
+///    case insensitively.
+/// 2. A single 8-bit integer, in either decimal or hexadecimal format.
+/// 3. A triple of 8-bit integers separated by a comma, where each integer is
+///    in decimal or hexadecimal format.
+///
+/// Hexadecimal numbers are written with a `0x` prefix.
+#[allow(missing_docs)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Color {
+    Black,
+    Blue,
+    Green,
+    Red,
+    Cyan,
+    Magenta,
+    Yellow,
+    White,
+    Ansi256(u8),
+    Rgb(u8, u8, u8),
+    #[doc(hidden)]
+    __Nonexhaustive,
+}
+
+/// An error from parsing an invalid color specification.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ParseColorError(ParseColorErrorKind);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ParseColorErrorKind {
+    /// An error originating from `termcolor`.
+    TermColor(termcolor::ParseColorError),
+    /// An error converting the `termcolor` color to a `env_logger::Color`.
+    /// 
+    /// This variant should only get reached if a user uses a new spec that's
+    /// valid for `termcolor`, but not recognised in `env_logger` yet.
+    Unrecognized {
+        given: String,
+    }
+}
+
+impl ParseColorError {
+    fn termcolor(err: termcolor::ParseColorError) -> Self {
+        ParseColorError(ParseColorErrorKind::TermColor(err))
+    }
+
+    fn unrecognized(given: String) -> Self {
+        ParseColorError(ParseColorErrorKind::Unrecognized { given })
+    }
+
+    /// Return the string that couldn't be parsed as a valid color.
+    pub fn invalid(&self) -> &str {
+        match self.0 {
+            ParseColorErrorKind::TermColor(ref err) => err.invalid(),
+            ParseColorErrorKind::Unrecognized { ref given, .. } => given,
+        }
+    }
+}
+
+impl Error for ParseColorError {
+    fn description(&self) -> &str {
+        match self.0 {
+            ParseColorErrorKind::TermColor(ref err) => err.description(),
+            ParseColorErrorKind::Unrecognized { .. } => "unrecognized color value",
+        }
+    }
+}
+
+impl fmt::Display for ParseColorError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            ParseColorErrorKind::TermColor(ref err) => fmt::Display::fmt(err, f),
+            ParseColorErrorKind::Unrecognized { ref given, .. } => {
+                write!(f, "unrecognized color value '{}'", given)
+            } 
+        }
+    }
+}
+
+impl Color {
+    fn to_termcolor(self) -> Option<termcolor::Color> {
+        match self {
+            Color::Black => Some(termcolor::Color::Black),
+            Color::Blue => Some(termcolor::Color::Blue),
+            Color::Green => Some(termcolor::Color::Green),
+            Color::Red => Some(termcolor::Color::Red),
+            Color::Cyan => Some(termcolor::Color::Cyan),
+            Color::Magenta => Some(termcolor::Color::Magenta),
+            Color::Yellow => Some(termcolor::Color::Yellow),
+            Color::White => Some(termcolor::Color::White),
+            Color::Ansi256(value) => Some(termcolor::Color::Ansi256(value)),
+            Color::Rgb(r, g, b) => Some(termcolor::Color::Rgb(r, g, b)),
+            _ => None,
+        }
+    }
+
+    fn from_termcolor(color: termcolor::Color) -> Option<Color> {
+        match color {
+            termcolor::Color::Black => Some(Color::Black),
+            termcolor::Color::Blue => Some(Color::Blue),
+            termcolor::Color::Green => Some(Color::Green),
+            termcolor::Color::Red => Some(Color::Red),
+            termcolor::Color::Cyan => Some(Color::Cyan),
+            termcolor::Color::Magenta => Some(Color::Magenta),
+            termcolor::Color::Yellow => Some(Color::Yellow),
+            termcolor::Color::White => Some(Color::White),
+            termcolor::Color::Ansi256(value) => Some(Color::Ansi256(value)),
+            termcolor::Color::Rgb(r, g, b) => Some(Color::Rgb(r, g, b)),
+            _ => None,
+        }
+    }
+}
+
+impl FromStr for Color {
+    type Err = ParseColorError;
+
+    fn from_str(s: &str) -> Result<Color, ParseColorError> {
+        let tc = termcolor::Color::from_str(s).map_err(ParseColorError::termcolor)?;
+        Color::from_termcolor(tc).ok_or(ParseColorError::unrecognized(s.to_owned()))
+    }
+}
+
 fn parse_write_style(spec: &str) -> WriteStyle {
     match spec {
         "auto" => WriteStyle::Auto,
@@ -612,6 +750,66 @@ mod tests {
 
         for input in inputs {
             assert_eq!(WriteStyle::Auto, parse_write_style(input));
+        }
+    }
+
+    #[test]
+    fn parse_color_name_valid() {
+        let inputs = vec![
+            "black",
+            "blue",
+            "green",
+            "red",
+            "cyan",
+            "magenta",
+            "yellow",
+            "white",
+        ];
+
+        for input in inputs {
+            assert!(Color::from_str(input).is_ok());
+        }
+    }
+
+    #[test]
+    fn parse_color_ansi_valid() {
+        let inputs = vec![
+            "7",
+            "32",
+            "0xFF",
+        ];
+
+        for input in inputs {
+            assert!(Color::from_str(input).is_ok());
+        }
+    }
+
+    #[test]
+    fn parse_color_rgb_valid() {
+        let inputs = vec![
+            "0,0,0",
+            "0,128,255",
+            "0x0,0x0,0x0",
+            "0x33,0x66,0xFF",
+        ];
+
+        for input in inputs {
+            assert!(Color::from_str(input).is_ok());
+        }
+    }
+
+    #[test]
+    fn parse_color_invalid() {
+        let inputs = vec![
+            "not_a_color",
+            "256",
+            "0,0",
+            "0,0,256",
+        ];
+
+        for input in inputs {
+            let err = Color::from_str(input).unwrap_err();
+            assert_eq!(input, err.invalid());
         }
     }
 }
