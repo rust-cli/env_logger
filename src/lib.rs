@@ -287,6 +287,14 @@ impl Format {
 
                 let mut write = Ok(());
 
+                // Write the timestamp
+                if self.default_format_timestamp {
+                    write = write.and(write_header_pre(buf, &mut written_header_value));
+
+                    let ts = buf.timestamp();
+                    write = write.and(write!(buf, "{}", ts));
+                }
+
                 // Write the record level
                 if self.default_format_level {
                     write = write.and(write_header_pre(buf, &mut written_header_value));
@@ -303,14 +311,6 @@ impl Format {
                     };
 
                     write = write.and(write!(buf, "{}", level));
-                }
-
-                // Write the timestamp
-                if self.default_format_timestamp {
-                    write = write.and(write_header_pre(buf, &mut written_header_value));
-
-                    let ts = buf.timestamp();
-                    write = write.and(write!(buf, "{}", ts));
                 }
 
                 // Write the module path
