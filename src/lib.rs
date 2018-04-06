@@ -70,6 +70,19 @@
 //! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
+//! If the binary name contains hyphens, you will need to replace
+//! them with underscores:
+//!
+//! ```{.bash}
+//! $ RUST_LOG=my_app ./my-app
+//! DEBUG: 2017-11-09T02:12:24Z: my_app: this is a debug message
+//! ERROR: 2017-11-09T02:12:24Z: my_app: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: my_app: the answer was: 12
+//! ```
+//!
+//! This is because Rust modules and crates cannot contain hyphens
+//! in their name, although `cargo` continues to accept them.
+//!
 //! See the documentation for the [`log` crate][log-crate-url] for more
 //! information about its API.
 //!
