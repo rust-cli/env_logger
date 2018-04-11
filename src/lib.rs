@@ -216,6 +216,8 @@ const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
 ///
+/// # Default environment variables
+///
 /// By default, the `Env` will read the following environment variables:
 ///
 /// - `RUST_LOG`: the level filter
@@ -440,11 +442,8 @@ impl Builder {
     /// Initializes the log builder from the environment using default variable names.
     /// 
     /// This method is a convenient way to call `from_env(Env::default())` without
-    /// having to use the `Env` type explicitly. The builder will read the following 
-    /// environment variables:
-    /// 
-    /// - `RUST_LOG`: the level filter
-    /// - `RUST_LOG_STYLE`: whether or not to print styles with records.
+    /// having to use the `Env` type explicitly. The builder will use the
+    /// [default environment variables].
     /// 
     /// # Examples
     /// 
@@ -456,6 +455,8 @@ impl Builder {
     /// let mut builder = Builder::from_default_env();
     /// builder.init();
     /// ```
+    ///
+    /// [default environment variables]: struct.Env.html#default-environment-variables
     pub fn from_default_env() -> Self {
         Self::from_env(Env::default())
     }
@@ -637,9 +638,8 @@ impl Builder {
 
     /// Build an env logger.
     ///
-    /// This method is kept private because the only way we support building
-    /// loggers is by installing them as the single global logger for the
-    /// `log` crate.
+    /// The returned logger implements the `Log` trait and can be installed manually
+    /// or nested within another logger.
     pub fn build(&mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
@@ -650,6 +650,60 @@ impl Builder {
 }
 
 impl Logger {
+    /// Creates the logger from the environment.
+    ///
+    /// The variables used to read configuration from can be tweaked before
+    /// passing in.
+    ///
+    /// # Examples
+    ///
+    /// Create a logger reading the log filter from an environment variable
+    /// called `MY_LOG`:
+    ///
+    /// ```
+    /// use env_logger::Logger;
+    ///
+    /// let logger = Logger::from_env("MY_LOG");
+    /// ```
+    ///
+    /// Create a logger using the `MY_LOG` variable for filtering and
+    /// `MY_LOG_STYLE` for whether or not to write styles:
+    ///
+    /// ```
+    /// use env_logger::{Logger, Env};
+    ///
+    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    ///
+    /// let logger = Logger::from_env(env);
+    /// ```
+    pub fn from_env<'a, E>(env: E) -> Self
+        where
+            E: Into<Env<'a>>
+    {
+        Builder::from_env(env).build()
+    }
+
+    /// Creates the logger from the environment using default variable names.
+    ///
+    /// This method is a convenient way to call `from_env(Env::default())` without
+    /// having to use the `Env` type explicitly. The logger will use the
+    /// [default environment variables].
+    ///
+    /// # Examples
+    ///
+    /// Creates a logger using the default environment variables:
+    ///
+    /// ```
+    /// use env_logger::Logger;
+    ///
+    /// let logger = Logger::from_default_env();
+    /// ```
+    ///
+    /// [default environment variables]: struct.Env.html#default-environment-variables
+    pub fn from_default_env() -> Self {
+        Builder::from_default_env().build()
+    }
+
     /// Returns the maximum `LevelFilter` that this env logger instance is
     /// configured to output.
     pub fn filter(&self) -> LevelFilter {
