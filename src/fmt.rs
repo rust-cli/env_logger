@@ -148,6 +148,13 @@ pub struct StyledValue<'a, T> {
 /// [`Formatter`]: struct.Formatter.html
 pub struct Timestamp(SystemTime);
 
+impl Timestamp {
+    /// Returns the source time for this timestamp.
+    pub fn source(&self) -> SystemTime {
+        self.0
+    }
+}
+
 /// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
