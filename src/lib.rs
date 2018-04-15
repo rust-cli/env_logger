@@ -211,8 +211,11 @@ pub mod fmt;
 
 pub use self::fmt::{Target, WriteStyle, Color, Formatter};
 
-const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
-const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+/// The default name for the environment variable to read filters from.
+pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
+
+/// The default name for the environment variable to read style preferences from.
+pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
 ///
