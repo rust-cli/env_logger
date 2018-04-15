@@ -191,7 +191,7 @@ use std::io;
 use std::mem;
 use std::cell::RefCell;
 
-use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
+use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 
 pub mod filter;
 pub mod fmt;
@@ -299,16 +299,7 @@ impl Format {
                 if self.default_format_level {
                     write = write.and(write_header_pre(buf, &mut written_header_value));
 
-                    let level = record.level();
-                    let mut level_style = buf.style();
-
-                    let level = match level {
-                        Level::Trace => level_style.set_color(Color::White).value("TRC"),
-                        Level::Debug => level_style.set_color(Color::Blue).value("DBG"),
-                        Level::Info => level_style.set_color(Color::Green).value("INF"),
-                        Level::Warn => level_style.set_color(Color::Yellow).value("WRN"),
-                        Level::Error => level_style.set_color(Color::Red).set_bold(true).value("ERR"),
-                    };
+                    let level = buf.level_style(record.level());
 
                     write = write.and(write!(buf, "{}", level));
                 }

@@ -37,9 +37,11 @@
 use std::io::prelude::*;
 use std::{io, fmt};
 use std::rc::Rc;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::time::SystemTime;
 
+use log::Level;
 use termcolor::{ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use atty;
 use humantime::format_rfc3339_seconds;
@@ -135,7 +137,7 @@ pub struct Style {
 ///
 /// [`Style::value`]: struct.Style.html#method.value
 pub struct StyledValue<'a, T> {
-    style: &'a Style,
+    style: Cow<'a, Style>,
     value: T,
 }
 
@@ -396,7 +398,14 @@ impl Style {
     /// ```
     pub fn value<T>(&self, value: T) -> StyledValue<T> {
         StyledValue {
-            style: &self,
+            style: Cow::Borrowed(self),
+            value
+        }
+    }
+
+    fn into_value<T>(self, value: T) -> StyledValue<'static, T> {
+        StyledValue {
+            style: Cow::Owned(self),
             value
         }
     }
@@ -466,6 +475,50 @@ impl Formatter {
     /// [`Timestamp`]: struct.Timestamp.html
     pub fn timestamp(&self) -> Timestamp {
         Timestamp(SystemTime::now())
+    }
+
+    /// Get a styled log level.
+    ///
+    /// # Examples
+    ///
+    /// Include a styled level with the log record:
+    ///
+    /// ```
+    /// use std::io::Write;
+    ///
+    /// let mut builder = env_logger::Builder::new();
+    ///
+    /// builder.format(|buf, record| {
+    ///     let level = buf.level_style(record.level());
+    ///
+    ///     writeln!(buf, "{}: {}", level, record.args())
+    /// });
+    /// ```
+    pub fn level_style(&self, level: Level) -> StyledValue<'static, &'static str> {
+        let mut level_style = self.style();
+
+        match level {
+            Level::Trace => {
+                level_style.set_color(Color::White);
+                level_style.into_value("TRC")
+            },
+            Level::Debug => {
+                level_style.set_color(Color::Blue);
+                level_style.into_value("DBG")
+            },
+            Level::Info => {
+                level_style.set_color(Color::Green);
+                level_style.into_value("INF")
+            },
+            Level::Warn => {
+                level_style.set_color(Color::Yellow);
+                level_style.into_value("WRN")
+            },
+            Level::Error => {
+                level_style.set_color(Color::Red).set_bold(true);
+                level_style.into_value("ERR")
+            },
+        }
     }
 
     pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
