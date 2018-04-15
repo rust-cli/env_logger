@@ -70,6 +70,19 @@
 //! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
 //! ```
 //!
+//! If the binary name contains hyphens, you will need to replace
+//! them with underscores:
+//!
+//! ```{.bash}
+//! $ RUST_LOG=my_app ./my-app
+//! DEBUG: 2017-11-09T02:12:24Z: my_app: this is a debug message
+//! ERROR: 2017-11-09T02:12:24Z: my_app: this is printed by default
+//! INFO: 2017-11-09T02:12:24Z: my_app: the answer was: 12
+//! ```
+//!
+//! This is because Rust modules and crates cannot contain hyphens
+//! in their name, although `cargo` continues to accept them.
+//!
 //! See the documentation for the [`log` crate][log-crate-url] for more
 //! information about its API.
 //!
@@ -169,7 +182,7 @@
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.5.5")]
+       html_root_url = "https://docs.rs/env_logger/0.5.7")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -202,6 +215,8 @@ const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
+///
+/// # Default environment variables
 ///
 /// By default, the `Env` will read the following environment variables:
 ///
@@ -443,11 +458,8 @@ impl Builder {
     /// Initializes the log builder from the environment using default variable names.
     /// 
     /// This method is a convenient way to call `from_env(Env::default())` without
-    /// having to use the `Env` type explicitly. The builder will read the following 
-    /// environment variables:
-    /// 
-    /// - `RUST_LOG`: the level filter
-    /// - `RUST_LOG_STYLE`: whether or not to print styles with records.
+    /// having to use the `Env` type explicitly. The builder will use the
+    /// [default environment variables].
     /// 
     /// # Examples
     /// 
@@ -459,6 +471,8 @@ impl Builder {
     /// let mut builder = Builder::from_default_env();
     /// builder.init();
     /// ```
+    ///
+    /// [default environment variables]: struct.Env.html#default-environment-variables
     pub fn from_default_env() -> Self {
         Self::from_env(Env::default())
     }
@@ -640,9 +654,8 @@ impl Builder {
 
     /// Build an env logger.
     ///
-    /// This method is kept private because the only way we support building
-    /// loggers is by installing them as the single global logger for the
-    /// `log` crate.
+    /// The returned logger implements the `Log` trait and can be installed manually
+    /// or nested within another logger.
     pub fn build(&mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
@@ -653,6 +666,60 @@ impl Builder {
 }
 
 impl Logger {
+    /// Creates the logger from the environment.
+    ///
+    /// The variables used to read configuration from can be tweaked before
+    /// passing in.
+    ///
+    /// # Examples
+    ///
+    /// Create a logger reading the log filter from an environment variable
+    /// called `MY_LOG`:
+    ///
+    /// ```
+    /// use env_logger::Logger;
+    ///
+    /// let logger = Logger::from_env("MY_LOG");
+    /// ```
+    ///
+    /// Create a logger using the `MY_LOG` variable for filtering and
+    /// `MY_LOG_STYLE` for whether or not to write styles:
+    ///
+    /// ```
+    /// use env_logger::{Logger, Env};
+    ///
+    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    ///
+    /// let logger = Logger::from_env(env);
+    /// ```
+    pub fn from_env<'a, E>(env: E) -> Self
+        where
+            E: Into<Env<'a>>
+    {
+        Builder::from_env(env).build()
+    }
+
+    /// Creates the logger from the environment using default variable names.
+    ///
+    /// This method is a convenient way to call `from_env(Env::default())` without
+    /// having to use the `Env` type explicitly. The logger will use the
+    /// [default environment variables].
+    ///
+    /// # Examples
+    ///
+    /// Creates a logger using the default environment variables:
+    ///
+    /// ```
+    /// use env_logger::Logger;
+    ///
+    /// let logger = Logger::from_default_env();
+    /// ```
+    ///
+    /// [default environment variables]: struct.Env.html#default-environment-variables
+    pub fn from_default_env() -> Self {
+        Builder::from_default_env().build()
+    }
+
     /// Returns the maximum `LevelFilter` that this env logger instance is
     /// configured to output.
     pub fn filter(&self) -> LevelFilter {
