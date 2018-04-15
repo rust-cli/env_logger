@@ -226,8 +226,14 @@ const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 /// These sources can be configured using the builder methods on `Env`.
 #[derive(Debug)]
 pub struct Env<'a> {
-    filter: Cow<'a, str>,
-    write_style: Cow<'a, str>,
+    filter: Var<'a>,
+    write_style: Var<'a>,
+}
+
+#[derive(Debug)]
+struct Var<'a> {
+    name: Cow<'a, str>,
+    default: Option<Cow<'a, str>>,
 }
 
 /// The env logger.
@@ -672,7 +678,7 @@ impl Logger {
     /// ```
     /// use env_logger::{Logger, Env};
     ///
-    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    /// let env = Env::new().filter_or("MY_LOG", "info").write_style_or("MY_LOG_STYLE", "always");
     ///
     /// let logger = Logger::from_env(env);
     /// ```
@@ -787,12 +793,26 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.filter = filter_env.into();
+        self.filter = Var::new(filter_env);
+
+        self
+    }
+
+    /// Specify an environment variable to read the filter from.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn filter_or<E, V>(mut self, filter_env: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        self.filter = Var::new_with_default(filter_env, default);
+
         self
     }
 
     fn get_filter(&self) -> Option<String> {
-        env::var(&*self.filter).ok()
+        self.filter.get()
     }
 
     /// Specify an environment variable to read the style from.
@@ -800,12 +820,57 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.write_style = write_style_env.into();
+        self.write_style = Var::new(write_style_env);
+
+        self
+    }
+
+    /// Specify an environment variable to read the style from.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn write_style_or<E, V>(mut self, write_style_env: E, default: V) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+            V: Into<Cow<'a, str>>,
+    {
+        self.write_style = Var::new_with_default(write_style_env, default);
+
         self
     }
 
     fn get_write_style(&self) -> Option<String> {
-        env::var(&*self.write_style).ok()
+        self.write_style.get()
+    }
+}
+
+impl<'a> Var<'a> {
+    fn new<E>(name: E) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: None,
+        }
+    }
+
+    fn new_with_default<E, V>(name: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: Some(default.into()),
+        }
+    }
+
+    fn get(&self) -> Option<String> {
+        env::var(&*self.name)
+            .ok()
+            .or_else(|| self.default
+                .to_owned()
+                .map(|v| v.into_owned()))
     }
 }
 
@@ -821,8 +886,8 @@ where
 impl<'a> Default for Env<'a> {
     fn default() -> Self {
         Env {
-            filter: DEFAULT_FILTER_ENV.into(),
-            write_style: DEFAULT_WRITE_STYLE_ENV.into()
+            filter: Var::new(DEFAULT_FILTER_ENV),
+            write_style: Var::new(DEFAULT_WRITE_STYLE_ENV),
         }
     }
 }
@@ -941,4 +1006,45 @@ where
     E: Into<Env<'a>>
 {
     try_init_from_env(env).expect("env_logger::init_from_env should not be called after logger initialized");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn env_get_filter_reads_from_var_if_set() {
+        env::set_var("env_get_filter_reads_from_var_if_set", "from var");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_filter_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_filter_reads_from_default_if_var_not_set");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_var_if_set() {
+        env::set_var("env_get_write_style_reads_from_var_if_set", "from var");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_write_style());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_write_style_reads_from_default_if_var_not_set");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_write_style());
+    }
 }
