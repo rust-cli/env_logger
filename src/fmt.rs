@@ -43,10 +43,96 @@ use std::error::Error;
 use std::cell::RefCell;
 use std::time::SystemTime;
 
-use log::Level;
+use log::{Level, Record};
 use termcolor::{self, ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use atty;
 use humantime::format_rfc3339_seconds;
+
+/// A format to write log records with a configurable default.
+pub(crate) struct Format {
+    pub(crate) default_format_timestamp: bool,
+    pub(crate) default_format_module_path: bool,
+    pub(crate) default_format_level: bool,
+    pub(crate) custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Format {
+            default_format_timestamp: true,
+            default_format_module_path: true,
+            default_format_level: true,
+            custom_format: None,
+        }
+    }
+}
+
+impl Format {
+    /// Convert the format into a callable function.
+    ///
+    /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
+    /// If the `custom_format` is `None`, then a default format is returned.
+    /// Any `default_format` switches set to `false` won't be written by the format.
+    pub(crate) fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
+        if let Some(fmt) = self.custom_format {
+            fmt
+        }
+            else {
+                Box::new(move |buf, record| {
+                    let mut brace_style = buf.style();
+                    brace_style.set_color(Color::Black).set_intense(true);
+
+                    // Write the start of a header value
+                    let mut written_header_value = false;
+                    let write_header_pre = |buf: &mut Formatter, sentinal: &mut bool| {
+                        if !*sentinal {
+                            *sentinal = true;
+                            write!(buf, "{}", brace_style.value("["))
+                        }
+                            else {
+                                write!(buf, " ")
+                            }
+                    };
+
+                    let mut write = Ok(());
+
+                    // Write the timestamp
+                    if self.default_format_timestamp {
+                        write = write.and(write_header_pre(buf, &mut written_header_value));
+
+                        let ts = buf.timestamp();
+                        write = write.and(write!(buf, "{}", ts));
+                    }
+
+                    // Write the record level
+                    if self.default_format_level {
+                        write = write.and(write_header_pre(buf, &mut written_header_value));
+
+                        let level = buf.level_style(record.level());
+
+                        write = write.and(write!(buf, "{}", level));
+                    }
+
+                    // Write the module path
+                    let default_format_module_path = (self.default_format_module_path, record.module_path());
+                    if let (true, Some(module_path)) = default_format_module_path {
+                        write = write.and(write_header_pre(buf, &mut written_header_value));
+
+                        write = write.and(write!(buf, "{}", module_path));
+                    }
+
+                    if written_header_value {
+                        write = write.and(write!(buf, "{} ", brace_style.value("]")));
+                    }
+
+                    // Write the record arguments
+                    write = write.and(writeln!(buf, "{}", record.args()));
+
+                    write
+                })
+            }
+    }
+}
 
 /// A formatter to write logs into.
 ///
