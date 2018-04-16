@@ -111,7 +111,7 @@ impl Format {
 
                         let level = buf.level_style(record.level());
 
-                        write = write.and(write!(buf, "{}", level));
+                        write = write.and(write!(buf, "{:<5}", level));
                     }
 
                     // Write the module path
@@ -581,31 +581,18 @@ impl Formatter {
     ///     writeln!(buf, "{}: {}", level, record.args())
     /// });
     /// ```
-    pub fn level_style(&self, level: Level) -> StyledValue<'static, &'static str> {
+    pub fn level_style(&self, level: Level) -> StyledValue<'static, Level> {
         let mut level_style = self.style();
 
         match level {
-            Level::Trace => {
-                level_style.set_color(Color::White);
-                level_style.into_value("TRC")
-            },
-            Level::Debug => {
-                level_style.set_color(Color::Blue);
-                level_style.into_value("DBG")
-            },
-            Level::Info => {
-                level_style.set_color(Color::Green);
-                level_style.into_value("INF")
-            },
-            Level::Warn => {
-                level_style.set_color(Color::Yellow);
-                level_style.into_value("WRN")
-            },
-            Level::Error => {
-                level_style.set_color(Color::Red).set_bold(true);
-                level_style.into_value("ERR")
-            },
-        }
+            Level::Trace => level_style.set_color(Color::White),
+            Level::Debug => level_style.set_color(Color::Blue),
+            Level::Info => level_style.set_color(Color::Green),
+            Level::Warn => level_style.set_color(Color::Yellow),
+            Level::Error => level_style.set_color(Color::Red).set_bold(true),
+        };
+
+        level_style.into_value(level)
     }
 
     pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
