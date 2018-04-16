@@ -89,10 +89,9 @@ impl Format {
                         if !*sentinal {
                             *sentinal = true;
                             write!(buf, "{}", brace_style.value("["))
+                        } else {
+                            write!(buf, " ")
                         }
-                            else {
-                                write!(buf, " ")
-                            }
                     };
 
                     let mut write = Ok(());
