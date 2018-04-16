@@ -78,6 +78,7 @@ impl Format {
             fmt
         }
             else {
+                // NOTE: We could simplify this with a `catch` block.
                 Box::new(move |buf, record| {
                     let mut brace_style = buf.style();
                     brace_style.set_color(Color::Black).set_intense(true);
