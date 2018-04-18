@@ -709,7 +709,7 @@ impl FromStr for Color {
 
     fn from_str(s: &str) -> Result<Color, ParseColorError> {
         let tc = termcolor::Color::from_str(s).map_err(ParseColorError::termcolor)?;
-        Color::from_termcolor(tc).ok_or(ParseColorError::unrecognized(s.to_owned()))
+        Color::from_termcolor(tc).ok_or_else(|| ParseColorError::unrecognized(s.to_owned()))
     }
 }
 
