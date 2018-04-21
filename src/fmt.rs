@@ -287,7 +287,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_color(&mut self, color: Color) -> &mut Style {
-        self.spec.set_fg(color.to_termcolor());
+        self.spec.set_fg(color.into_termcolor());
         self
     }
 
@@ -366,7 +366,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_bg(&mut self, color: Color) -> &mut Style {
-        self.spec.set_bg(color.to_termcolor());
+        self.spec.set_bg(color.into_termcolor());
         self
     }
 
@@ -671,7 +671,7 @@ impl fmt::Display for ParseColorError {
 }
 
 impl Color {
-    fn to_termcolor(self) -> Option<termcolor::Color> {
+    fn into_termcolor(self) -> Option<termcolor::Color> {
         match self {
             Color::Black => Some(termcolor::Color::Black),
             Color::Blue => Some(termcolor::Color::Blue),
@@ -709,7 +709,7 @@ impl FromStr for Color {
 
     fn from_str(s: &str) -> Result<Color, ParseColorError> {
         let tc = termcolor::Color::from_str(s).map_err(ParseColorError::termcolor)?;
-        Color::from_termcolor(tc).ok_or_else(|| ParseColorError::unrecognized(s.to_owned()))
+        Color::from_termcolor(tc).ok_or_else(|| ParseColorError::unrecognized(s.into()))
     }
 }
 
