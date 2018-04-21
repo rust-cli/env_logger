@@ -529,6 +529,52 @@ impl Builder {
         self
     }
 
+    /// Adds a directive to the filter for a specific module.
+    ///
+    /// # Examples
+    ///
+    /// Only include messages for warning and above for logs in `path::to::module`:
+    ///
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.filter_module("path::to::module", LevelFilter::Info);
+    /// # }
+    /// ```
+    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+        self.filter.filter_module(module, level);
+        self
+    }
+
+    /// Adds a directive to the filter for all modules.
+    ///
+    /// # Examples
+    ///
+    /// Only include messages for warning and above for logs in `path::to::module`:
+    ///
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.filter_level(LevelFilter::Info);
+    /// # }
+    /// ```
+    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+        self.filter.filter_level(level);
+        self
+    }
+
     /// Adds filters to the logger.
     ///
     /// The given module (if any) will log at most the specified level provided.
