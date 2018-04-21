@@ -197,6 +197,16 @@ impl Builder {
         builder
     }
 
+    /// Adds a directive to the filter for a specific module.
+    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+        self.filter(Some(module), level)
+    }
+
+    /// Adds a directive to the filter for all modules.
+    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+        self.filter(None, level)
+    }
+
     /// Adds a directive to the filter.
     ///
     /// The given module (if any) will log at most the specified level provided.
@@ -206,7 +216,7 @@ impl Builder {
                   level: LevelFilter) -> &mut Self {
         self.directives.push(Directive {
             name: module.map(|s| s.to_string()),
-            level: level,
+            level,
         });
         self
     }
