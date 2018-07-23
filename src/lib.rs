@@ -268,6 +268,7 @@ struct Format {
     default_format_timestamp: bool,
     default_format_module_path: bool,
     default_format_level: bool,
+    default_format_timestamp_nanos: bool,
     custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
 }
 
@@ -277,6 +278,7 @@ impl Default for Format {
             default_format_timestamp: true,
             default_format_module_path: true,
             default_format_level: true,
+            default_format_timestamp_nanos: false,
             custom_format: None,
         }
     }
@@ -312,8 +314,13 @@ impl Format {
                 };
 
                 let write_ts = if self.default_format_timestamp {
-                    let ts = buf.timestamp();
-                    write!(buf, "{}: ", ts)
+                    if self.default_format_timestamp_nanos {
+                      let ts_nanos = buf.precise_timestamp();
+                      write!(buf, "{}: ", ts_nanos) 
+                    } else {
+                      let ts = buf.timestamp();
+                      write!(buf, "{}: ", ts)      
+                    }
                 } else {
                     Ok(())
                 };
@@ -526,6 +533,12 @@ impl Builder {
     /// Whether or not to write the timestamp in the default format.
     pub fn default_format_timestamp(&mut self, write: bool) -> &mut Self {
         self.format.default_format_timestamp = write;
+        self
+    }
+
+    /// Whether or not to write the timestamp with nanos.
+    pub fn default_format_timestamp_nanos(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_timestamp_nanos = write;
         self
     }
 
