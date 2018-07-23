@@ -44,7 +44,7 @@ use std::time::SystemTime;
 
 use termcolor::{self, ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use atty;
-use humantime::format_rfc3339_seconds;
+use humantime::{format_rfc3339_seconds, format_rfc3339_nanos};
 
 /// A formatter to write logs into.
 ///
@@ -147,6 +147,10 @@ pub struct StyledValue<'a, T> {
 /// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
 /// [`Formatter`]: struct.Formatter.html
 pub struct Timestamp(SystemTime);
+
+/// An [RFC3339] formatted timestamp with nanos
+#[derive(Debug)]
+pub struct PreciseTimestamp(SystemTime);
 
 /// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -468,6 +472,11 @@ impl Formatter {
         Timestamp(SystemTime::now())
     }
 
+     /// Get a [`PreciseTimestamp`] for the current date and time in UTC with nanos.
+    pub fn precise_timestamp(&self) -> PreciseTimestamp {
+        PreciseTimestamp(SystemTime::now())
+    }
+
     pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
         writer.inner.print(&self.buf.borrow())
     }
@@ -572,6 +581,12 @@ impl_styled_value_fmt!(
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
         format_rfc3339_seconds(self.0).fmt(f)
+    }
+}
+
+impl fmt::Display for PreciseTimestamp {
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        format_rfc3339_nanos(self.0).fmt(f)
     }
 }
 
