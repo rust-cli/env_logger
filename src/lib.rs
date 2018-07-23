@@ -177,8 +177,30 @@
 //! }
 //! ```
 //! 
+//! ## Specifying defaults for environment variables
+//! 
+//! `env_logger` can read configuration from environment variables.
+//! If these variables aren't present, the default value to use can be tweaked with the [`Env`] type.
+//! The following example defaults to log `warn` and above if the `RUST_LOG` environment variable
+//! isn't set:
+//! 
+//! ```
+//! #[macro_use] extern crate log;
+//! extern crate env_logger;
+//!
+//! use log::Level;
+//!
+//! fn main() {
+//!     let env = env_logger::Env::default()
+//!         .filter_or(env_logger::DEFAULT_FILTER_ENV, "warn");
+//! 
+//!     env_logger::Builder::from_env(env).init();
+//! }
+//! ```
+//! 
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
+//! [`Env`]: struct.Env.html
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
