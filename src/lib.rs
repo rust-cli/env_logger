@@ -154,7 +154,7 @@
 //! ## Tweaking the default format
 //! 
 //! Parts of the default format can be excluded from the log output using the [`Builder`].
-//! The following example excluding the timestamp from the log output:
+//! The following example excludes the timestamp from the log output:
 //! 
 //! ```
 //! #[macro_use] extern crate log;
