@@ -226,7 +226,7 @@ use std::io;
 use std::mem;
 use std::cell::RefCell;
 
-use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
+use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 
 pub mod filter;
 pub mod fmt;
@@ -320,16 +320,7 @@ impl Format {
             Box::new(move |buf, record| {
                 let write_level = if self.default_format_level {
                     let level = record.level();
-                    let mut level_style = buf.style();
-
-                    match level {
-                        Level::Trace => level_style.set_color(Color::White),
-                        Level::Debug => level_style.set_color(Color::Blue),
-                        Level::Info => level_style.set_color(Color::Green),
-                        Level::Warn => level_style.set_color(Color::Yellow),
-                        Level::Error => level_style.set_color(Color::Red).set_bold(true),
-                    };
-
+                    let level_style = buf.default_level_style(level);
                     write!(buf, "{:>5} ", level_style.value(level))
                 } else {
                     Ok(())

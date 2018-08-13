@@ -42,6 +42,7 @@ use std::error::Error;
 use std::cell::RefCell;
 use std::time::SystemTime;
 
+use log::Level;
 use termcolor::{self, ColorSpec, ColorChoice, Buffer, BufferWriter, WriteColor};
 use atty;
 use humantime::{format_rfc3339_seconds, format_rfc3339_nanos};
@@ -447,6 +448,19 @@ impl Formatter {
             buf: self.buf.clone(),
             spec: ColorSpec::new(),
         }
+    }
+
+    /// Get the default [`Style`] for the given level.
+    pub fn default_level_style(&self, level: Level) -> Style {
+        let mut level_style = self.style();
+        match level {
+            Level::Trace => level_style.set_color(Color::White),
+            Level::Debug => level_style.set_color(Color::Blue),
+            Level::Info => level_style.set_color(Color::Green),
+            Level::Warn => level_style.set_color(Color::Yellow),
+            Level::Error => level_style.set_color(Color::Red).set_bold(true),
+        };
+        level_style
     }
 
     /// Get a [`Timestamp`] for the current date and time in UTC.
