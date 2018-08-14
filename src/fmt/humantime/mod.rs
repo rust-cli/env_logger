@@ -1,0 +1,5 @@
+#[cfg_attr(feature = "humantime", path = "extern_impl.rs")]
+#[cfg_attr(not(feature = "humantime"), path = "shim_impl.rs")]
+mod imp;
+
+pub(in ::fmt) use self::imp::*;

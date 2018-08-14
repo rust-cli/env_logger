@@ -212,11 +212,15 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
-#![deny(missing_debug_implementations, missing_docs, warnings)]
+// #![deny(missing_debug_implementations, missing_docs, warnings)]
 
 extern crate log;
+
+#[cfg(feature = "termcolor")]
 extern crate termcolor;
+#[cfg(feature = "humantime")]
 extern crate humantime;
+#[cfg(feature = "atty")]
 extern crate atty;
 
 use std::env;
@@ -231,7 +235,7 @@ use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::{Target, WriteStyle, Color, Formatter};
+pub use self::fmt::pub_use::*;
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
@@ -319,23 +323,42 @@ impl Format {
         else {
             Box::new(move |buf, record| {
                 let write_level = if self.default_format_level {
-                    let level = record.level();
-                    let level_style = buf.default_level_style(level);
-                    write!(buf, "{:>5} ", level_style.value(level))
+                    let level = {
+                        #[cfg(feature = "termcolor")]
+                        {
+                            buf.default_styled_level(record.level())
+                        }
+                        #[cfg(not(feature = "termcolor"))]
+                        {
+                            record.level()
+                        }
+                    };
+
+                    write!(buf, "{:>5} ", level)
                 } else {
                     Ok(())
                 };
 
-                let write_ts = if self.default_format_timestamp {
-                    if self.default_format_timestamp_nanos {
-                      let ts_nanos = buf.precise_timestamp();
-                      write!(buf, "{}: ", ts_nanos) 
-                    } else {
-                      let ts = buf.timestamp();
-                      write!(buf, "{}: ", ts)      
+                let write_ts = {
+                    #[cfg(feature = "humantime")]
+                    {
+                        if self.default_format_timestamp {
+                            if self.default_format_timestamp_nanos {
+                                let ts_nanos = buf.precise_timestamp();
+                                write!(buf, "{}: ", ts_nanos) 
+                            } else {
+                                let ts = buf.timestamp();
+                                write!(buf, "{}: ", ts)      
+                            }
+                        } else {
+                            Ok(())
+                        }
                     }
-                } else {
-                    Ok(())
+
+                    #[cfg(not(feature = "humantime"))]
+                    {
+                        Ok(())
+                    }
                 };
 
                 let default_format_module_path = (self.default_format_module_path, record.module_path());
