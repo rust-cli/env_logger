@@ -46,10 +46,10 @@ mod humantime;
 use self::termcolor::{Buffer, BufferWriter};
 use self::atty::{is_stdout, is_stderr};
 
-pub use self::humantime::pub_use::*;
-pub use self::termcolor::pub_use::*;
+pub use self::humantime::pub_use_in_super::*;
+pub use self::termcolor::pub_use_in_super::*;
 
-pub(super) mod pub_use {
+pub(super) mod pub_use_in_super {
     pub use super::{Target, WriteStyle, Formatter};
 
     #[cfg(feature = "termcolor")]

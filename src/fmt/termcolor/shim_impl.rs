@@ -3,7 +3,7 @@ use std::io;
 
 use ::WriteStyle;
 
-pub(in ::fmt) mod pub_use {
+pub(in ::fmt) mod pub_use_in_super {
     
 }
 

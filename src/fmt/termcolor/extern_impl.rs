@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::borrow::Cow;
 use std::fmt;
 use std::io;
 use std::str::FromStr;
@@ -11,7 +12,7 @@ use termcolor::{self, ColorSpec};
 use ::WriteStyle;
 use ::fmt::Formatter;
 
-pub(in ::fmt) mod pub_use {
+pub(in ::fmt) mod pub_use_in_super {
     pub use super::*;
 }
 
@@ -48,6 +49,8 @@ impl Formatter {
     }
 
     /// Get the default [`Style`] for the given level.
+    /// 
+    /// The style can be used to print other values besides the level.
     pub fn default_level_style(&self, level: Level) -> Style {
         let mut level_style = self.style();
         match level {
@@ -58,6 +61,13 @@ impl Formatter {
             Level::Error => level_style.set_color(Color::Red).set_bold(true),
         };
         level_style
+    }
+
+    /// Get a printable [`Style`] for the given level.
+    /// 
+    /// The style can only be used to print the level.
+    pub fn default_styled_level(&self, level: Level) -> StyledValue<'static, Level> {
+        self.default_level_style(level).into_value(level)
     }
 }
 
@@ -87,19 +97,19 @@ impl Buffer {
         unimplemented!()
     }
 
-    pub(in ::fmt) fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
-        unimplemented!()
-    }
-
-    pub(in ::fmt) fn reset(&mut self) -> io::Result<()> {
-        unimplemented!()
-    }
-
     pub(in ::fmt) fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         unimplemented!()
     }
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
+        unimplemented!()
+    }
+
+    fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
+        unimplemented!()
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
         unimplemented!()
     }
 }
@@ -168,7 +178,7 @@ pub struct Style {
 ///
 /// [`Style::value`]: struct.Style.html#method.value
 pub struct StyledValue<'a, T> {
-    style: &'a Style,
+    style: Cow<'a, Style>,
     value: T,
 }
 
@@ -303,7 +313,14 @@ impl Style {
     /// ```
     pub fn value<T>(&self, value: T) -> StyledValue<T> {
         StyledValue {
-            style: &self,
+            style: Cow::Borrowed(&self),
+            value
+        }
+    }
+
+    fn into_value<T>(self, value: T) -> StyledValue<'static, T> {
+        StyledValue {
+            style: Cow::Owned(self),
             value
         }
     }

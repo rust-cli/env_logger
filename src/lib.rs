@@ -235,7 +235,7 @@ use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::pub_use::*;
+pub use self::fmt::pub_use_in_super::*;
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
