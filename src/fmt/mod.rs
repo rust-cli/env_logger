@@ -14,17 +14,12 @@
 //!
 //! ```
 //! use std::io::Write;
-//! use env_logger::fmt::Color;
 //!
 //! let mut builder = env_logger::Builder::new();
 //!
 //! builder.format(|buf, record| {
-//!     let mut level_style = buf.style();
-//!
-//!     level_style.set_color(Color::Red).set_bold(true);
-//!
 //!     writeln!(buf, "{}: {}",
-//!         level_style.value(record.level()),
+//!         record.level(),
 //!         record.args())
 //! });
 //! ```
