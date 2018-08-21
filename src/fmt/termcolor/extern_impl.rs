@@ -1,13 +1,13 @@
 use std::error::Error;
 use std::borrow::Cow;
 use std::fmt;
-use std::io;
+use std::io::{self, Write};
 use std::str::FromStr;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use log::Level;
-use termcolor::{self, ColorSpec};
+use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 
 use ::WriteStyle;
 use ::fmt::Formatter;
@@ -75,42 +75,52 @@ pub(in ::fmt) struct BufferWriter(termcolor::BufferWriter);
 pub(in ::fmt) struct Buffer(termcolor::Buffer);
 
 impl BufferWriter {
-    pub(in ::fmt) fn stderr(color_choice: WriteStyle) -> Self {
-        unimplemented!()
+    pub(in ::fmt) fn stderr(write_style: WriteStyle) -> Self {
+        BufferWriter(termcolor::BufferWriter::stderr(write_style.into_color_choice()))
     }
 
-    pub(in ::fmt) fn stdout(color_choice: WriteStyle) -> Self {
-        unimplemented!()
+    pub(in ::fmt) fn stdout(write_style: WriteStyle) -> Self {
+        BufferWriter(termcolor::BufferWriter::stdout(write_style.into_color_choice()))
     }
 
     pub(in ::fmt) fn buffer(&self) -> Buffer {
-        unimplemented!()
+        Buffer(self.0.buffer())
     }
 
     pub(in ::fmt) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        unimplemented!()
+        self.0.print(&buf.0)
     }
 }
 
 impl Buffer {
     pub(in ::fmt) fn clear(&mut self) {
-        unimplemented!()
+        self.0.clear()
     }
 
     pub(in ::fmt) fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unimplemented!()
+        self.0.write(buf)
     }
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
-        unimplemented!()
+        self.0.flush()
     }
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
-        unimplemented!()
+        self.0.set_color(spec)
     }
 
     fn reset(&mut self) -> io::Result<()> {
-        unimplemented!()
+        self.0.reset()
+    }
+}
+
+impl WriteStyle {
+    fn into_color_choice(self) -> ColorChoice {
+        match self {
+            WriteStyle::Always => ColorChoice::Always,
+            WriteStyle::Auto => ColorChoice::Auto,
+            WriteStyle::Never => ColorChoice::Never,
+        }
     }
 }
 
