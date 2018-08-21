@@ -212,7 +212,7 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
-// #![deny(missing_debug_implementations, missing_docs, warnings)]
+#![deny(missing_debug_implementations, missing_docs, warnings)]
 
 extern crate log;
 
