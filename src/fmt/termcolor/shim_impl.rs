@@ -31,8 +31,16 @@ impl BufferWriter {
 
     pub(in ::fmt) fn print(&self, buf: &Buffer) -> io::Result<()> {
         match self.target {
-            Target::Stderr => io::stderr().write_all(&buf.0),
-            Target::Stdout => io::stdout().write_all(&buf.0),
+            Target::Stderr => {
+                let stderr = io::stderr();
+                let mut stderr = stderr.lock();
+                stderr.write_all(&buf.0)
+            },
+            Target::Stdout => {
+                let stdout = io::stdout();
+                let mut stdout = stdout.lock();
+                stdout.write_all(&buf.0)
+            },
         }
     }
 }
