@@ -16,6 +16,11 @@ keywords = ["logging", "log", "logger"]
 [maintenance]
 status = "actively-developed"
 
+[workspace]
+members = [
+    "ci"
+]
+
 [dependencies]
 log = { version = "0.4", features = ["std"] }
 regex = { version = "1", optional = true }
