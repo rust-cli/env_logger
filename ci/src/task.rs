@@ -28,11 +28,20 @@ impl TestArgs {
             return None;
         }
 
-        Some(self.features.iter().map(|f| *f).collect::<Vec<_>>().join(" "))
+        let s = self.features.iter().fold(String::new(), |mut s, f| {
+            if s.len() > 0 {
+                s.push_str(" ");
+            }
+            s.push_str(f);
+
+            s
+        });
+
+        Some(s)
     }
 }
 
-pub fn test(args: TestArgs) {
+pub fn test(args: TestArgs) -> bool {
     let features = args.features_string();
 
     let mut command = Command::new("cargo");
@@ -63,5 +72,8 @@ pub fn test(args: TestArgs) {
 
     if !status.success() {
         eprintln!("test execution failed for features: {}", features.as_ref().map(AsRef::as_ref).unwrap_or(""));
+        false
+    } else {
+        true
     }
 }
