@@ -1,9 +1,6 @@
 mod task;
 mod permute;
 
-use self::task::{test, TestArgs};
-use self::permute::permute;
-
 fn main() {
     let features = [
         "termcolor",
@@ -13,11 +10,11 @@ fn main() {
     ];
 
     // Run a default build
-    test(Default::default());
+    task::test(Default::default());
 
     // Run a set of permutations
-    for features in permute(&features) {
-        test(TestArgs {
+    for features in permute::all(&features) {
+        task::test(task::TestArgs {
             features,
             default_features: false,
             lib_only: true,

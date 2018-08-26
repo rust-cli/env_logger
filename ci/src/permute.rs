@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-pub fn permute<T>(input: &[T]) -> BTreeSet<BTreeSet<T>> where T: Ord + Eq + Clone {
+pub fn all<T>(input: &[T]) -> BTreeSet<BTreeSet<T>> where T: Ord + Eq + Clone {
     let mut permutations = BTreeSet::new();
 
     if input.len() == 0 {
@@ -17,7 +17,7 @@ pub fn permute<T>(input: &[T]) -> BTreeSet<BTreeSet<T>> where T: Ord + Eq + Clon
                 .cloned()
                 .collect::<Vec<_>>();
 
-            for pt in permute(&p) {
+            for pt in all(&p) {
                 permutations.insert(pt);
             }
         }
