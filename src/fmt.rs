@@ -150,6 +150,8 @@ pub struct StyledValue<'a, T> {
 pub struct Timestamp(SystemTime);
 
 /// An [RFC3339] formatted timestamp with nanos
+///
+/// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
 #[derive(Debug)]
 pub struct PreciseTimestamp(SystemTime);
 
