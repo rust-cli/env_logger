@@ -37,37 +37,37 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=error ./main
-//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
+//! [2017-11-09T02:12:24Z ERROR main] this is printed by default
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
-//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
-//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
+//! [2017-11-09T02:12:24Z ERROR main] this is printed by default
+//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
-//! [DEBUG 2017-11-09T02:12:24Z main] this is a debug message
-//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
-//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
+//! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
+//! [2017-11-09T02:12:24Z ERROR main] this is printed by default
+//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
-//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
-//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
+//! [2017-11-09T02:12:24Z ERROR main] this is printed by default
+//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
 //! ```
 //!
 //! And enable all logging:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main ./main
-//! [DEBUG 2017-11-09T02:12:24Z main] this is a debug message
-//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
-//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
+//! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
+//! [2017-11-09T02:12:24Z ERROR main] this is printed by default
+//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
 //! ```
 //!
 //! If the binary name contains hyphens, you will need to replace
@@ -75,9 +75,9 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=my_app ./my-app
-//! [DEBUG 2017-11-09T02:12:24Z my_app] this is a debug message
-//! [ERROR 2017-11-09T02:12:24Z my_app] this is printed by default
-//! [INFO 2017-11-09T02:12:24Z my_app] the answer was: 12
+//! [2017-11-09T02:12:24Z DEBUG my_app] this is a debug message
+//! [2017-11-09T02:12:24Z ERROR my_app] this is printed by default
+//! [2017-11-09T02:12:24Z INFO  my_app] the answer was: 12
 //! ```
 //!
 //! This is because Rust modules and crates cannot contain hyphens
@@ -176,6 +176,15 @@
 //!     }
 //! }
 //! ```
+//! 
+//! ### Stability of the default format
+//! 
+//! The default format won't optimise for long-term stability, and explicitly makes no 
+//! guarantees about the stability of its output across major, minor or patch version 
+//! bumps during `0.x`.
+//! 
+//! If you want to capture or innterpret the output of `env_logger` programmatically 
+//! then you should use a custom format.
 //! 
 //! ## Specifying defaults for environment variables
 //! 
