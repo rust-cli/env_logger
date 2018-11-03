@@ -37,37 +37,37 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=error ./main
-//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
+//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
-//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
-//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
+//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
+//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
-//! DEBUG: 2017-11-09T02:12:24Z: main: this is a debug message
-//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
-//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
+//! [DEBUG 2017-11-09T02:12:24Z main] this is a debug message
+//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
+//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
-//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
-//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
+//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
+//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
 //! ```
 //!
 //! And enable all logging:
 //!
 //! ```{.bash}
 //! $ RUST_LOG=main ./main
-//! DEBUG: 2017-11-09T02:12:24Z: main: this is a debug message
-//! ERROR: 2017-11-09T02:12:24Z: main: this is printed by default
-//! INFO: 2017-11-09T02:12:24Z: main: the answer was: 12
+//! [DEBUG 2017-11-09T02:12:24Z main] this is a debug message
+//! [ERROR 2017-11-09T02:12:24Z main] this is printed by default
+//! [INFO 2017-11-09T02:12:24Z main] the answer was: 12
 //! ```
 //!
 //! If the binary name contains hyphens, you will need to replace
@@ -75,9 +75,9 @@
 //!
 //! ```{.bash}
 //! $ RUST_LOG=my_app ./my-app
-//! DEBUG: 2017-11-09T02:12:24Z: my_app: this is a debug message
-//! ERROR: 2017-11-09T02:12:24Z: my_app: this is printed by default
-//! INFO: 2017-11-09T02:12:24Z: my_app: the answer was: 12
+//! [DEBUG 2017-11-09T02:12:24Z my_app] this is a debug message
+//! [ERROR 2017-11-09T02:12:24Z my_app] this is printed by default
+//! [INFO 2017-11-09T02:12:24Z my_app] the answer was: 12
 //! ```
 //!
 //! This is because Rust modules and crates cannot contain hyphens
@@ -154,7 +154,7 @@
 //! ## Tweaking the default format
 //! 
 //! Parts of the default format can be excluded from the log output using the [`Builder`].
-//! The following example excluding the timestamp from the log output:
+//! The following example excludes the timestamp from the log output:
 //! 
 //! ```
 //! #[macro_use] extern crate log;
@@ -177,12 +177,34 @@
 //! }
 //! ```
 //! 
+//! ## Specifying defaults for environment variables
+//! 
+//! `env_logger` can read configuration from environment variables.
+//! If these variables aren't present, the default value to use can be tweaked with the [`Env`] type.
+//! The following example defaults to log `warn` and above if the `RUST_LOG` environment variable
+//! isn't set:
+//! 
+//! ```
+//! #[macro_use] extern crate log;
+//! extern crate env_logger;
+//!
+//! use log::Level;
+//!
+//! fn main() {
+//!     let env = env_logger::Env::default()
+//!         .filter_or(env_logger::DEFAULT_FILTER_ENV, "warn");
+//! 
+//!     env_logger::Builder::from_env(env).init();
+//! }
+//! ```
+//! 
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
+//! [`Env`]: struct.Env.html
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.5.7")]
+       html_root_url = "https://docs.rs/env_logger/0.5.13")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -193,8 +215,12 @@
 #![deny(missing_debug_implementations, missing_docs, warnings)]
 
 extern crate log;
+
+#[cfg(feature = "termcolor")]
 extern crate termcolor;
+#[cfg(feature = "humantime")]
 extern crate humantime;
+#[cfg(feature = "atty")]
 extern crate atty;
 
 use std::env;
@@ -208,10 +234,13 @@ use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::{Target, WriteStyle, Color, Formatter};
+pub use self::fmt::pub_use_in_super::*;
 
-const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
-const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+/// The default name for the environment variable to read filters from.
+pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
+
+/// The default name for the environment variable to read style preferences from.
+pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
 ///
@@ -225,8 +254,14 @@ const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 /// These sources can be configured using the builder methods on `Env`.
 #[derive(Debug)]
 pub struct Env<'a> {
-    filter: Cow<'a, str>,
-    write_style: Cow<'a, str>,
+    filter: Var<'a>,
+    write_style: Var<'a>,
+}
+
+#[derive(Debug)]
+struct Var<'a> {
+    name: Cow<'a, str>,
+    default: Option<Cow<'a, str>>,
 }
 
 /// The env logger.
@@ -450,6 +485,58 @@ impl Builder {
         self
     }
 
+    /// Whether or not to write the timestamp with nanos.
+    pub fn default_format_timestamp_nanos(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_timestamp_nanos = write;
+        self
+    }
+
+    /// Adds a directive to the filter for a specific module.
+    ///
+    /// # Examples
+    ///
+    /// Only include messages for warning and above for logs in `path::to::module`:
+    ///
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.filter_module("path::to::module", LevelFilter::Info);
+    /// # }
+    /// ```
+    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+        self.filter.filter_module(module, level);
+        self
+    }
+
+    /// Adds a directive to the filter for all modules.
+    ///
+    /// # Examples
+    ///
+    /// Only include messages for warning and above for logs in `path::to::module`:
+    ///
+    /// ```
+    /// # extern crate log;
+    /// # extern crate env_logger;
+    /// # fn main() {
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.filter_level(LevelFilter::Info);
+    /// # }
+    /// ```
+    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+        self.filter.filter_level(level);
+        self
+    }
+
     /// Adds filters to the logger.
     ///
     /// The given module (if any) will log at most the specified level provided.
@@ -602,7 +689,7 @@ impl Logger {
     /// ```
     /// use env_logger::{Logger, Env};
     ///
-    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    /// let env = Env::new().filter_or("MY_LOG", "info").write_style_or("MY_LOG_STYLE", "always");
     ///
     /// let logger = Logger::from_env(env);
     /// ```
@@ -717,12 +804,26 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.filter = filter_env.into();
+        self.filter = Var::new(filter_env);
+
+        self
+    }
+
+    /// Specify an environment variable to read the filter from.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn filter_or<E, V>(mut self, filter_env: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        self.filter = Var::new_with_default(filter_env, default);
+
         self
     }
 
     fn get_filter(&self) -> Option<String> {
-        env::var(&*self.filter).ok()
+        self.filter.get()
     }
 
     /// Specify an environment variable to read the style from.
@@ -730,12 +831,57 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.write_style = write_style_env.into();
+        self.write_style = Var::new(write_style_env);
+
+        self
+    }
+
+    /// Specify an environment variable to read the style from.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn write_style_or<E, V>(mut self, write_style_env: E, default: V) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+            V: Into<Cow<'a, str>>,
+    {
+        self.write_style = Var::new_with_default(write_style_env, default);
+
         self
     }
 
     fn get_write_style(&self) -> Option<String> {
-        env::var(&*self.write_style).ok()
+        self.write_style.get()
+    }
+}
+
+impl<'a> Var<'a> {
+    fn new<E>(name: E) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: None,
+        }
+    }
+
+    fn new_with_default<E, V>(name: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: Some(default.into()),
+        }
+    }
+
+    fn get(&self) -> Option<String> {
+        env::var(&*self.name)
+            .ok()
+            .or_else(|| self.default
+                .to_owned()
+                .map(|v| v.into_owned()))
     }
 }
 
@@ -751,8 +897,8 @@ where
 impl<'a> Default for Env<'a> {
     fn default() -> Self {
         Env {
-            filter: DEFAULT_FILTER_ENV.into(),
-            write_style: DEFAULT_WRITE_STYLE_ENV.into()
+            filter: Var::new(DEFAULT_FILTER_ENV),
+            write_style: Var::new(DEFAULT_WRITE_STYLE_ENV),
         }
     }
 }
@@ -871,4 +1017,45 @@ where
     E: Into<Env<'a>>
 {
     try_init_from_env(env).expect("env_logger::init_from_env should not be called after logger initialized");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn env_get_filter_reads_from_var_if_set() {
+        env::set_var("env_get_filter_reads_from_var_if_set", "from var");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_filter_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_filter_reads_from_default_if_var_not_set");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_var_if_set() {
+        env::set_var("env_get_write_style_reads_from_var_if_set", "from var");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_write_style());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_write_style_reads_from_default_if_var_not_set");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_write_style());
+    }
 }

@@ -1,17 +1,14 @@
 language: rust
 sudo: false
 rust:
-  - 1.18.0
+  - 1.20.0
   - stable
   - beta
   - nightly
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
-  - cargo build --verbose
-  - cargo build --verbose --no-default-features
-  - cargo test --verbose
-  - cargo test --verbose --no-default-features
+  - cargo run -p ci
 after_success:
   - travis-cargo --only nightly doc-upload
 

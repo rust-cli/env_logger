@@ -1,6 +1,6 @@
 [package]
 name = "env_logger"
-version = "0.5.7" # remember to update html_root_url
+version = "0.5.13" # remember to update html_root_url
 authors = ["The Rust Project Developers"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -13,12 +13,17 @@ variable.
 categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
 
+[workspace]
+members = [
+    "ci"
+]
+
 [dependencies]
-log = { version = "0.4.0", features = ["std"] }
-regex = { version = "0.2", optional = true }
-termcolor = "0.3"
-humantime = "1.1.0"
-atty = "0.2"
+log = { version = "0.4", features = ["std"] }
+regex = { version = "1.0.3", optional = true }
+termcolor = { version = "1.0.2", optional = true }
+humantime = { version = "1.1", optional = true }
+atty = { version = "0.2.5", optional = true }
 
 [[test]]
 name = "regexp_filter"
@@ -29,4 +34,4 @@ name = "log-in-log"
 harness = false
 
 [features]
-default = ["regex"]
+default = ["termcolor", "atty", "humantime", "regex"]
