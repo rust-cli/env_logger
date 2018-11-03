@@ -117,8 +117,8 @@ struct DefaultFormat<'a> {
 
 impl<'a> DefaultFormat<'a> {
     fn write(mut self, record: &Record) -> io::Result<()> {
-        self.write_level(record)?;
         self.write_timestamp()?;
+        self.write_level(record)?;
         self.write_module_path(record)?;
         self.finish_header()?;
 
