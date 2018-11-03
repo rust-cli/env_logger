@@ -33,6 +33,7 @@ use std::io::prelude::*;
 use std::{io, fmt};
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt::Display;
 
 use log::Record;
 
@@ -85,73 +86,138 @@ impl Format {
         }
         else {
             Box::new(move |buf, record| {
-                let mut brace_style = buf.style();
-                brace_style.set_color(Color::Black).set_intense(true);
-
-                // Write the start of a header value
-                let mut written_header_value = false;
-                let write_header_pre = |buf: &mut Formatter, sentinal: &mut bool| {
-                    if !*sentinal {
-                        *sentinal = true;
-                        write!(buf, "{}", brace_style.value("["))
-                    } else {
-                        write!(buf, " ")
-                    }
+                let fmt = DefaultFormat {
+                    timestamp: self.default_format_level,
+                    module_path: self.default_format_module_path,
+                    level: self.default_format_level,
+                    timestamp_nanos: self.default_format_timestamp_nanos,
+                    written_header_value: false,
+                    buf,
                 };
 
-                let mut write = Ok(());
-
-                // Write the record level
-                if self.default_format_level {
-                    let level = {
-                        #[cfg(feature = "termcolor")]
-                        {
-                            buf.default_styled_level(record.level())
-                        }
-                        #[cfg(not(feature = "termcolor"))]
-                        {
-                            record.level()
-                        }
-                    };
-
-                    write = write.and(write_header_pre(buf, &mut written_header_value));
-                    write = write.and(write!(buf, "{:<5}", level));
-                }
-
-                // Write the timestamp
-                #[cfg(feature = "humantime")]
-                {
-                    if self.default_format_timestamp {
-                        write = write.and(write_header_pre(buf, &mut written_header_value));
-
-                        if self.default_format_timestamp_nanos {
-                            let ts_nanos = buf.precise_timestamp();
-                            write = write.and(write!(buf, "{}", ts_nanos));
-                        } else {
-                            let ts = buf.timestamp();
-                            write = write.and(write!(buf, "{}", ts));
-                        }
-                    }
-                }
-
-                // Write the module path
-                let default_format_module_path = (self.default_format_module_path, record.module_path());
-                if let (true, Some(module_path)) = default_format_module_path {
-                    write = write.and(write_header_pre(buf, &mut written_header_value));
-                    write = write.and(write!(buf, "{}", module_path));
-                }
-
-                // Write the end of the header
-                if written_header_value {
-                    write = write.and(write!(buf, "{} ", brace_style.value("]")));
-                }
-
-                // Write the record args
-                write = write.and(writeln!(buf, "{}", record.args()));
-
-                write
+                fmt.write(record)
             })
         }
+    }
+}
+
+#[cfg(feature = "termcolor")]
+type SubtleStyle = StyledValue<'static, &'static str>;
+#[cfg(not(feature = "termcolor"))]
+type SubtleStyle = &'static str;
+
+struct DefaultFormat<'a> {
+    timestamp: bool,
+    module_path: bool,
+    level: bool,
+    timestamp_nanos: bool,
+    written_header_value: bool,
+    buf: &'a mut Formatter,
+}
+
+impl<'a> DefaultFormat<'a> {
+    fn write(mut self, record: &Record) -> io::Result<()> {
+        self.write_level(record)?;
+        self.write_timestamp()?;
+        self.write_module_path(record)?;
+        self.finish_header()?;
+
+        self.write_args(record)
+    }
+
+    fn subtle_style(&self, text: &'static str) -> SubtleStyle {
+        #[cfg(feature = "termcolor")]
+        {
+            self.buf.style()
+                .set_color(Color::Black)
+                .set_intense(true)
+                .into_value(text)
+        }
+        #[cfg(not(feature = "termcolor"))]
+        {
+            text
+        }
+    }
+
+    fn write_header_value<T>(&mut self, value: T) -> io::Result<()>
+    where
+        T: Display,
+    {
+        if !self.written_header_value {
+            self.written_header_value = true;
+
+            let open_brace = self.subtle_style("[");
+            write!(self.buf, "{}{}", open_brace, value)
+        } else {
+            write!(self.buf, " {}", value)
+        }
+    }
+
+    fn write_level(&mut self, record: &Record) -> io::Result<()> {
+        if !self.level {
+            return Ok(())
+        }
+
+        let level = {
+            #[cfg(feature = "termcolor")]
+            {
+                self.buf.default_styled_level(record.level())
+            }
+            #[cfg(not(feature = "termcolor"))]
+            {
+                record.level()
+            }
+        };
+
+        self.write_header_value(format_args!("{:<5}", level))
+    }
+
+    fn write_timestamp(&mut self) -> io::Result<()> {
+        #[cfg(feature = "humantime")]
+        {
+            if !self.timestamp {
+                return Ok(())
+            }
+
+            if self.timestamp_nanos {
+                let ts_nanos = self.buf.precise_timestamp();
+                self.write_header_value(ts_nanos)
+            } else {
+                let ts = self.buf.timestamp();
+                self.write_header_value(ts)
+            }
+        }
+        #[cfg(not(feature = "humantime"))]
+        {
+            let _ = self.timestamp;
+            let _ = self.timestamp_nanos;
+            Ok(())
+        }
+    }
+
+    fn write_module_path(&mut self, record: &Record) -> io::Result<()> {
+        if !self.module_path {
+            return Ok(())
+        }
+
+        if let Some(module_path) = record.module_path() {
+            self.write_header_value(module_path)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn finish_header(&mut self) -> io::Result<()> {
+        if self.written_header_value {
+            let close_brace = self.subtle_style("]");
+            write!(self.buf, "{}", close_brace)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn write_args(&mut self, record: &Record) -> io::Result<()> {
+        writeln!(self.buf, "{}", record.args())
     }
 }
 
