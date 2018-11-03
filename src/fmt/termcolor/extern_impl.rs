@@ -1,8 +1,6 @@
-use std::error::Error;
 use std::borrow::Cow;
 use std::fmt;
 use std::io::{self, Write};
-use std::str::FromStr;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -421,61 +419,6 @@ pub enum Color {
     __Nonexhaustive,
 }
 
-/// An error from parsing an invalid color specification.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ParseColorError(ParseColorErrorKind);
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-enum ParseColorErrorKind {
-    /// An error originating from `termcolor`.
-    TermColor(termcolor::ParseColorError),
-    /// An error converting the `termcolor` color to a `env_logger::Color`.
-    /// 
-    /// This variant should only get reached if a user uses a new spec that's
-    /// valid for `termcolor`, but not recognised in `env_logger` yet.
-    Unrecognized {
-        given: String,
-    }
-}
-
-impl ParseColorError {
-    fn termcolor(err: termcolor::ParseColorError) -> Self {
-        ParseColorError(ParseColorErrorKind::TermColor(err))
-    }
-
-    fn unrecognized(given: String) -> Self {
-        ParseColorError(ParseColorErrorKind::Unrecognized { given })
-    }
-
-    /// Return the string that couldn't be parsed as a valid color.
-    pub fn invalid(&self) -> &str {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => err.invalid(),
-            ParseColorErrorKind::Unrecognized { ref given, .. } => given,
-        }
-    }
-}
-
-impl Error for ParseColorError {
-    fn description(&self) -> &str {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => err.description(),
-            ParseColorErrorKind::Unrecognized { .. } => "unrecognized color value",
-        }
-    }
-}
-
-impl fmt::Display for ParseColorError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => fmt::Display::fmt(err, f),
-            ParseColorErrorKind::Unrecognized { ref given, .. } => {
-                write!(f, "unrecognized color value '{}'", given)
-            } 
-        }
-    }
-}
-
 impl Color {
     fn into_termcolor(self) -> Option<termcolor::Color> {
         match self {
@@ -490,96 +433,6 @@ impl Color {
             Color::Ansi256(value) => Some(termcolor::Color::Ansi256(value)),
             Color::Rgb(r, g, b) => Some(termcolor::Color::Rgb(r, g, b)),
             _ => None,
-        }
-    }
-
-    fn from_termcolor(color: termcolor::Color) -> Option<Color> {
-        match color {
-            termcolor::Color::Black => Some(Color::Black),
-            termcolor::Color::Blue => Some(Color::Blue),
-            termcolor::Color::Green => Some(Color::Green),
-            termcolor::Color::Red => Some(Color::Red),
-            termcolor::Color::Cyan => Some(Color::Cyan),
-            termcolor::Color::Magenta => Some(Color::Magenta),
-            termcolor::Color::Yellow => Some(Color::Yellow),
-            termcolor::Color::White => Some(Color::White),
-            termcolor::Color::Ansi256(value) => Some(Color::Ansi256(value)),
-            termcolor::Color::Rgb(r, g, b) => Some(Color::Rgb(r, g, b)),
-            _ => None,
-        }
-    }
-}
-
-impl FromStr for Color {
-    type Err = ParseColorError;
-
-    fn from_str(s: &str) -> Result<Color, ParseColorError> {
-        let tc = termcolor::Color::from_str(s).map_err(ParseColorError::termcolor)?;
-        Color::from_termcolor(tc).ok_or_else(|| ParseColorError::unrecognized(s.into()))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_color_name_valid() {
-        let inputs = vec![
-            "black",
-            "blue",
-            "green",
-            "red",
-            "cyan",
-            "magenta",
-            "yellow",
-            "white",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_ansi_valid() {
-        let inputs = vec![
-            "7",
-            "32",
-            "0xFF",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_rgb_valid() {
-        let inputs = vec![
-            "0,0,0",
-            "0,128,255",
-            "0x0,0x0,0x0",
-            "0x33,0x66,0xFF",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_invalid() {
-        let inputs = vec![
-            "not_a_color",
-            "256",
-            "0,0",
-            "0,0,256",
-        ];
-
-        for input in inputs {
-            let err = Color::from_str(input).unwrap_err();
-            assert_eq!(input, err.invalid());
         }
     }
 }
