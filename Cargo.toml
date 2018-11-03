@@ -16,12 +16,17 @@ keywords = ["logging", "log", "logger"]
 [maintenance]
 status = "actively-developed"
 
+[workspace]
+members = [
+    "ci"
+]
+
 [dependencies]
 log = { version = "0.4", features = ["std"] }
 regex = { version = "1.0.3", optional = true }
-termcolor = "1"
-humantime = "1.1"
-atty = "0.2.5"
+termcolor = { version = "1.0.2", optional = true }
+humantime = { version = "1.1", optional = true }
+atty = { version = "0.2.5", optional = true }
 
 [[test]]
 name = "regexp_filter"
@@ -32,4 +37,4 @@ name = "log-in-log"
 harness = false
 
 [features]
-default = ["regex"]
+default = ["termcolor", "atty", "humantime", "regex"]
