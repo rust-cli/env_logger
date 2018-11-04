@@ -10,7 +10,7 @@ use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 use ::WriteStyle;
 use ::fmt::Formatter;
 
-pub(in ::fmt) mod pub_use_in_super {
+pub(in ::fmt::writer) mod pub_use_in_super {
     pub use super::*;
 }
 
@@ -73,19 +73,19 @@ pub(in ::fmt) struct BufferWriter(termcolor::BufferWriter);
 pub(in ::fmt) struct Buffer(termcolor::Buffer);
 
 impl BufferWriter {
-    pub(in ::fmt) fn stderr(write_style: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stderr(write_style: WriteStyle) -> Self {
         BufferWriter(termcolor::BufferWriter::stderr(write_style.into_color_choice()))
     }
 
-    pub(in ::fmt) fn stdout(write_style: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stdout(write_style: WriteStyle) -> Self {
         BufferWriter(termcolor::BufferWriter::stdout(write_style.into_color_choice()))
     }
 
-    pub(in ::fmt) fn buffer(&self) -> Buffer {
+    pub(in ::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer(self.0.buffer())
     }
 
-    pub(in ::fmt) fn print(&self, buf: &Buffer) -> io::Result<()> {
+    pub(in ::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.0.print(&buf.0)
     }
 }
