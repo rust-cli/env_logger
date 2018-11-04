@@ -33,20 +33,14 @@ impl BufferWriter {
         // This impl uses the `eprint` and `print` macros
         // instead of using the streams directly.
         // This is so their output can be captured by `cargo test`
+        let log = String::from_utf8_lossy(&buf.0);
+
         match self.target {
-            Target::Stderr => {
-                let log = String::from_utf8_lossy(&buf.0);
-                eprint!("{}", log);
-
-                Ok(())
-            },
-            Target::Stdout => {
-                let log = String::from_utf8_lossy(&buf.0);
-                print!("{}", log);
-
-                Ok(())
-            },
+            Target::Stderr => eprint!("{}", log),
+            Target::Stdout => print!("{}", log),
         }
+
+        Ok(())
     }
 }
 
