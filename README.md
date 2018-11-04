@@ -40,7 +40,7 @@ environment variable that corresponds with the log messages you want to show.
 
 ```bash
 $ RUST_LOG=info ./main
-INFO: 2017-11-09T02:12:24Z: main: starting up
+[2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
 ### In tests
@@ -52,7 +52,7 @@ Tests can use the `env_logger` crate to see log messages generated during that t
 log = "0.4.0"
 
 [dev-dependencies]
-env_logger = "0.5.13"
+env_logger = { version = "0.5.13", default-features = false }
 ```
 
 ```rust
@@ -93,11 +93,11 @@ $ RUST_LOG=my_lib=info cargo test
      Running target/debug/my_lib-...
 
 running 2 tests
-INFO: 2017-11-09T02:12:24Z: my_lib::tests: logging from another test
-INFO: 2017-11-09T02:12:24Z: my_lib: add_one called with -8
+[2017-11-09T02:12:24Z INFO my_lib::tests] logging from another test
+[2017-11-09T02:12:24Z INFO my_lib] add_one called with -8
 test tests::it_handles_negative_numbers ... ok
-INFO: 2017-11-09T02:12:24Z: my_lib::tests: can log from the test too
-INFO: 2017-11-09T02:12:24Z: my_lib: add_one called with 2
+[2017-11-09T02:12:24Z INFO my_lib::tests] can log from the test too
+[2017-11-09T02:12:24Z INFO my_lib] add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
@@ -115,8 +115,8 @@ $ RUST_LOG=my_lib=info cargo test it_adds_one
      Running target/debug/my_lib-...
 
 running 1 test
-INFO: 2017-11-09T02:12:24Z: my_lib::tests: can log from the test too
-INFO: 2017-11-09T02:12:24Z: my_lib: add_one called with 2
+[2017-11-09T02:12:24Z INFO my_lib::tests] can log from the test too
+[2017-11-09T02:12:24Z INFO my_lib] add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured
@@ -138,3 +138,9 @@ if env::var("RUST_LOG").is_ok() {
 }
 builder.init();
 ```
+
+## Stability of the default format
+
+The default format won't optimise for long-term stability, and explicitly makes no guarantees about the stability of its output across major, minor or patch version bumps during `0.x`.
+
+If you want to capture or interpret the output of `env_logger` programmatically then you should use a custom format.

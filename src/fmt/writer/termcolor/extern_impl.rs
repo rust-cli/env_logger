@@ -1,8 +1,6 @@
-use std::error::Error;
 use std::borrow::Cow;
 use std::fmt;
 use std::io::{self, Write};
-use std::str::FromStr;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -12,7 +10,7 @@ use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 use ::WriteStyle;
 use ::fmt::Formatter;
 
-pub(in ::fmt) mod pub_use_in_super {
+pub(in ::fmt::writer) mod glob {
     pub use super::*;
 }
 
@@ -55,7 +53,7 @@ impl Formatter {
         let mut level_style = self.style();
         match level {
             Level::Trace => level_style.set_color(Color::White),
-            Level::Debug => level_style.set_color(Color::Blue),
+            Level::Debug => level_style.set_color(Color::Black).set_intense(true),
             Level::Info => level_style.set_color(Color::Green),
             Level::Warn => level_style.set_color(Color::Yellow),
             Level::Error => level_style.set_color(Color::Red).set_bold(true),
@@ -71,23 +69,23 @@ impl Formatter {
     }
 }
 
-pub(in ::fmt) struct BufferWriter(termcolor::BufferWriter);
+pub(in ::fmt::writer) struct BufferWriter(termcolor::BufferWriter);
 pub(in ::fmt) struct Buffer(termcolor::Buffer);
 
 impl BufferWriter {
-    pub(in ::fmt) fn stderr(write_style: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stderr(write_style: WriteStyle) -> Self {
         BufferWriter(termcolor::BufferWriter::stderr(write_style.into_color_choice()))
     }
 
-    pub(in ::fmt) fn stdout(write_style: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stdout(write_style: WriteStyle) -> Self {
         BufferWriter(termcolor::BufferWriter::stdout(write_style.into_color_choice()))
     }
 
-    pub(in ::fmt) fn buffer(&self) -> Buffer {
+    pub(in ::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer(self.0.buffer())
     }
 
-    pub(in ::fmt) fn print(&self, buf: &Buffer) -> io::Result<()> {
+    pub(in ::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.0.print(&buf.0)
     }
 }
@@ -103,6 +101,11 @@ impl Buffer {
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
         self.0.flush()
+    }
+
+    #[cfg(test)]
+    pub(in ::fmt) fn bytes(&self) -> &[u8] {
+        self.0.as_slice()
     }
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
@@ -323,14 +326,15 @@ impl Style {
     /// ```
     pub fn value<T>(&self, value: T) -> StyledValue<T> {
         StyledValue {
-            style: Cow::Borrowed(&self),
+            style: Cow::Borrowed(self),
             value
         }
     }
 
-    fn into_value<T>(self, value: T) -> StyledValue<'static, T> {
+    /// Wrap a value in the style by taking ownership of it.
+    pub fn into_value<T>(&mut self, value: T) -> StyledValue<'static, T> {
         StyledValue {
-            style: Cow::Owned(self),
+            style: Cow::Owned(self.clone()),
             value
         }
     }
@@ -420,61 +424,6 @@ pub enum Color {
     __Nonexhaustive,
 }
 
-/// An error from parsing an invalid color specification.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ParseColorError(ParseColorErrorKind);
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-enum ParseColorErrorKind {
-    /// An error originating from `termcolor`.
-    TermColor(termcolor::ParseColorError),
-    /// An error converting the `termcolor` color to a `env_logger::Color`.
-    /// 
-    /// This variant should only get reached if a user uses a new spec that's
-    /// valid for `termcolor`, but not recognised in `env_logger` yet.
-    Unrecognized {
-        given: String,
-    }
-}
-
-impl ParseColorError {
-    fn termcolor(err: termcolor::ParseColorError) -> Self {
-        ParseColorError(ParseColorErrorKind::TermColor(err))
-    }
-
-    fn unrecognized(given: String) -> Self {
-        ParseColorError(ParseColorErrorKind::Unrecognized { given })
-    }
-
-    /// Return the string that couldn't be parsed as a valid color.
-    pub fn invalid(&self) -> &str {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => err.invalid(),
-            ParseColorErrorKind::Unrecognized { ref given, .. } => given,
-        }
-    }
-}
-
-impl Error for ParseColorError {
-    fn description(&self) -> &str {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => err.description(),
-            ParseColorErrorKind::Unrecognized { .. } => "unrecognized color value",
-        }
-    }
-}
-
-impl fmt::Display for ParseColorError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            ParseColorErrorKind::TermColor(ref err) => fmt::Display::fmt(err, f),
-            ParseColorErrorKind::Unrecognized { ref given, .. } => {
-                write!(f, "unrecognized color value '{}'", given)
-            } 
-        }
-    }
-}
-
 impl Color {
     fn into_termcolor(self) -> Option<termcolor::Color> {
         match self {
@@ -489,96 +438,6 @@ impl Color {
             Color::Ansi256(value) => Some(termcolor::Color::Ansi256(value)),
             Color::Rgb(r, g, b) => Some(termcolor::Color::Rgb(r, g, b)),
             _ => None,
-        }
-    }
-
-    fn from_termcolor(color: termcolor::Color) -> Option<Color> {
-        match color {
-            termcolor::Color::Black => Some(Color::Black),
-            termcolor::Color::Blue => Some(Color::Blue),
-            termcolor::Color::Green => Some(Color::Green),
-            termcolor::Color::Red => Some(Color::Red),
-            termcolor::Color::Cyan => Some(Color::Cyan),
-            termcolor::Color::Magenta => Some(Color::Magenta),
-            termcolor::Color::Yellow => Some(Color::Yellow),
-            termcolor::Color::White => Some(Color::White),
-            termcolor::Color::Ansi256(value) => Some(Color::Ansi256(value)),
-            termcolor::Color::Rgb(r, g, b) => Some(Color::Rgb(r, g, b)),
-            _ => None,
-        }
-    }
-}
-
-impl FromStr for Color {
-    type Err = ParseColorError;
-
-    fn from_str(s: &str) -> Result<Color, ParseColorError> {
-        let tc = termcolor::Color::from_str(s).map_err(ParseColorError::termcolor)?;
-        Color::from_termcolor(tc).ok_or_else(|| ParseColorError::unrecognized(s.into()))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_color_name_valid() {
-        let inputs = vec![
-            "black",
-            "blue",
-            "green",
-            "red",
-            "cyan",
-            "magenta",
-            "yellow",
-            "white",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_ansi_valid() {
-        let inputs = vec![
-            "7",
-            "32",
-            "0xFF",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_rgb_valid() {
-        let inputs = vec![
-            "0,0,0",
-            "0,128,255",
-            "0x0,0x0,0x0",
-            "0x33,0x66,0xFF",
-        ];
-
-        for input in inputs {
-            assert!(Color::from_str(input).is_ok());
-        }
-    }
-
-    #[test]
-    fn parse_color_invalid() {
-        let inputs = vec![
-            "not_a_color",
-            "256",
-            "0,0",
-            "0,0,256",
-        ];
-
-        for input in inputs {
-            let err = Color::from_str(input).unwrap_err();
-            assert_eq!(input, err.invalid());
         }
     }
 }

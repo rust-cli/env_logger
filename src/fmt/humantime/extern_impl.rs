@@ -5,7 +5,7 @@ use humantime::{format_rfc3339_nanos, format_rfc3339_seconds};
 
 use ::fmt::Formatter;
 
-pub(in ::fmt) mod pub_use_in_super {
+pub(in ::fmt) mod glob {
     pub use super::*;
 }
 

@@ -13,9 +13,6 @@ variable.
 categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
 
-[maintenance]
-status = "actively-developed"
-
 [workspace]
 members = [
     "ci"
