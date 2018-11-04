@@ -11,7 +11,7 @@ pub fn all<T>(input: &[T]) -> BTreeSet<BTreeSet<T>> where T: Ord + Eq + Clone {
 
     if input.len() > 1 {
         for t in input {
-            let mut p = input
+            let p = input
                 .iter()
                 .filter(|pt| *pt != t)
                 .cloned()

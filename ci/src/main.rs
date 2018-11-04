@@ -14,6 +14,14 @@ fn main() {
         panic!("default test execution failed");
     }
 
+    // Run a build with no features
+    if !task::test(task::TestArgs {
+        default_features: false,
+        ..Default::default()
+    }) {
+        panic!("default test execution failed");
+    }
+
     // Run a set of permutations
     let failed = permute::all(&features)
         .into_iter()
