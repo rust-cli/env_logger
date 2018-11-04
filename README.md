@@ -143,4 +143,4 @@ builder.init();
 
 The default format won't optimise for long-term stability, and explicitly makes no guarantees about the stability of its output across major, minor or patch version bumps during `0.x`.
 
-If you want to capture or innterpret the output of `env_logger` programmatically then you should use a custom format.
+If you want to capture or interpret the output of `env_logger` programmatically then you should use a custom format.
