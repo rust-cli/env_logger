@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io;
 
 use fmt::{WriteStyle, Target};
 
@@ -6,7 +6,7 @@ pub(in ::fmt::writer) mod pub_use_in_super {
     
 }
 
-pub(in ::fmt) struct BufferWriter {
+pub(in ::fmt::writer) struct BufferWriter {
     target: Target,
 }
 
@@ -30,16 +30,21 @@ impl BufferWriter {
     }
 
     pub(in ::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
+        // This impl uses the `eprint` and `print` macros
+        // instead of using the streams directly.
+        // This is so their output can be captured by `cargo test`
         match self.target {
             Target::Stderr => {
-                let stderr = io::stderr();
-                let mut stderr = stderr.lock();
-                stderr.write_all(&buf.0)
+                let log = String::from_utf8_lossy(&buf.0);
+                eprint!("{}", log);
+
+                Ok(())
             },
             Target::Stdout => {
-                let stdout = io::stdout();
-                let mut stdout = stdout.lock();
-                stdout.write_all(&buf.0)
+                let log = String::from_utf8_lossy(&buf.0);
+                print!("{}", log);
+
+                Ok(())
             },
         }
     }

@@ -2,13 +2,15 @@ mod termcolor;
 mod atty;
 
 use std::{fmt, io};
-use self::termcolor::{Buffer, BufferWriter};
+use self::termcolor::BufferWriter;
 use self::atty::{is_stdout, is_stderr};
 
 pub(in ::fmt) mod pub_use_in_super {
     pub use super::termcolor::pub_use_in_super::*;
     pub use super::*;
 }
+
+pub(in ::fmt) use self::termcolor::Buffer;
 
 /// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

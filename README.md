@@ -52,7 +52,7 @@ Tests can use the `env_logger` crate to see log messages generated during that t
 log = "0.4.0"
 
 [dev-dependencies]
-env_logger = "0.5.13"
+env_logger = { version = "0.5.13", default-features = false }
 ```
 
 ```rust

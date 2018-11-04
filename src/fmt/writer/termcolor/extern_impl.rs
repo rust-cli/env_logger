@@ -69,7 +69,7 @@ impl Formatter {
     }
 }
 
-pub(in ::fmt) struct BufferWriter(termcolor::BufferWriter);
+pub(in ::fmt::writer) struct BufferWriter(termcolor::BufferWriter);
 pub(in ::fmt) struct Buffer(termcolor::Buffer);
 
 impl BufferWriter {
