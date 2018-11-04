@@ -30,63 +30,133 @@
 //! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
 
 use std::io::prelude::*;
-use std::{io, fmt};
+use std::{io, fmt, mem};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::Display;
 
 use log::Record;
 
-mod writer;
+pub(crate) mod writer;
 mod humantime;
 
-pub use self::humantime::pub_use_in_super::*;
-pub use self::writer::pub_use_in_super::*;
+pub use self::humantime::glob::*;
+pub use self::writer::glob::*;
 
-pub(super) mod pub_use_in_super {
+use self::writer::{Writer, Buffer};
+
+pub(crate) mod glob {
     pub use super::{Target, WriteStyle, Formatter};
-
-    #[cfg(feature = "termcolor")]
-    pub use super::Color;
 }
 
-pub(super) struct Format {
+/// A formatter to write logs into.
+///
+/// `Formatter` implements the standard [`Write`] trait for writing log records.
+/// It also supports terminal colors, through the [`style`] method.
+///
+/// # Examples
+///
+/// Use the [`writeln`] macro to easily format a log record:
+///
+/// ```
+/// use std::io::Write;
+///
+/// let mut builder = env_logger::Builder::new();
+///
+/// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
+/// ```
+///
+/// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
+/// [`writeln`]: https://doc.rust-lang.org/stable/std/macro.writeln.html
+/// [`style`]: #method.style
+pub struct Formatter {
+    buf: Rc<RefCell<Buffer>>,
+    write_style: WriteStyle,
+}
+
+impl Formatter {
+    pub(crate) fn new(writer: &Writer) -> Self {
+        Formatter {
+            buf: Rc::new(RefCell::new(writer.buffer())),
+            write_style: writer.write_style(),
+        }
+    }
+
+    pub(crate) fn write_style(&self) -> WriteStyle {
+        self.write_style
+    }
+
+    pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
+        writer.print(&self.buf.borrow())
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.buf.borrow_mut().clear()
+    }
+}
+
+impl Write for Formatter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.buf.borrow_mut().write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.buf.borrow_mut().flush()
+    }
+}
+
+impl fmt::Debug for Formatter {
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        f.debug_struct("Formatter").finish()
+    }
+}
+
+pub(crate) struct Builder {
     pub default_format_timestamp: bool,
+    pub default_format_timestamp_nanos: bool,
     pub default_format_module_path: bool,
     pub default_format_level: bool,
-    pub default_format_timestamp_nanos: bool,
     pub custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
+    built: bool,
 }
 
-impl Default for Format {
+impl Default for Builder {
     fn default() -> Self {
-        Format {
+        Builder {
             default_format_timestamp: true,
+            default_format_timestamp_nanos: false,
             default_format_module_path: true,
             default_format_level: true,
-            default_format_timestamp_nanos: false,
             custom_format: None,
+            built: false,
         }
     }
 }
 
-impl Format {
+impl Builder {
     /// Convert the format into a callable function.
     /// 
     /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
     /// If the `custom_format` is `None`, then a default format is returned.
     /// Any `default_format` switches set to `false` won't be written by the format.
-    pub fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
-        if let Some(fmt) = self.custom_format {
+    pub fn build(&mut self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
+        assert!(!self.built, "attempt to re-use consumed builder");
+
+        let built = mem::replace(self, Builder {
+            built: true,
+            ..Default::default()
+        });
+
+        if let Some(fmt) = built.custom_format {
             fmt
         }
         else {
             Box::new(move |buf, record| {
                 let fmt = DefaultFormat {
-                    timestamp: self.default_format_level,
-                    module_path: self.default_format_module_path,
-                    level: self.default_format_level,
-                    timestamp_nanos: self.default_format_timestamp_nanos,
+                    timestamp: built.default_format_timestamp,
+                    timestamp_nanos: built.default_format_timestamp_nanos,
+                    module_path: built.default_format_module_path,
+                    level: built.default_format_level,
                     written_header_value: false,
                     buf,
                 };
@@ -165,7 +235,7 @@ impl<'a> DefaultFormat<'a> {
             }
         };
 
-        self.write_header_value(format_args!("{:<5}", level))
+        self.write_header_value(format_args!("{}", level))
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
@@ -217,70 +287,66 @@ impl<'a> DefaultFormat<'a> {
     }
 }
 
-/// A formatter to write logs into.
-///
-/// `Formatter` implements the standard [`Write`] trait for writing log records.
-/// It also supports terminal colors, through the [`style`] method.
-///
-/// # Examples
-///
-/// Use the [`writeln`] macro to easily format a log record:
-///
-/// ```
-/// use std::io::Write;
-///
-/// let mut builder = env_logger::Builder::new();
-///
-/// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
-/// ```
-///
-/// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
-/// [`writeln`]: https://doc.rust-lang.org/stable/std/macro.writeln.html
-/// [`style`]: #method.style
-pub struct Formatter {
-    buf: Rc<RefCell<Buffer>>,
-    write_style: WriteStyle,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Formatter {
-    pub(crate) fn new(writer: &Writer) -> Self {
-        Formatter {
-            buf: Rc::new(RefCell::new(writer.buffer())),
-            write_style: writer.write_style(),
-        }
+    use log::{Level, Record};
+
+    fn write(fmt: DefaultFormat) -> String {
+        let buf = fmt.buf.buf.clone();
+
+        let record = Record::builder()
+            .args(format_args!("log message"))
+            .level(Level::Info)
+            .file(Some("test.rs"))
+            .line(Some(144))
+            .module_path(Some("test::path"))
+            .build();
+
+        fmt.write(&record).expect("failed to write record");
+
+        let buf = buf.borrow();
+        String::from_utf8(buf.bytes().to_vec()).expect("failed to read record")
     }
 
-    pub(crate) fn write_style(&self) -> WriteStyle {
-        self.write_style
+    #[test]
+    fn default_format_with_header() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            timestamp: false,
+            timestamp_nanos: false,
+            module_path: true,
+            level: true,
+            written_header_value: false,
+            buf: &mut f,
+        });
+
+        assert_eq!("[INFO test::path] log message\n", written);
     }
 
-    pub(crate) fn print(&self, writer: &Writer) -> io::Result<()> {
-        writer.print(&self.buf.borrow())
-    }
+    #[test]
+    fn default_format_no_header() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
 
-    pub(crate) fn clear(&mut self) {
-        self.buf.borrow_mut().clear()
-    }
-}
+        let mut f = Formatter::new(&writer);
 
-impl Write for Formatter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buf.borrow_mut().write(buf)
-    }
+        let written = write(DefaultFormat {
+            timestamp: false,
+            timestamp_nanos: false,
+            module_path: false,
+            level: false,
+            written_header_value: false,
+            buf: &mut f,
+        });
 
-    fn flush(&mut self) -> io::Result<()> {
-        self.buf.borrow_mut().flush()
-    }
-}
-
-impl fmt::Debug for Writer {
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Writer").finish()
-    }
-}
-
-impl fmt::Debug for Formatter {
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Formatter").finish()
+        assert_eq!("log message\n", written);
     }
 }

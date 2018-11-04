@@ -43,14 +43,14 @@
 //! ```{.bash}
 //! $ RUST_LOG=info ./main
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
-//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
+//! [2017-11-09T02:12:24Z INFO main] the answer was: 12
 //! ```
 //!
 //! ```{.bash}
 //! $ RUST_LOG=debug ./main
 //! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
-//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
+//! [2017-11-09T02:12:24Z INFO main] the answer was: 12
 //! ```
 //!
 //! You can also set the log level on a per module basis:
@@ -58,7 +58,7 @@
 //! ```{.bash}
 //! $ RUST_LOG=main=info ./main
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
-//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
+//! [2017-11-09T02:12:24Z INFO main] the answer was: 12
 //! ```
 //!
 //! And enable all logging:
@@ -67,7 +67,7 @@
 //! $ RUST_LOG=main ./main
 //! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
-//! [2017-11-09T02:12:24Z INFO  main] the answer was: 12
+//! [2017-11-09T02:12:24Z INFO main] the answer was: 12
 //! ```
 //!
 //! If the binary name contains hyphens, you will need to replace
@@ -77,7 +77,7 @@
 //! $ RUST_LOG=my_app ./my-app
 //! [2017-11-09T02:12:24Z DEBUG my_app] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR my_app] this is printed by default
-//! [2017-11-09T02:12:24Z INFO  my_app] the answer was: 12
+//! [2017-11-09T02:12:24Z INFO my_app] the answer was: 12
 //! ```
 //!
 //! This is because Rust modules and crates cannot contain hyphens
@@ -232,10 +232,8 @@ extern crate humantime;
 #[cfg(feature = "atty")]
 extern crate atty;
 
-use std::env;
+use std::{env, io};
 use std::borrow::Cow;
-use std::io;
-use std::mem;
 use std::cell::RefCell;
 
 use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
@@ -243,7 +241,10 @@ use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::pub_use_in_super::*;
+pub use self::fmt::glob::*;
+
+use self::filter::Filter;
+use self::fmt::writer::{self, Writer};
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
@@ -293,8 +294,8 @@ struct Var<'a> {
 /// [`Builder::try_init()`]: struct.Builder.html#method.try_init
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
-    writer: fmt::Writer,
-    filter: filter::Filter,
+    writer: Writer,
+    filter: Filter,
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
@@ -329,8 +330,8 @@ pub struct Logger {
 #[derive(Default)]
 pub struct Builder {
     filter: filter::Builder,
-    writer: fmt::Builder,
-    format: fmt::Format,
+    writer: writer::Builder,
+    format: fmt::Builder,
 }
 
 impl Builder {
@@ -670,7 +671,7 @@ impl Builder {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: mem::replace(&mut self.format, Default::default()).into_boxed_fn(),
+            format: self.format.build(),
         }
     }
 }

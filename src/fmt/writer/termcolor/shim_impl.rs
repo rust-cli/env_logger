@@ -2,7 +2,7 @@ use std::io;
 
 use fmt::{WriteStyle, Target};
 
-pub(in ::fmt::writer) mod pub_use_in_super {
+pub(in ::fmt::writer) mod glob {
     
 }
 
@@ -56,5 +56,10 @@ impl Buffer {
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
         Ok(())
+    }
+
+    #[cfg(test)]
+    pub(in ::fmt) fn bytes(&self) -> &[u8] {
+        &self.0
     }
 }

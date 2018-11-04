@@ -10,7 +10,7 @@ use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 use ::WriteStyle;
 use ::fmt::Formatter;
 
-pub(in ::fmt::writer) mod pub_use_in_super {
+pub(in ::fmt::writer) mod glob {
     pub use super::*;
 }
 
@@ -101,6 +101,11 @@ impl Buffer {
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
         self.0.flush()
+    }
+
+    #[cfg(test)]
+    pub(in ::fmt) fn bytes(&self) -> &[u8] {
+        self.0.as_slice()
     }
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {

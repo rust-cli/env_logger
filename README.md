@@ -115,8 +115,8 @@ $ RUST_LOG=my_lib=info cargo test it_adds_one
      Running target/debug/my_lib-...
 
 running 1 test
-[INFO 2017-11-09T02:12:24Z my_lib::tests] can log from the test too
-[INFO 2017-11-09T02:12:24Z my_lib] add_one called with 2
+[2017-11-09T02:12:24Z INFO my_lib::tests] can log from the test too
+[2017-11-09T02:12:24Z INFO my_lib] add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured

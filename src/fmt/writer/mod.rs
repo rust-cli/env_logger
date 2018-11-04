@@ -5,8 +5,8 @@ use std::{fmt, io};
 use self::termcolor::BufferWriter;
 use self::atty::{is_stdout, is_stderr};
 
-pub(in ::fmt) mod pub_use_in_super {
-    pub use super::termcolor::pub_use_in_super::*;
+pub(in ::fmt) mod glob {
+    pub use super::termcolor::glob::*;
     pub use super::*;
 }
 
@@ -142,6 +142,12 @@ impl fmt::Debug for Builder {
         .field("target", &self.target)
         .field("write_style", &self.write_style)
         .finish()
+    }
+}
+
+impl fmt::Debug for Writer {
+    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
+        f.debug_struct("Writer").finish()
     }
 }
 
