@@ -235,7 +235,7 @@ impl<'a> DefaultFormat<'a> {
             }
         };
 
-        self.write_header_value(format_args!("{}", level))
+        self.write_header_value(format_args!("{:<5}", level))
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
@@ -327,7 +327,7 @@ mod tests {
             buf: &mut f,
         });
 
-        assert_eq!("[INFO test::path] log message\n", written);
+        assert_eq!("[INFO  test::path] log message\n", written);
     }
 
     #[test]

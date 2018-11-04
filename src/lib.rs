@@ -332,6 +332,7 @@ pub struct Builder {
     filter: filter::Builder,
     writer: writer::Builder,
     format: fmt::Builder,
+    built: bool,
 }
 
 impl Builder {
@@ -668,6 +669,9 @@ impl Builder {
     /// The returned logger implements the `Log` trait and can be installed manually
     /// or nested within another logger.
     pub fn build(&mut self) -> Logger {
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
+
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),

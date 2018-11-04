@@ -70,6 +70,7 @@ impl Writer {
 pub(crate) struct Builder {
     target: Target,
     write_style: WriteStyle,
+    built: bool,
 }
 
 impl Builder {
@@ -78,6 +79,7 @@ impl Builder {
         Builder {
             target: Default::default(),
             write_style: Default::default(),
+            built: false,
         }
     }
 
@@ -104,6 +106,9 @@ impl Builder {
 
     /// Build a terminal writer.
     pub fn build(&mut self) -> Writer {
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
+
         let color_choice = match self.write_style {
             WriteStyle::Auto => {
                 if match self.target {
