@@ -931,10 +931,16 @@ mod std_fmt_impls {
 
     impl fmt::Debug for Builder{
         fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-            f.debug_struct("Logger")
-            .field("filter", &self.filter)
-            .field("writer", &self.writer)
-            .finish()
+            if self.built {
+                f.debug_struct("Logger")
+                .field("built", &true)
+                .finish()
+            } else {
+                f.debug_struct("Logger")
+                .field("filter", &self.filter)
+                .field("writer", &self.writer)
+                .finish()
+            }
         }
     }
 }
