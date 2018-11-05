@@ -46,7 +46,7 @@ pub use self::writer::glob::*;
 use self::writer::{Writer, Buffer};
 
 pub(crate) mod glob {
-    pub use super::{Target, WriteStyle, Formatter};
+    pub use super::{Target, WriteStyle};
 }
 
 /// A formatter to write logs into.
@@ -56,7 +56,8 @@ pub(crate) mod glob {
 ///
 /// # Examples
 ///
-/// Use the [`writeln`] macro to easily format a log record:
+/// Use the [`writeln`] macro to format a log record.
+/// An instance of a `Formatter` is passed to an `env_logger` format as `buf`:
 ///
 /// ```
 /// use std::io::Write;
@@ -172,6 +173,9 @@ type SubtleStyle = StyledValue<'static, &'static str>;
 #[cfg(not(feature = "termcolor"))]
 type SubtleStyle = &'static str;
 
+/// The default format.
+/// 
+/// This format needs to work with any combination of crate features.
 struct DefaultFormat<'a> {
     timestamp: bool,
     module_path: bool,
