@@ -93,11 +93,11 @@ $ RUST_LOG=my_lib=info cargo test
      Running target/debug/my_lib-...
 
 running 2 tests
-[2017-11-09T02:12:24Z INFO my_lib::tests] logging from another test
-[2017-11-09T02:12:24Z INFO my_lib] add_one called with -8
+[INFO my_lib::tests] logging from another test
+[INFO my_lib] add_one called with -8
 test tests::it_handles_negative_numbers ... ok
-[2017-11-09T02:12:24Z INFO my_lib::tests] can log from the test too
-[2017-11-09T02:12:24Z INFO my_lib] add_one called with 2
+[INFO my_lib::tests] can log from the test too
+[INFO my_lib] add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
@@ -115,8 +115,8 @@ $ RUST_LOG=my_lib=info cargo test it_adds_one
      Running target/debug/my_lib-...
 
 running 1 test
-[2017-11-09T02:12:24Z INFO my_lib::tests] can log from the test too
-[2017-11-09T02:12:24Z INFO my_lib] add_one called with 2
+[INFO my_lib::tests] can log from the test too
+[INFO my_lib] add_one called with 2
 test tests::it_adds_one ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured
@@ -131,11 +131,9 @@ you can use the `Builder` to change the log target:
 use std::env;
 use env_logger::{Builder, Target};
 
-let mut builder = Builder::new();
+let mut builder = Builder::from_default_env();
 builder.target(Target::Stdout);
-if env::var("RUST_LOG").is_ok() {
-    builder.parse(&env::var("RUST_LOG").unwrap());
-}
+
 builder.init();
 ```
 

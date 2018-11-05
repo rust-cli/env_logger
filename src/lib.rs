@@ -157,24 +157,11 @@
 //! The following example excludes the timestamp from the log output:
 //! 
 //! ```
-//! #[macro_use] extern crate log;
-//! extern crate env_logger;
+//! use env_logger::Builder;
 //!
-//! use log::Level;
-//!
-//! fn main() {
-//!     env_logger::Builder::from_default_env()
-//!         .default_format_timestamp(false)
-//!         .init();
-//!
-//!     debug!("this is a debug {}", "message");
-//!     error!("this is printed by default");
-//!
-//!     if log_enabled!(Level::Info) {
-//!         let x = 3 * 4; // expensive computation
-//!         info!("the answer was: {}", x);
-//!     }
-//! }
+//! Builder::from_default_env()
+//!     .default_format_timestamp(false)
+//!     .init();
 //! ```
 //! 
 //! ### Stability of the default format
@@ -186,6 +173,24 @@
 //! If you want to capture or interpret the output of `env_logger` programmatically 
 //! then you should use a custom format.
 //! 
+//! ### Using a custom format
+//! 
+//! Custom formats can be provided as closures to the [`Builder`].
+//! These closures take a [`Formatter`] and `log::Record` as arguments:
+//! 
+//! ```
+//! use std::io::Write;
+//! use env_logger::Builder;
+//!
+//! Builder::from_default_env()
+//!     .format(|buf, record| {
+//!         writeln!(buf, "{}: {}", record.level(), record.args())
+//!     })
+//!     .init();
+//! ```
+//! 
+//! See the [`fmt`] module for more details about custom formats.
+//! 
 //! ## Specifying defaults for environment variables
 //! 
 //! `env_logger` can read configuration from environment variables.
@@ -194,22 +199,15 @@
 //! isn't set:
 //! 
 //! ```
-//! #[macro_use] extern crate log;
-//! extern crate env_logger;
+//! use env_logger::{Builder, Env};
 //!
-//! use log::Level;
-//!
-//! fn main() {
-//!     let env = env_logger::Env::default()
-//!         .filter_or(env_logger::DEFAULT_FILTER_ENV, "warn");
-//! 
-//!     env_logger::Builder::from_env(env).init();
-//! }
+//! Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //! 
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
 //! [`Env`]: struct.Env.html
+//! [`fmt`]: fmt/index.html
 
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
@@ -244,6 +242,7 @@ pub mod fmt;
 pub use self::fmt::glob::*;
 
 use self::filter::Filter;
+use self::fmt::Formatter;
 use self::fmt::writer::{self, Writer};
 
 /// The default name for the environment variable to read filters from.
@@ -457,7 +456,7 @@ impl Builder {
     /// 
     /// let mut builder = Builder::new();
     /// 
-    /// builder.format(|buf, record| write!(buf, "{}", record.args()));
+    /// builder.format(|buf, record| writeln!(buf, "{}", record.args()));
     /// ```
     ///
     /// [`Formatter`]: fmt/struct.Formatter.html
@@ -836,6 +835,18 @@ impl<'a> Env<'a> {
         self
     }
 
+    /// Use the default environment variable to read the filter from.
+    /// 
+    /// If the variable is not set, the default value will be used.
+    pub fn default_filter_or<V>(mut self, default: V) -> Self
+    where
+        V: Into<Cow<'a, str>>,
+    {
+        self.filter = Var::new_with_default(DEFAULT_FILTER_ENV, default);
+
+        self
+    }
+
     fn get_filter(&self) -> Option<String> {
         self.filter.get()
     }
@@ -859,6 +870,18 @@ impl<'a> Env<'a> {
             V: Into<Cow<'a, str>>,
     {
         self.write_style = Var::new_with_default(write_style_env, default);
+
+        self
+    }
+
+    /// Use the default environment variable to read the style from.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn default_write_style_or<V>(mut self, default: V) -> Self
+        where
+            V: Into<Cow<'a, str>>,
+    {
+        self.write_style = Var::new_with_default(DEFAULT_WRITE_STYLE_ENV, default);
 
         self
     }

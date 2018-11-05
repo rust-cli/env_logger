@@ -52,8 +52,8 @@ impl Formatter {
     pub fn default_level_style(&self, level: Level) -> Style {
         let mut level_style = self.style();
         match level {
-            Level::Trace => level_style.set_color(Color::White),
-            Level::Debug => level_style.set_color(Color::Black).set_intense(true),
+            Level::Trace => level_style.set_color(Color::Black).set_intense(true),
+            Level::Debug => level_style.set_color(Color::White),
             Level::Info => level_style.set_color(Color::Green),
             Level::Warn => level_style.set_color(Color::Yellow),
             Level::Error => level_style.set_color(Color::Red).set_bold(true),
@@ -332,7 +332,7 @@ impl Style {
     }
 
     /// Wrap a value in the style by taking ownership of it.
-    pub fn into_value<T>(&mut self, value: T) -> StyledValue<'static, T> {
+    pub(crate) fn into_value<T>(&mut self, value: T) -> StyledValue<'static, T> {
         StyledValue {
             style: Cow::Owned(self.clone()),
             value
