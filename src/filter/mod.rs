@@ -116,6 +116,7 @@ pub struct Filter {
 pub struct Builder {
     directives: Vec<Directive>,
     filter: Option<inner::Filter>,
+    built: bool,
 }
 
 #[derive(Debug)]
@@ -183,6 +184,7 @@ impl Builder {
         Builder {
             directives: Vec::new(),
             filter: None,
+            built: false,
         }
     }
 
@@ -239,6 +241,9 @@ impl Builder {
 
     /// Build a log filter.
     pub fn build(&mut self) -> Filter {
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
+
         if self.directives.is_empty() {
             // Adds the default filter if none exist
             self.directives.push(Directive {
@@ -279,10 +284,16 @@ impl fmt::Debug for Filter {
 
 impl fmt::Debug for Builder {
     fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        f.debug_struct("Filter")
+        if self.built {
+            f.debug_struct("Filter")
+            .field("built", &true)
+            .finish()
+        } else {
+            f.debug_struct("Filter")
             .field("filter", &self.filter)
             .field("directives", &self.directives)
             .finish()
+        }
     }
 }
 
