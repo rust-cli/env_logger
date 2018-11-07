@@ -8,13 +8,16 @@ rust:
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
+  - if [ "${MINIMAL_VERSIONS}" = "y" ]; then cargo update -Z minimal-versions; fi
   - cargo run -p ci
   - cargo run --example default
-  - if [ "${TRAVIS_RUST_VERSION}" = nightly ]; then cargo update -Z minimal-versions; fi
-  - if [ "${TRAVIS_RUST_VERSION}" = nightly ]; then cargo run -p ci; fi
-  - if [ "${TRAVIS_RUST_VERSION}" = nightly ]; then cargo run --example default; fi
 after_success:
   - travis-cargo --only nightly doc-upload
+
+matrix:
+  include:
+    - rust: nightly
+      env: MINIMAL_VERSIONS=y
 
 notifications:
   email:
