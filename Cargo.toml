@@ -33,5 +33,9 @@ harness = false
 name = "log-in-log"
 harness = false
 
+[[test]]
+name = "init-twice-retains-filter"
+harness = false
+
 [features]
 default = ["termcolor", "atty", "humantime", "regex"]
