@@ -646,8 +646,14 @@ impl Builder {
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
         let logger = self.build();
 
-        log::set_max_level(logger.filter());
-        log::set_boxed_logger(Box::new(logger))
+        let max_level = logger.filter();
+        let r = log::set_boxed_logger(Box::new(logger));
+
+        if r.is_ok() {
+            log::set_max_level(max_level);
+        }
+
+        r
     }
 
     /// Initializes the global logger with the built env logger.
