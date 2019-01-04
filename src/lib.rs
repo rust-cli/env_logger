@@ -209,8 +209,8 @@
 //! [`Env`]: struct.Env.html
 //! [`fmt`]: fmt/index.html
 
-#![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "http://www.rust-lang.org/favicon.ico",
+#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+       html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
        html_root_url = "https://docs.rs/env_logger/0.6.0")]
 #![cfg_attr(test, deny(warnings))]
 
