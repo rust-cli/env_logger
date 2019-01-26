@@ -306,8 +306,8 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
     let mods = parts.next();
     let filter = parts.next();
     if parts.next().is_some() {
-        println!("warning: invalid logging spec '{}', \
-                 ignoring it (too many '/'s)", spec);
+        eprintln!("warning: invalid logging spec '{}', \
+                  ignoring it (too many '/'s)", spec);
         return (dirs, None);
     }
     mods.map(|m| { for s in m.split(',') {
@@ -327,15 +327,15 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
                 match part1.parse() {
                     Ok(num) => (num, Some(part0)),
                     _ => {
-                        println!("warning: invalid logging spec '{}', \
-                                 ignoring it", part1);
+                        eprintln!("warning: invalid logging spec '{}', \
+                                  ignoring it", part1);
                         continue
                     }
                 }
             },
             _ => {
-                println!("warning: invalid logging spec '{}', \
-                         ignoring it", s);
+                eprintln!("warning: invalid logging spec '{}', \
+                          ignoring it", s);
                 continue
             }
         };
@@ -349,7 +349,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         match inner::Filter::new(filter) {
             Ok(re) => Some(re),
             Err(e) => {
-                println!("warning: invalid regex filter - {}", e);
+                eprintln!("warning: invalid regex filter - {}", e);
                 None
             }
         }
