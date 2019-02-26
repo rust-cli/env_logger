@@ -139,6 +139,35 @@
 //! * `error,hello=warn/[0-9]scopes` turn on global error logging and also
 //!   warn for hello. In both cases the log message must include a single digit
 //!   number followed by 'scopes'.
+//! 
+//! ## Capturing logs in tests
+//! 
+//! Records logged during `cargo test` will not be captured by the test harness by default.
+//! The [`Builder::is_test`] method can be used in unit tests to ensure logs will be captured:
+//! 
+//! ```
+//! # #[macro_use] extern crate log;
+//! # extern crate env_logger;
+//! # fn main() {}
+//! #[cfg(test)]
+//! mod tests {
+//!     fn init() {
+//!         let _ = env_logger::builder().is_test(true).try_init();
+//!     }
+//! 
+//!     #[test]
+//!     fn it_works() {
+//!         info!("This record will be captured by `cargo test`");
+//! 
+//!         assert_eq!(2, 1 + 1);
+//!     }
+//! }
+//! ```
+//! 
+//! Enabling test capturing comes at the expense of color and other style support.
+//! 
+//! Test support can also be enabled by setting the `RUST_LOG_TEST` environment variable
+//! to `1`.
 //!
 //! ## Disabling colors
 //!
@@ -157,9 +186,7 @@
 //! The following example excludes the timestamp from the log output:
 //! 
 //! ```
-//! use env_logger::Builder;
-//!
-//! Builder::from_default_env()
+//! env_logger::builder()
 //!     .default_format_timestamp(false)
 //!     .init();
 //! ```
@@ -180,9 +207,8 @@
 //! 
 //! ```
 //! use std::io::Write;
-//! use env_logger::Builder;
 //!
-//! Builder::from_default_env()
+//! env_logger::builder()
 //!     .format(|buf, record| {
 //!         writeln!(buf, "{}: {}", record.level(), record.args())
 //!     })
@@ -199,13 +225,14 @@
 //! isn't set:
 //! 
 //! ```
-//! use env_logger::{Builder, Env};
+//! use env_logger::Env;
 //!
-//! Builder::from_env(Env::default().default_filter_or("warn")).init();
+//! env_logger::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //! 
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
+//! [`Builder::is_test`]: struct.Builder.html#method.is_test
 //! [`Env`]: struct.Env.html
 //! [`fmt`]: fmt/index.html
 
@@ -251,6 +278,10 @@ pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 /// The default name for the environment variable to read style preferences from.
 pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
+/// The default name for the environment variable to read whether the
+/// logger will be used in unit tests from.
+pub const DEFAULT_IS_TEST_ENV: &'static str = "RUST_LOG_TEST";
+
 /// Set of environment variables to configure from.
 ///
 /// # Default environment variables
@@ -265,6 +296,7 @@ pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 pub struct Env<'a> {
     filter: Var<'a>,
     write_style: Var<'a>,
+    is_test: Var<'a>,
 }
 
 #[derive(Debug)]
@@ -404,11 +436,15 @@ impl Builder {
         let env = env.into();
 
         if let Some(s) = env.get_filter() {
-            builder.parse(&s);
+            builder.parse_filters(&s);
         }
 
         if let Some(s) = env.get_write_style() {
             builder.parse_write_style(&s);
+        }
+
+        if let Some(s) = env.get_is_test() {
+            builder.parse_is_test(&s);
         }
 
         builder
@@ -579,7 +615,16 @@ impl Builder {
     /// environment variable.
     ///
     /// See the module documentation for more details.
+    #[deprecated(since = "0.6.0", note = "use `parse_filters` instead.")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
+        self.parse_filters(filters)
+    }
+
+    /// Parses the directives string in the same form as the `RUST_LOG`
+    /// environment variable.
+    ///
+    /// See the module documentation for more details.
+    pub fn parse_filters(&mut self, filters: &str) -> &mut Self {
         self.filter.parse(filters);
         self
     }
@@ -630,7 +675,25 @@ impl Builder {
     ///
     /// See the module documentation for more details.
     pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
-        self.writer.parse(write_style);
+        self.writer.parse_write_style(write_style);
+        self
+    }
+
+    /// Sets whether or not the logger will be used in unit tests.
+    /// 
+    /// If `is_test` is `true` then the logger will allow the testing framework to
+    /// capture log records rather than printing them to the terminal directly.
+    pub fn is_test(&mut self, is_test: bool) -> &mut Self {
+        self.writer.is_test(is_test);
+        self
+    }
+
+    /// Parses whether or not the logger will be used in unit tests in the same 
+    /// form as the `RUST_LOG_TEST` environment variable.
+    ///
+    /// See the module documentation for more details.
+    pub fn parse_is_test(&mut self, is_test: &str) -> &mut Self {
+        self.writer.parse_is_test(is_test);
         self
     }
 
@@ -895,6 +958,48 @@ impl<'a> Env<'a> {
     fn get_write_style(&self) -> Option<String> {
         self.write_style.get()
     }
+
+    /// Specify an environment variable to read whether the environment
+    /// is a testing framework.
+    pub fn is_test<E>(mut self, is_test_env: E) -> Self
+    where
+        E: Into<Cow<'a, str>>
+    {
+        self.is_test = Var::new(is_test_env);
+
+        self
+    }
+
+    /// Specify an environment variable to read whether the environment
+    /// is a testing framework.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn is_test_or<E, V>(mut self, is_test_env: E, default: V) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+            V: Into<Cow<'a, str>>,
+    {
+        self.is_test = Var::new_with_default(is_test_env, default);
+
+        self
+    }
+
+    /// Use the default environment variable to read whether the environment
+    /// is a testing framework.
+    ///
+    /// If the variable is not set, the default value will be used.
+    pub fn default_is_test_or<V>(mut self, default: V) -> Self
+        where
+            V: Into<Cow<'a, str>>,
+    {
+        self.is_test = Var::new_with_default(DEFAULT_IS_TEST_ENV, default);
+
+        self
+    }
+
+    fn get_is_test(&self) -> Option<String> {
+        self.is_test.get()
+    }
 }
 
 impl<'a> Var<'a> {
@@ -942,6 +1047,7 @@ impl<'a> Default for Env<'a> {
         Env {
             filter: Var::new(DEFAULT_FILTER_ENV),
             write_style: Var::new(DEFAULT_WRITE_STYLE_ENV),
+            is_test: Var::new(DEFAULT_IS_TEST_ENV),
         }
     }
 }
@@ -1066,6 +1172,23 @@ where
     E: Into<Env<'a>>
 {
     try_init_from_env(env).expect("env_logger::init_from_env should not be called after logger initialized");
+}
+
+/// Create a new builder with the default environment variables.
+/// 
+/// The builder can be configured before being initialized.
+pub fn builder() -> Builder {
+    Builder::from_default_env()
+}
+
+/// Create a builder from the given environment variables.
+/// 
+/// The builder can be configured before being initialized.
+pub fn from_env<'a, E>(env: E) -> Builder
+where
+    E: Into<Env<'a>>
+{
+    Builder::from_env(env)
 }
 
 #[cfg(test)]
