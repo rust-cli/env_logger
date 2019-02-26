@@ -106,11 +106,6 @@ impl Builder {
         self
     }
 
-    /// Parses a test flag string.
-    pub(crate) fn parse_is_test(&mut self, is_test: &str) -> &mut Self {
-        self.is_test(parse_is_test(is_test))
-    }
-
     /// Whether or not to capture logs for `cargo test`.
     pub(crate) fn is_test(&mut self, is_test: bool) -> &mut Self {
         self.is_test = is_test;
@@ -178,13 +173,6 @@ fn parse_write_style(spec: &str) -> WriteStyle {
     }
 }
 
-fn parse_is_test(spec: &str) -> bool {
-    match spec {
-        "1" => true,
-        _ => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -214,16 +202,5 @@ mod tests {
         for input in inputs {
             assert_eq!(WriteStyle::Auto, parse_write_style(input));
         }
-    }
-
-    #[test]
-    fn parse_is_test_valid() {
-        assert!(parse_is_test("1"));
-        assert!(!parse_is_test("0"));
-    }
-
-    #[test]
-    fn parse_is_test_invalid() {
-        assert!(!parse_is_test("pls do"));
     }
 }

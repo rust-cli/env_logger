@@ -164,10 +164,8 @@
 //! }
 //! ```
 //! 
-//! Enabling test capturing comes at the expense of color and other style support.
-//! 
-//! Test support can also be enabled by setting the `RUST_LOG_TEST` environment variable
-//! to `1`.
+//! Enabling test capturing comes at the expense of color and other style support
+//! and may have performance implications.
 //!
 //! ## Disabling colors
 //!
@@ -278,10 +276,6 @@ pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 /// The default name for the environment variable to read style preferences from.
 pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
-/// The default name for the environment variable to read whether the
-/// logger will be used in unit tests from.
-pub const DEFAULT_IS_TEST_ENV: &'static str = "RUST_LOG_TEST";
-
 /// Set of environment variables to configure from.
 ///
 /// # Default environment variables
@@ -296,7 +290,6 @@ pub const DEFAULT_IS_TEST_ENV: &'static str = "RUST_LOG_TEST";
 pub struct Env<'a> {
     filter: Var<'a>,
     write_style: Var<'a>,
-    is_test: Var<'a>,
 }
 
 #[derive(Debug)]
@@ -441,10 +434,6 @@ impl Builder {
 
         if let Some(s) = env.get_write_style() {
             builder.parse_write_style(&s);
-        }
-
-        if let Some(s) = env.get_is_test() {
-            builder.parse_is_test(&s);
         }
 
         builder
@@ -685,15 +674,6 @@ impl Builder {
     /// capture log records rather than printing them to the terminal directly.
     pub fn is_test(&mut self, is_test: bool) -> &mut Self {
         self.writer.is_test(is_test);
-        self
-    }
-
-    /// Parses whether or not the logger will be used in unit tests in the same 
-    /// form as the `RUST_LOG_TEST` environment variable.
-    ///
-    /// See the module documentation for more details.
-    pub fn parse_is_test(&mut self, is_test: &str) -> &mut Self {
-        self.writer.parse_is_test(is_test);
         self
     }
 
@@ -958,48 +938,6 @@ impl<'a> Env<'a> {
     fn get_write_style(&self) -> Option<String> {
         self.write_style.get()
     }
-
-    /// Specify an environment variable to read whether the environment
-    /// is a testing framework.
-    pub fn is_test<E>(mut self, is_test_env: E) -> Self
-    where
-        E: Into<Cow<'a, str>>
-    {
-        self.is_test = Var::new(is_test_env);
-
-        self
-    }
-
-    /// Specify an environment variable to read whether the environment
-    /// is a testing framework.
-    ///
-    /// If the variable is not set, the default value will be used.
-    pub fn is_test_or<E, V>(mut self, is_test_env: E, default: V) -> Self
-        where
-            E: Into<Cow<'a, str>>,
-            V: Into<Cow<'a, str>>,
-    {
-        self.is_test = Var::new_with_default(is_test_env, default);
-
-        self
-    }
-
-    /// Use the default environment variable to read whether the environment
-    /// is a testing framework.
-    ///
-    /// If the variable is not set, the default value will be used.
-    pub fn default_is_test_or<V>(mut self, default: V) -> Self
-        where
-            V: Into<Cow<'a, str>>,
-    {
-        self.is_test = Var::new_with_default(DEFAULT_IS_TEST_ENV, default);
-
-        self
-    }
-
-    fn get_is_test(&self) -> Option<String> {
-        self.is_test.get()
-    }
 }
 
 impl<'a> Var<'a> {
@@ -1047,7 +985,6 @@ impl<'a> Default for Env<'a> {
         Env {
             filter: Var::new(DEFAULT_FILTER_ENV),
             write_style: Var::new(DEFAULT_WRITE_STYLE_ENV),
-            is_test: Var::new(DEFAULT_IS_TEST_ENV),
         }
     }
 }
