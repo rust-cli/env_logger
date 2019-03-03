@@ -15,7 +15,7 @@ fn main() {
         // Init again using a different max level
         // This shouldn't clobber the level that was previously set
         env_logger::Builder::new()
-            .parse("info")
+            .parse_filters("info")
             .try_init()
             .unwrap_err();
 

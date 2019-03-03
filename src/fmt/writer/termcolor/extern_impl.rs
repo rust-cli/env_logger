@@ -8,7 +8,7 @@ use log::Level;
 use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 
 use ::WriteStyle;
-use ::fmt::Formatter;
+use ::fmt::{Formatter, Target};
 
 pub(in ::fmt::writer) mod glob {
     pub use super::*;
@@ -69,51 +69,98 @@ impl Formatter {
     }
 }
 
-pub(in ::fmt::writer) struct BufferWriter(termcolor::BufferWriter);
-pub(in ::fmt) struct Buffer(termcolor::Buffer);
+pub(in ::fmt::writer) struct BufferWriter {
+    inner: termcolor::BufferWriter,
+    test_target: Option<Target>,
+}
+
+pub(in ::fmt) struct Buffer {
+    inner: termcolor::Buffer,
+    test_target: Option<Target>,
+}
 
 impl BufferWriter {
-    pub(in ::fmt::writer) fn stderr(write_style: WriteStyle) -> Self {
-        BufferWriter(termcolor::BufferWriter::stderr(write_style.into_color_choice()))
+    pub(in ::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
+        BufferWriter {
+            inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
+            test_target: if is_test {
+                Some(Target::Stderr)
+            } else {
+                None
+            },
+        }
     }
 
-    pub(in ::fmt::writer) fn stdout(write_style: WriteStyle) -> Self {
-        BufferWriter(termcolor::BufferWriter::stdout(write_style.into_color_choice()))
+    pub(in ::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
+        BufferWriter {
+            inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
+            test_target: if is_test {
+                Some(Target::Stdout)
+            } else {
+                None
+            },
+        }
     }
 
     pub(in ::fmt::writer) fn buffer(&self) -> Buffer {
-        Buffer(self.0.buffer())
+        Buffer {
+            inner: self.inner.buffer(),
+            test_target: self.test_target,
+        }
     }
 
     pub(in ::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        self.0.print(&buf.0)
+        if let Some(target) = self.test_target {
+            // This impl uses the `eprint` and `print` macros
+            // instead of `termcolor`'s buffer.
+            // This is so their output can be captured by `cargo test`
+            let log = String::from_utf8_lossy(buf.bytes());
+
+            match target {
+                Target::Stderr => eprint!("{}", log),
+                Target::Stdout => print!("{}", log),
+            }
+
+            Ok(())
+        } else {
+            self.inner.print(&buf.inner)
+        }
     }
 }
 
 impl Buffer {
     pub(in ::fmt) fn clear(&mut self) {
-        self.0.clear()
+        self.inner.clear()
     }
 
     pub(in ::fmt) fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.write(buf)
+        self.inner.write(buf)
     }
 
     pub(in ::fmt) fn flush(&mut self) -> io::Result<()> {
-        self.0.flush()
+        self.inner.flush()
     }
 
-    #[cfg(test)]
     pub(in ::fmt) fn bytes(&self) -> &[u8] {
-        self.0.as_slice()
+        self.inner.as_slice()
     }
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
-        self.0.set_color(spec)
+        // Ignore styles for test captured logs because they can't be printed
+        if self.test_target.is_none() {
+            self.inner.set_color(spec)
+        } else {
+            Ok(())
+        }
     }
 
     fn reset(&mut self) -> io::Result<()> {
-        self.0.reset()
+        // Ignore styles for test captured logs because they can't be printed
+        if self.test_target.is_none() {
+            self.inner.reset()
+        } else {
+            Ok(())
+        }
     }
 }
 

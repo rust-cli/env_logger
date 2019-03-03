@@ -70,21 +70,23 @@ impl Writer {
 pub(crate) struct Builder {
     target: Target,
     write_style: WriteStyle,
+    is_test: bool,
     built: bool,
 }
 
 impl Builder {
     /// Initialize the writer builder with defaults.
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Builder {
             target: Default::default(),
             write_style: Default::default(),
+            is_test: false,
             built: false,
         }
     }
 
     /// Set the target to write to.
-    pub fn target(&mut self, target: Target) -> &mut Self {
+    pub(crate) fn target(&mut self, target: Target) -> &mut Self {
         self.target = target;
         self
     }
@@ -94,18 +96,24 @@ impl Builder {
     /// See the [Disabling colors] section for more details.
     ///
     /// [Disabling colors]: ../index.html#disabling-colors
-    pub fn parse(&mut self, write_style: &str) -> &mut Self {
+    pub(crate) fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
         self.write_style(parse_write_style(write_style))
     }
 
     /// Whether or not to print style characters when writing.
-    pub fn write_style(&mut self, write_style: WriteStyle) -> &mut Self {
+    pub(crate) fn write_style(&mut self, write_style: WriteStyle) -> &mut Self {
         self.write_style = write_style;
         self
     }
 
+    /// Whether or not to capture logs for `cargo test`.
+    pub(crate) fn is_test(&mut self, is_test: bool) -> &mut Self {
+        self.is_test = is_test;
+        self
+    }
+
     /// Build a terminal writer.
-    pub fn build(&mut self) -> Writer {
+    pub(crate) fn build(&mut self) -> Writer {
         assert!(!self.built, "attempt to re-use consumed builder");
         self.built = true;
 
@@ -124,8 +132,8 @@ impl Builder {
         };
 
         let writer = match self.target {
-            Target::Stderr => BufferWriter::stderr(color_choice),
-            Target::Stdout => BufferWriter::stdout(color_choice),
+            Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
+            Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
         };
 
         Writer {

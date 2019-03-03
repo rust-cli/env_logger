@@ -13,13 +13,13 @@ pub(in ::fmt::writer) struct BufferWriter {
 pub(in ::fmt) struct Buffer(Vec<u8>);
 
 impl BufferWriter {
-    pub(in ::fmt::writer) fn stderr(_: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
             target: Target::Stderr,
         }
     }
 
-    pub(in ::fmt::writer) fn stdout(_: WriteStyle) -> Self {
+    pub(in ::fmt::writer) fn stdout(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
             target: Target::Stdout,
         }
