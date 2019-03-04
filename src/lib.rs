@@ -236,7 +236,7 @@
 
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.6.0")]
+       html_root_url = "https://docs.rs/env_logger/0.6.1")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -604,7 +604,7 @@ impl Builder {
     /// environment variable.
     ///
     /// See the module documentation for more details.
-    #[deprecated(since = "0.6.0", note = "use `parse_filters` instead.")]
+    #[deprecated(since = "0.6.1", note = "use `parse_filters` instead.")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
         self.parse_filters(filters)
     }
