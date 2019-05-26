@@ -157,6 +157,8 @@
 //! 
 //!     #[test]
 //!     fn it_works() {
+//!         init();
+//! 
 //!         info!("This record will be captured by `cargo test`");
 //! 
 //!         assert_eq!(2, 1 + 1);
