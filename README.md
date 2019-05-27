@@ -43,7 +43,7 @@ $ RUST_LOG=info ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
-`env_logger` can be configured in other ways besides an environment variable. See [the examples](tree/master/examples) for more approaches.
+`env_logger` can be configured in other ways besides an environment variable. See [the examples](https://github.com/sebasmagri/env_logger/tree/master/examples) for more approaches.
 
 ### In tests
 
