@@ -43,6 +43,8 @@ $ RUST_LOG=info ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
+`env_logger` can be configured in other ways besides an environment variable. See [the examples](tree/master/examples) for more approaches.
+
 ### In tests
 
 Tests can use the `env_logger` crate to see log messages generated during that test:
