@@ -528,6 +528,12 @@ impl Builder {
         self
     }
 
+    /// Configures the indentation policy for multiline log records.
+    pub fn default_format_indent(&mut self, indent: fmt::Indent) -> &mut Self {
+        self.format.default_format_indent = indent;
+        self
+    }
+
     /// Adds a directive to the filter for a specific module.
     ///
     /// # Examples
