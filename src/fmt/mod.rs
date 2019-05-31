@@ -356,7 +356,7 @@ impl<'a> DefaultFormat<'a> {
                             if !first {
                                 self.fmt.buf.write_all(&[ b'\n' ])?;
                                 match self.indent_count {
-                                    Some(count) => write!(self.fmt.buf, "{:width$}", "", width = count)?,
+                                    Some(count) => write!(self.fmt.buf, "{:width$}{} ", "", self.fmt.subtle_style("|"), width = count)?,
                                     None => self.fmt.write_header(self.record)?
                                 }
                             }
@@ -375,7 +375,7 @@ impl<'a> DefaultFormat<'a> {
                 // Select the right number of spaces to indent
                 let indent_count = match self.indent {
                     Indent::Spaces(n)    => Some(n),
-                    Indent::Auto         => Some(self.written_header_count),
+                    Indent::Auto         => Some(if self.written_header_count < 2 { 0 } else { self.written_header_count - 2 }),
                     Indent::RepeatHeader => None,
                     _ => unreachable!()
                 };
@@ -481,7 +481,7 @@ mod tests {
             ..default_format(&mut f)
         });
 
-        assert_eq!("[INFO  test::path] log\n                   message\n", written);
+        assert_eq!("[INFO  test::path] log\n                 | message\n", written);
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
             ..default_format(&mut f)
         });
 
-        assert_eq!("[INFO  test::path] log\n    message\n", written);
+        assert_eq!("[INFO  test::path] log\n    | message\n", written);
     }
 
     #[test]
@@ -518,5 +518,21 @@ mod tests {
         });
 
         assert_eq!("[INFO  test::path] log\n[INFO  test::path] message\n", written);
+    }
+
+    #[test]
+    fn default_format_indent_auto_no_header() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            indent: Indent::Auto,
+            ..default_format(&mut f)
+        });
+
+        assert_eq!("log\n| message\n", written);
     }
 }
