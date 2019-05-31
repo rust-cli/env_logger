@@ -343,20 +343,23 @@ impl<'a> DefaultFormat<'a> {
 
                 // Create a wrapper around the buffer only if we have to actually indent the message
 
-                struct IndentWrapper<'a, 'b> {
-                    fmt: &'b mut DefaultFormat<'a>,
-                    record: &'b Record<'b>,
+                struct IndentWrapper<'a, 'b: 'a> {
+                    fmt: &'a mut DefaultFormat<'b>,
+                    record: &'a Record<'a>,
                     indent_count: Option<usize>
                 }
 
-                impl<'a, 'b> Write for IndentWrapper<'a, 'b> {
+                impl<'a, 'b> Write for IndentWrapper<'a, 'b>  {
                     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
                         let mut first = true;
                         for chunk in buf.split(|&x| x == b'\n') {
                             if !first {
                                 self.fmt.buf.write_all(&[ b'\n' ])?;
                                 match self.indent_count {
-                                    Some(count) => write!(self.fmt.buf, "{:width$}{} ", "", self.fmt.subtle_style("|"), width = count)?,
+                                    Some(count) => {
+                                        let bar = self.fmt.subtle_style("|");
+                                        write!(self.fmt.buf, "{:width$}{} ", "", bar, width = count)?
+                                    },
                                     None => self.fmt.write_header(self.record)?
                                 }
                             }
@@ -380,12 +383,16 @@ impl<'a> DefaultFormat<'a> {
                     _ => unreachable!()
                 };
 
-                let mut wrapper = IndentWrapper {
-                    fmt: self,
-                    record,
-                    indent_count
-                };
-                write!(wrapper, "{}", record.args())?;
+                // The explicit scope here is just to make older versions of Rust happy
+                {
+                    let mut wrapper = IndentWrapper {
+                        fmt: self,
+                        record,
+                        indent_count
+                    };
+                    write!(wrapper, "{}", record.args())?;
+                }
+
                 writeln!(self.buf)?;
 
                 Ok(())
