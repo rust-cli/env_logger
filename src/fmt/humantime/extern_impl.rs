@@ -46,13 +46,12 @@ impl Formatter {
 /// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
 /// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
 /// [`Formatter`]: struct.Formatter.html
-#[derive(Clone, Copy)]
 pub struct Timestamp(SystemTime);
 
 /// An [RFC3339] formatted timestamp with nanos.
 ///
 /// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct PreciseTimestamp(SystemTime);
 
 impl fmt::Debug for Timestamp {
