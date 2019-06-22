@@ -528,6 +528,13 @@ impl Builder {
         self
     }
 
+    /// Configures the amount of spaces to use to indent multiline log records.
+    /// A value of `None` disables any kind of indentation.
+    pub fn default_format_indent(&mut self, indent: Option<usize>) -> &mut Self {
+        self.format.default_format_indent = indent;
+        self
+    }
+
     /// Adds a directive to the filter for a specific module.
     ///
     /// # Examples

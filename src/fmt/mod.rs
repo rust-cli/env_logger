@@ -117,6 +117,7 @@ pub(crate) struct Builder {
     pub default_format_timestamp_nanos: bool,
     pub default_format_module_path: bool,
     pub default_format_level: bool,
+    pub default_format_indent: Option<usize>,
     pub custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
     built: bool,
 }
@@ -128,6 +129,7 @@ impl Default for Builder {
             default_format_timestamp_nanos: false,
             default_format_module_path: true,
             default_format_level: true,
+            default_format_indent: Some(4),
             custom_format: None,
             built: false,
         }
@@ -159,6 +161,7 @@ impl Builder {
                     module_path: built.default_format_module_path,
                     level: built.default_format_level,
                     written_header_value: false,
+                    indent: built.default_format_indent,
                     buf,
                 };
 
@@ -182,6 +185,7 @@ struct DefaultFormat<'a> {
     level: bool,
     timestamp_nanos: bool,
     written_header_value: bool,
+    indent: Option<usize>,
     buf: &'a mut Formatter,
 }
 
@@ -287,7 +291,55 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn write_args(&mut self, record: &Record) -> io::Result<()> {
-        writeln!(self.buf, "{}", record.args())
+        match self.indent {
+            
+            // Fast path for no indentation
+            None => writeln!(self.buf, "{}", record.args()),
+
+            Some(indent_count) => {
+
+                // Create a wrapper around the buffer only if we have to actually indent the message
+
+                struct IndentWrapper<'a, 'b: 'a> {
+                    fmt: &'a mut DefaultFormat<'b>,
+                    indent_count: usize
+                }
+
+                impl<'a, 'b> Write for IndentWrapper<'a, 'b>  {
+                    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+                        let mut first = true;
+                        for chunk in buf.split(|&x| x == b'\n') {
+                            if !first {
+                                let bar = self.fmt.subtle_style("|");
+                                write!(self.fmt.buf, "\n{:width$}{} ", "", bar, width = self.indent_count)?;
+                            }
+                            self.fmt.buf.write_all(chunk)?;
+                            first = false;
+                        }
+
+                        Ok(buf.len())
+                    }
+
+                    fn flush(&mut self) -> io::Result<()> {
+                        self.fmt.buf.flush()
+                    }
+                }
+
+                // The explicit scope here is just to make older versions of Rust happy
+                {
+                    let mut wrapper = IndentWrapper {
+                        fmt: self,
+                        indent_count
+                    };
+                    write!(wrapper, "{}", record.args())?;
+                }
+
+                writeln!(self.buf)?;
+
+                Ok(())
+            }
+
+        }
     }
 }
 
@@ -301,7 +353,7 @@ mod tests {
         let buf = fmt.buf.buf.clone();
 
         let record = Record::builder()
-            .args(format_args!("log message"))
+            .args(format_args!("log\nmessage"))
             .level(Level::Info)
             .file(Some("test.rs"))
             .line(Some(144))
@@ -328,10 +380,11 @@ mod tests {
             module_path: true,
             level: true,
             written_header_value: false,
+            indent: None,
             buf: &mut f,
         });
 
-        assert_eq!("[INFO  test::path] log message\n", written);
+        assert_eq!("[INFO  test::path] log\nmessage\n", written);
     }
 
     #[test]
@@ -348,9 +401,73 @@ mod tests {
             module_path: false,
             level: false,
             written_header_value: false,
+            indent: None,
             buf: &mut f,
         });
 
-        assert_eq!("log message\n", written);
+        assert_eq!("log\nmessage\n", written);
+    }
+
+    #[test]
+    fn default_format_indent_spaces() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            timestamp: false,
+            timestamp_nanos: false,
+            module_path: true,
+            level: true,
+            written_header_value: false,
+            indent: Some(4),
+            buf: &mut f,
+        });
+
+        assert_eq!("[INFO  test::path] log\n    | message\n", written);
+    }
+
+    #[test]
+    fn default_format_indent_zero_spaces() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            timestamp: false,
+            timestamp_nanos: false,
+            module_path: true,
+            level: true,
+            written_header_value: false,
+            indent: Some(0),
+            buf: &mut f,
+        });
+
+        assert_eq!("[INFO  test::path] log\n| message\n", written);
+    }
+
+    #[test]
+    fn default_format_indent_spaces_no_header() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            timestamp: false,
+            timestamp_nanos: false,
+            module_path: false,
+            level: false,
+            written_header_value: false,
+            indent: Some(4),
+            buf: &mut f,
+        });
+
+        assert_eq!("log\n    | message\n", written);
     }
 }
