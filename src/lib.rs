@@ -322,6 +322,7 @@ struct Var<'a> {
 pub struct Logger {
     writer: Writer,
     filter: Filter,
+    #[allow(unknown_lints, bare_trait_objects)]
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 

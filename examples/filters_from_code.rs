@@ -6,8 +6,6 @@ Specify logging filters in code instead of using an environment variable.
 extern crate log;
 extern crate env_logger;
 
-use env_logger::Env;
-
 fn main() {
     env_logger::builder()
         .filter_level(log::LevelFilter::Trace)
