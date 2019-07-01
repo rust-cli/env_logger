@@ -30,8 +30,27 @@
 //! });
 //! ```
 //!
+//! # Key Value arguments
+//!
+//! If the `unstable-kv` feature is enabled, then the default format will include key values from
+//! the log by default, but this can be disabled by calling [`Builder::format_key_values`]
+//! with [`hidden_kv_format`] as the format function.
+//!
+//! The way these keys and values are formatted can also be customized with a separate format
+//! function that is called by the default format with [`Builder::format_key_values`].
+//!
+//! ```
+//! use log::info;
+//! env_logger::init();
+//! info!(x="45"; "Some message");
+//! info!(x="12"; "Another message {x}", x="12");
+//! ```
+//!
+//! See <https://docs.rs/log/latest/log/#structured-logging>.
+//!
 //! [`Builder::format`]: crate::Builder::format
 //! [`Write`]: std::io::Write
+//! [`Builder::format_key_values`]: crate::Builder::format_key_values
 
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -45,6 +64,8 @@ use log::Record;
 
 #[cfg(feature = "humantime")]
 mod humantime;
+#[cfg(feature = "unstable-kv")]
+mod kv;
 pub(crate) mod writer;
 
 #[cfg(feature = "color")]
@@ -52,6 +73,8 @@ pub use anstyle as style;
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
+#[cfg(feature = "unstable-kv")]
+pub use self::kv::*;
 pub use self::writer::Target;
 pub use self::writer::WriteStyle;
 
@@ -181,6 +204,8 @@ pub(crate) struct Builder {
     pub format_indent: Option<usize>,
     pub custom_format: Option<FormatFn>,
     pub format_suffix: &'static str,
+    #[cfg(feature = "unstable-kv")]
+    pub kv_format: Option<Box<KvFormatFn>>,
     built: bool,
 }
 
@@ -213,6 +238,8 @@ impl Builder {
                     written_header_value: false,
                     indent: built.format_indent,
                     suffix: built.format_suffix,
+                    #[cfg(feature = "unstable-kv")]
+                    kv_format: built.kv_format.as_deref().unwrap_or(&default_kv_format),
                     buf,
                 };
 
@@ -232,6 +259,8 @@ impl Default for Builder {
             format_indent: Some(4),
             custom_format: None,
             format_suffix: "\n",
+            #[cfg(feature = "unstable-kv")]
+            kv_format: None,
             built: false,
         }
     }
@@ -275,6 +304,8 @@ struct DefaultFormat<'a> {
     indent: Option<usize>,
     buf: &'a mut Formatter,
     suffix: &'a str,
+    #[cfg(feature = "unstable-kv")]
+    kv_format: &'a KvFormatFn,
 }
 
 impl<'a> DefaultFormat<'a> {
@@ -285,7 +316,10 @@ impl<'a> DefaultFormat<'a> {
         self.write_target(record)?;
         self.finish_header()?;
 
-        self.write_args(record)
+        self.write_args(record)?;
+        #[cfg(feature = "unstable-kv")]
+        self.write_kv(record)?;
+        write!(self.buf, "{}", self.suffix)
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
@@ -401,7 +435,7 @@ impl<'a> DefaultFormat<'a> {
     fn write_args(&mut self, record: &Record) -> io::Result<()> {
         match self.indent {
             // Fast path for no indentation
-            None => write!(self.buf, "{}{}", record.args(), self.suffix),
+            None => write!(self.buf, "{}", record.args()),
 
             Some(indent_count) => {
                 // Create a wrapper around the buffer only if we have to actually indent the message
@@ -445,11 +479,15 @@ impl<'a> DefaultFormat<'a> {
                     write!(wrapper, "{}", record.args())?;
                 }
 
-                write!(self.buf, "{}", self.suffix)?;
-
                 Ok(())
             }
         }
+    }
+
+    #[cfg(feature = "unstable-kv")]
+    fn write_kv(&mut self, record: &Record) -> io::Result<()> {
+        let format = self.kv_format;
+        format(self.buf, record.key_values())
     }
 }
 
@@ -486,19 +524,25 @@ mod tests {
         write_target("", fmt)
     }
 
-    #[test]
-    fn format_with_header() {
+    fn formatter() -> Formatter {
         let writer = writer::Builder::new()
             .write_style(WriteStyle::Never)
             .build();
 
-        let mut f = Formatter::new(&writer);
+        Formatter::new(&writer)
+    }
+
+    #[test]
+    fn format_with_header() {
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
             target: false,
             level: true,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
             suffix: "\n",
@@ -510,17 +554,15 @@ mod tests {
 
     #[test]
     fn format_no_header() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
             target: false,
             level: false,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
             suffix: "\n",
@@ -532,17 +574,15 @@ mod tests {
 
     #[test]
     fn format_indent_spaces() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
             target: false,
             level: true,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
             suffix: "\n",
@@ -554,17 +594,15 @@ mod tests {
 
     #[test]
     fn format_indent_zero_spaces() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
             target: false,
             level: true,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(0),
             suffix: "\n",
@@ -576,17 +614,15 @@ mod tests {
 
     #[test]
     fn format_indent_spaces_no_header() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
             target: false,
             level: false,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
             suffix: "\n",
@@ -598,17 +634,15 @@ mod tests {
 
     #[test]
     fn format_suffix() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
             target: false,
             level: false,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
             suffix: "\n\n",
@@ -620,17 +654,15 @@ mod tests {
 
     #[test]
     fn format_suffix_with_indent() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
             target: false,
             level: false,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
             suffix: "\n\n",
@@ -642,11 +674,7 @@ mod tests {
 
     #[test]
     fn format_target() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write_target(
             "target",
@@ -655,6 +683,8 @@ mod tests {
                 module_path: true,
                 target: true,
                 level: true,
+                #[cfg(feature = "unstable-kv")]
+                kv_format: &hidden_kv_format,
                 written_header_value: false,
                 indent: None,
                 suffix: "\n",
@@ -667,17 +697,15 @@ mod tests {
 
     #[test]
     fn format_empty_target() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
             target: true,
             level: true,
+            #[cfg(feature = "unstable-kv")]
+            kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
             suffix: "\n",
@@ -689,11 +717,7 @@ mod tests {
 
     #[test]
     fn format_no_target() {
-        let writer = writer::Builder::new()
-            .write_style(WriteStyle::Never)
-            .build();
-
-        let mut f = Formatter::new(&writer);
+        let mut f = formatter();
 
         let written = write_target(
             "target",
@@ -702,6 +726,8 @@ mod tests {
                 module_path: true,
                 target: false,
                 level: true,
+                #[cfg(feature = "unstable-kv")]
+                kv_format: &hidden_kv_format,
                 written_header_value: false,
                 indent: None,
                 suffix: "\n",
@@ -710,5 +736,68 @@ mod tests {
         );
 
         assert_eq!("[INFO  test::path] log\nmessage\n", written);
+    }
+
+    #[cfg(feature = "unstable-kv")]
+    #[test]
+    fn format_kv_default() {
+        let kvs = &[("a", 1u32), ("b", 2u32)][..];
+        let mut f = formatter();
+        let record = Record::builder()
+            .args(format_args!("log message"))
+            .level(Level::Info)
+            .module_path(Some("test::path"))
+            .key_values(&kvs)
+            .build();
+
+        let written = write_record(
+            record,
+            DefaultFormat {
+                timestamp: None,
+                module_path: false,
+                target: false,
+                level: true,
+                kv_format: &default_kv_format,
+                written_header_value: false,
+                indent: None,
+                suffix: "\n",
+                buf: &mut f,
+            },
+        );
+
+        assert_eq!("[INFO ] log message a=1 b=2\n", written);
+    }
+
+    #[cfg(feature = "unstable-kv")]
+    #[test]
+    fn format_kv_default_full() {
+        let kvs = &[("a", 1u32), ("b", 2u32)][..];
+        let mut f = formatter();
+        let record = Record::builder()
+            .args(format_args!("log\nmessage"))
+            .level(Level::Info)
+            .module_path(Some("test::path"))
+            .target("target")
+            .file(Some("test.rs"))
+            .line(Some(42))
+            .key_values(&kvs)
+            .build();
+
+        let written = write_record(
+            record,
+            DefaultFormat {
+                timestamp: None,
+                module_path: true,
+                target: true,
+                level: true,
+                kv_format: &default_kv_format,
+                written_header_value: false,
+                indent: None,
+                suffix: "\n",
+                buf: &mut f,
+            },
+        );
+
+        assert_eq!("[INFO  test::path target] log\nmessage a=1 b=2\n", written);
     }
 }
