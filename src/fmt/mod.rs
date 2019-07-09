@@ -310,8 +310,7 @@ impl<'a> DefaultFormat<'a> {
                         let mut first = true;
                         for chunk in buf.split(|&x| x == b'\n') {
                             if !first {
-                                let bar = self.fmt.subtle_style("|");
-                                write!(self.fmt.buf, "\n{:width$}{} ", "", bar, width = self.indent_count)?;
+                                write!(self.fmt.buf, "\n{:width$}", "", width = self.indent_count)?;
                             }
                             self.fmt.buf.write_all(chunk)?;
                             first = false;
@@ -426,7 +425,7 @@ mod tests {
             buf: &mut f,
         });
 
-        assert_eq!("[INFO  test::path] log\n    | message\n", written);
+        assert_eq!("[INFO  test::path] log\n    message\n", written);
     }
 
     #[test]
@@ -447,7 +446,7 @@ mod tests {
             buf: &mut f,
         });
 
-        assert_eq!("[INFO  test::path] log\n| message\n", written);
+        assert_eq!("[INFO  test::path] log\nmessage\n", written);
     }
 
     #[test]
@@ -468,6 +467,6 @@ mod tests {
             buf: &mut f,
         });
 
-        assert_eq!("log\n    | message\n", written);
+        assert_eq!("log\n    message\n", written);
     }
 }
