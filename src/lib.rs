@@ -238,7 +238,7 @@
 
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.6.1")]
+       html_root_url = "https://docs.rs/env_logger/0.6.2")]
 #![cfg_attr(test, deny(warnings))]
 
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -322,6 +322,7 @@ struct Var<'a> {
 pub struct Logger {
     writer: Writer,
     filter: Filter,
+    #[allow(unknown_lints, bare_trait_objects)]
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
 
