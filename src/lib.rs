@@ -272,6 +272,8 @@ use self::filter::Filter;
 use self::fmt::Formatter;
 use self::fmt::writer::{self, Writer};
 
+pub use self::fmt::TimestampPrecision as Timestamp;
+
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 
@@ -518,14 +520,24 @@ impl Builder {
     }
 
     /// Whether or not to write the timestamp in the default format.
+    #[deprecated = "Use format_timestamp() instead"]
     pub fn default_format_timestamp(&mut self, write: bool) -> &mut Self {
-        self.format.default_format_timestamp = write;
+        if write {
+            self.format_timestamp(Some(Timestamp::Seconds));
+        } else {
+            self.format_timestamp(None);
+        }
         self
     }
 
-    /// Whether or not to write the timestamp with nanos.
+    /// Whether or not to write the timestamp with nanosecond precision.
+    #[deprecated = "Use format_timestamp() instead"]
     pub fn default_format_timestamp_nanos(&mut self, write: bool) -> &mut Self {
-        self.format.default_format_timestamp_nanos = write;
+        // The old logic included two booleans: One for timestamp on/off and one
+        // for nanosecond precision. Mimic it here for compatibility.
+        if write && self.format.default_format_timestamp.is_some() {
+            self.format.default_format_timestamp = Some(fmt::TimestampPrecision::Nanos);
+        }
         self
     }
 
@@ -533,6 +545,12 @@ impl Builder {
     /// A value of `None` disables any kind of indentation.
     pub fn default_format_indent(&mut self, indent: Option<usize>) -> &mut Self {
         self.format.default_format_indent = indent;
+        self
+    }
+
+    /// Configures if timestamp should be included and in what precision.
+    pub fn format_timestamp(&mut self, timestamp: Option<Timestamp>) -> &mut Self {
+        self.format.default_format_timestamp = timestamp;
         self
     }
 
