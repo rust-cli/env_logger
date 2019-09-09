@@ -277,6 +277,9 @@ impl<'a> DefaultFormat<'a> {
         }
         #[cfg(not(feature = "humantime"))]
         {
+            // Trick the compiler to think we have used self.timestamp
+            // Workaround for "field is never used: `timestamp`" compiler nag.
+            let _ = self.timestamp;
             Ok(())
         }
     }
