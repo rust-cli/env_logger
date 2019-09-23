@@ -2,13 +2,12 @@ use std::fmt;
 use std::time::SystemTime;
 
 use humantime::{
-    format_rfc3339_micros, format_rfc3339_millis,
-    format_rfc3339_nanos, format_rfc3339_seconds,
+    format_rfc3339_micros, format_rfc3339_millis, format_rfc3339_nanos, format_rfc3339_seconds,
 };
 
-use ::fmt::{Formatter, TimestampPrecision};
+use crate::fmt::{Formatter, TimestampPrecision};
 
-pub(in ::fmt) mod glob {
+pub(in crate::fmt) mod glob {
     pub use super::*;
 }
 
@@ -74,12 +73,6 @@ impl Formatter {
             precision: TimestampPrecision::Nanos,
         }
     }
-
-    /// Get a [`PreciseTimestamp`] for the current date and time in UTC with nanos.
-    #[deprecated = "Use timestamp_nanos() instead"]
-    pub fn precise_timestamp(&self) -> PreciseTimestamp {
-        PreciseTimestamp(SystemTime::now())
-    }
 }
 
 /// An [RFC3339] formatted timestamp.
@@ -94,12 +87,6 @@ pub struct Timestamp {
     precision: TimestampPrecision,
 }
 
-/// An [RFC3339] formatted timestamp with nanos.
-///
-/// [RFC3339]: https://www.ietf.org/rfc/rfc3339.txt
-#[derive(Debug)]
-pub struct PreciseTimestamp(SystemTime);
-
 impl fmt::Debug for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         /// A `Debug` wrapper for `Timestamp` that uses the `Display` implementation.
@@ -112,8 +99,8 @@ impl fmt::Debug for Timestamp {
         }
 
         f.debug_tuple("Timestamp")
-        .field(&TimestampValue(&self))
-        .finish()
+            .field(&TimestampValue(&self))
+            .finish()
     }
 }
 
@@ -127,11 +114,5 @@ impl fmt::Display for Timestamp {
         };
 
         formatter(self.time).fmt(f)
-    }
-}
-
-impl fmt::Display for PreciseTimestamp {
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        format_rfc3339_nanos(self.0).fmt(f)
     }
 }

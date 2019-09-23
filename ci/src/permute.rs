@@ -1,6 +1,9 @@
 use std::collections::BTreeSet;
 
-pub fn all<T>(input: &[T]) -> BTreeSet<BTreeSet<T>> where T: Ord + Eq + Clone {
+pub fn all<T>(input: &[T]) -> BTreeSet<BTreeSet<T>>
+where
+    T: Ord + Eq + Clone,
+{
     let mut permutations = BTreeSet::new();
 
     if input.len() == 0 {

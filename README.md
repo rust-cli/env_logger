@@ -24,7 +24,6 @@ env_logger = "0.6.2"
 ```rust
 #[macro_use]
 extern crate log;
-extern crate env_logger;
 
 fn main() {
     env_logger::init();
@@ -69,7 +68,6 @@ fn add_one(num: i32) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate env_logger;
 
     fn init() {
         let _ = env_logger::builder().is_test(true).try_init();
