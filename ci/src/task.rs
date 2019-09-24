@@ -1,8 +1,5 @@
 use std::collections::BTreeSet;
-use std::process::{
-    Command,
-    Stdio,
-};
+use std::process::{Command, Stdio};
 
 pub type Feature = &'static str;
 
@@ -45,7 +42,7 @@ pub fn test(args: TestArgs) -> bool {
     let features = args.features_string();
 
     let mut command = Command::new("cargo");
-        
+
     command
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -65,13 +62,14 @@ pub fn test(args: TestArgs) -> bool {
     }
 
     println!("running {:?}", command);
-    
-    let status = command
-        .status()
-        .expect("Failed to execute command");
+
+    let status = command.status().expect("Failed to execute command");
 
     if !status.success() {
-        eprintln!("test execution failed for features: {}", features.as_ref().map(AsRef::as_ref).unwrap_or(""));
+        eprintln!(
+            "test execution failed for features: {}",
+            features.as_ref().map(AsRef::as_ref).unwrap_or("")
+        );
         false
     } else {
         true
