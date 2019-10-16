@@ -807,7 +807,7 @@ impl Log for Logger {
                 static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
             }
 
-            FORMATTER.with(|tl_buf| {
+            let tls_result = FORMATTER.try_with(|tl_buf| {
                 // It's possible for implementations to sometimes
                 // log-while-logging (e.g. a `std::fmt` implementation logs
                 // internally) but it's super rare. If this happens make sure we
@@ -842,6 +842,15 @@ impl Log for Logger {
                 // Always clear the buffer afterwards
                 formatter.clear();
             });
+
+            if tls_result.is_err() {
+                // The thread-local storage was not available (because its
+                // destructor has already run). Create a new single-use
+                // Formatter on the stack for this call.
+                let mut formatter = Formatter::new(&self.writer);
+                let _ = (self.format)(&mut formatter, record)
+                    .and_then(|_| formatter.print(&self.writer));
+            }
         }
     }
 
