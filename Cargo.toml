@@ -35,6 +35,10 @@ name = "log-in-log"
 harness = false
 
 [[test]]
+name = "log_tls_dtors"
+harness = false
+
+[[test]]
 name = "init-twice-retains-filter"
 harness = false
 
