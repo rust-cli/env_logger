@@ -237,7 +237,7 @@
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-    html_root_url = "https://docs.rs/env_logger/0.7.0"
+    html_root_url = "https://docs.rs/env_logger/0.7.1"
 )]
 #![cfg_attr(test, deny(warnings))]
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -808,41 +808,43 @@ impl Log for Logger {
             }
 
             let print = |formatter: &mut Formatter, record: &Record| {
-                let _ = (self.format)(formatter, record)
-                    .and_then(|_| formatter.print(&self.writer));
+                let _ =
+                    (self.format)(formatter, record).and_then(|_| formatter.print(&self.writer));
 
                 // Always clear the buffer afterwards
                 formatter.clear();
             };
 
-            let printed = FORMATTER.try_with(|tl_buf| {
-                match tl_buf.try_borrow_mut() {
-                    // There are no active borrows of the buffer
-                    Ok(mut tl_buf) => match *tl_buf {
-                        // We have a previously set formatter
-                        Some(ref mut formatter) => {
-                            // Check the buffer style. If it's different from the logger's
-                            // style then drop the buffer and recreate it.
-                            if formatter.write_style() != self.writer.write_style() {
-                                *formatter = Formatter::new(&self.writer);
+            let printed = FORMATTER
+                .try_with(|tl_buf| {
+                    match tl_buf.try_borrow_mut() {
+                        // There are no active borrows of the buffer
+                        Ok(mut tl_buf) => match *tl_buf {
+                            // We have a previously set formatter
+                            Some(ref mut formatter) => {
+                                // Check the buffer style. If it's different from the logger's
+                                // style then drop the buffer and recreate it.
+                                if formatter.write_style() != self.writer.write_style() {
+                                    *formatter = Formatter::new(&self.writer);
+                                }
+
+                                print(formatter, record);
                             }
+                            // We don't have a previously set formatter
+                            None => {
+                                let mut formatter = Formatter::new(&self.writer);
+                                print(&mut formatter, record);
 
-                            print(formatter, record);
-                        }
-                        // We don't have a previously set formatter
-                        None => {
-                            let mut formatter = Formatter::new(&self.writer);
-                            print(&mut formatter, record);
-
-                            *tl_buf = Some(formatter);
+                                *tl_buf = Some(formatter);
+                            }
+                        },
+                        // There's already an active borrow of the buffer (due to re-entrancy)
+                        Err(_) => {
+                            print(&mut Formatter::new(&self.writer), record);
                         }
                     }
-                    // There's already an active borrow of the buffer (due to re-entrancy)
-                    Err(_) => {
-                        print(&mut Formatter::new(&self.writer), record);
-                    }
-                }
-            }).is_ok();
+                })
+                .is_ok();
 
             if !printed {
                 // The thread-local storage was not available (because its
