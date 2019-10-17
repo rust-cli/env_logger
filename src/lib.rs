@@ -807,49 +807,48 @@ impl Log for Logger {
                 static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
             }
 
-            let tls_result = FORMATTER.try_with(|tl_buf| {
-                // It's possible for implementations to sometimes
-                // log-while-logging (e.g. a `std::fmt` implementation logs
-                // internally) but it's super rare. If this happens make sure we
-                // at least don't panic and ship some output to the screen.
-                let mut a;
-                let mut b = None;
-                let tl_buf = match tl_buf.try_borrow_mut() {
-                    Ok(f) => {
-                        a = f;
-                        &mut *a
-                    }
-                    Err(_) => &mut b,
-                };
-
-                // Check the buffer style. If it's different from the logger's
-                // style then drop the buffer and recreate it.
-                match *tl_buf {
-                    Some(ref mut formatter) => {
-                        if formatter.write_style() != self.writer.write_style() {
-                            *formatter = Formatter::new(&self.writer)
-                        }
-                    }
-                    ref mut tl_buf => *tl_buf = Some(Formatter::new(&self.writer)),
-                }
-
-                // The format is guaranteed to be `Some` by this point
-                let mut formatter = tl_buf.as_mut().unwrap();
-
-                let _ = (self.format)(&mut formatter, record)
+            let print = |formatter: &mut Formatter, record: &Record| {
+                let _ = (self.format)(formatter, record)
                     .and_then(|_| formatter.print(&self.writer));
 
                 // Always clear the buffer afterwards
                 formatter.clear();
-            });
+            };
 
-            if tls_result.is_err() {
+            let printed = FORMATTER.try_with(|tl_buf| {
+                match tl_buf.try_borrow_mut() {
+                    // There are no active borrows of the buffer
+                    Ok(mut tl_buf) => match *tl_buf {
+                        // We have a previously set formatter
+                        Some(ref mut formatter) => {
+                            // Check the buffer style. If it's different from the logger's
+                            // style then drop the buffer and recreate it.
+                            if formatter.write_style() != self.writer.write_style() {
+                                *formatter = Formatter::new(&self.writer);
+                            }
+
+                            print(formatter, record);
+                        }
+                        // We don't have a previously set formatter
+                        None => {
+                            let mut formatter = Formatter::new(&self.writer);
+                            print(&mut formatter, record);
+
+                            *tl_buf = Some(formatter);
+                        }
+                    }
+                    // There's already an active borrow of the buffer (due to re-entrancy)
+                    Err(_) => {
+                        print(&mut Formatter::new(&self.writer), record);
+                    }
+                }
+            }).is_ok();
+
+            if !printed {
                 // The thread-local storage was not available (because its
                 // destructor has already run). Create a new single-use
                 // Formatter on the stack for this call.
-                let mut formatter = Formatter::new(&self.writer);
-                let _ = (self.format)(&mut formatter, record)
-                    .and_then(|_| formatter.print(&self.writer));
+                print(&mut Formatter::new(&self.writer), record);
             }
         }
     }
