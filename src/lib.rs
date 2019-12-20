@@ -286,16 +286,11 @@ use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 pub mod filter;
 pub mod fmt;
 
-pub mod wasm;
-
 pub use self::fmt::glob::*;
 
 use self::filter::Filter;
 use self::fmt::writer::{self, Writer};
 use self::fmt::{FormatFn, Formatter};
-
-#[cfg(target="wasm32-unknown-unknown")]
-use crate::wasm;
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &str = "RUST_LOG";
@@ -895,17 +890,6 @@ impl Log for Logger {
         self.filter.enabled(metadata)
     }
 
-    #[cfg(target="wasm32-unknown-unknown")]
-    fn log(&self, record: &Record) {
-        if self.matches(record) {
-            // TODO: use self.format to format the logs
-            let msg = format!("{<5}: {}", record.level(), record.args());
-
-            wasm::print(msg, record.level());
-        }
-    }
-
-    #[cfg(not(target="wasm32-unknown-unknown"))]
     fn log(&self, record: &Record) {
         if self.matches(record) {
             // Log records are written to a thread-local buffer before being printed
