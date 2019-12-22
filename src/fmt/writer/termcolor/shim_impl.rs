@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::fmt::{Target, WriteStyle};
+#[cfg(all(target_arch="wasm32", target_vendor="unknown"))]
 use crate::fmt::writer::web;
 
 pub(in crate::fmt::writer) mod glob {}
