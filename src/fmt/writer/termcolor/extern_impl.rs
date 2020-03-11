@@ -51,7 +51,7 @@ impl Formatter {
     pub fn default_level_style(&self, level: Level) -> Style {
         let mut level_style = self.style();
         match level {
-            Level::Trace => level_style.set_color(Color::Black).set_intense(true),
+            Level::Trace => level_style.set_color(Color::Cyan),
             Level::Debug => level_style.set_color(Color::Blue),
             Level::Info => level_style.set_color(Color::Green),
             Level::Warn => level_style.set_color(Color::Yellow),
