@@ -412,17 +412,61 @@ impl Builder {
         E: Into<Env<'a>>,
     {
         let mut builder = Builder::new();
+        builder.parse_env(env);
+        builder
+    }
+
+    /// Applies the configuration from the environment.
+    ///
+    /// This function allows a builder to be configured with default parameters,
+    /// to be then overridden by the environment.
+    ///
+    /// # Examples
+    ///
+    /// Initialise a logger with filter level `Off`, then override the log
+    /// filter from an environment variable called `MY_LOG`:
+    ///
+    /// ```
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.filter_level(LevelFilter::Off);
+    /// builder.parse_env("MY_LOG");
+    /// builder.init();
+    /// ```
+    ///
+    /// Initialise a logger with filter level `Off`, then use the `MY_LOG`
+    /// variable to override filtering and `MY_LOG_STYLE` to override  whether
+    /// or not to write styles:
+    ///
+    /// ```
+    /// use log::LevelFilter;
+    /// use env_logger::{Builder, Env};
+    ///
+    /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
+    ///
+    /// let mut builder = Builder::new();
+    /// builder.filter_level(LevelFilter::Off);
+    /// builder.parse_env(env);
+    /// builder.init();
+    /// ```
+    pub fn parse_env<'a, E>(&mut self, env: E) -> &mut Self
+    where
+        E: Into<Env<'a>>,
+    {
         let env = env.into();
 
         if let Some(s) = env.get_filter() {
-            builder.parse_filters(&s);
+            self.parse_filters(&s);
         }
 
         if let Some(s) = env.get_write_style() {
-            builder.parse_write_style(&s);
+            self.parse_write_style(&s);
         }
 
-        builder
+        self
     }
 
     /// Initializes the log builder from the environment using default variable names.
@@ -445,6 +489,32 @@ impl Builder {
     /// [default environment variables]: struct.Env.html#default-environment-variables
     pub fn from_default_env() -> Self {
         Self::from_env(Env::default())
+    }
+
+    /// Applies the configuration from the environment using default variable names.
+    ///
+    /// This method is a convenient way to call `parse_env(Env::default())` without
+    /// having to use the `Env` type explicitly. The builder will use the
+    /// [default environment variables].
+    ///
+    /// # Examples
+    ///
+    /// Initialise a logger with filter level `Off`, then configure it using the
+    /// default environment variables:
+    ///
+    /// ```
+    /// use log::LevelFilter;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    /// builder.filter_level(LevelFilter::Off);
+    /// builder.parse_default_env();
+    /// builder.init();
+    /// ```
+    ///
+    /// [default environment variables]: struct.Env.html#default-environment-variables
+    pub fn parse_default_env(&mut self) -> &mut Self {
+        self.parse_env(Env::default())
     }
 
     /// Sets the format function for formatting the log output.
