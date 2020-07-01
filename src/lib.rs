@@ -538,7 +538,7 @@ impl Builder {
     ///
     /// # Examples
     ///
-    /// Only include messages for warning and above for logs in `path::to::module`:
+    /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
     /// # fn main() {
@@ -559,7 +559,7 @@ impl Builder {
     ///
     /// # Examples
     ///
-    /// Only include messages for warning and above for logs in `path::to::module`:
+    /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
     /// # fn main() {
@@ -583,7 +583,7 @@ impl Builder {
     ///
     /// # Examples
     ///
-    /// Only include messages for warning and above for logs in `path::to::module`:
+    /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
     /// # fn main() {
