@@ -452,6 +452,7 @@ impl_styled_value_fmt!(
 /// Hexadecimal numbers are written with a `0x` prefix.
 #[allow(missing_docs)]
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum Color {
     Black,
     Blue,
@@ -463,8 +464,6 @@ pub enum Color {
     White,
     Ansi256(u8),
     Rgb(u8, u8, u8),
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 impl Color {
@@ -480,7 +479,6 @@ impl Color {
             Color::White => Some(termcolor::Color::White),
             Color::Ansi256(value) => Some(termcolor::Color::Ansi256(value)),
             Color::Rgb(r, g, b) => Some(termcolor::Color::Rgb(r, g, b)),
-            _ => None,
         }
     }
 }
