@@ -19,6 +19,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: nightly
+          override: true
           components: rustfmt
 
       - name: Check formatting
@@ -46,7 +48,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ $matrix.rust }}
+          toolchain: ${{ matrix.rust }}
           override: true
 
       - name: Run cargo check
@@ -65,6 +67,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
+          override: true
           components: clippy
 
       - name: Run lints
