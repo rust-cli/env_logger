@@ -312,7 +312,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
     }
     mods.map(|m| {
         for s in m.split(',') {
-            if s.len() == 0 {
+            if s.is_empty() {
                 continue;
             }
             let mut parts = s.split('=');
@@ -354,7 +354,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         }
     });
 
-    let filter = filter.map_or(None, |filter| match inner::Filter::new(filter) {
+    let filter = filter.and_then(|filter| match inner::Filter::new(filter) {
         Ok(re) => Some(re),
         Err(e) => {
             eprintln!("warning: invalid regex filter - {}", e);
@@ -362,7 +362,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         }
     });
 
-    return (dirs, filter);
+    (dirs, filter)
 }
 
 // Check whether a level and target are enabled by the set of directives.

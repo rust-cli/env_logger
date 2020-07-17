@@ -245,6 +245,7 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 #![deny(missing_debug_implementations, missing_docs, warnings)]
+#![allow(clippy::needless_doctest_main)]
 
 use std::{borrow::Cow, cell::RefCell, env, io};
 
@@ -260,10 +261,10 @@ use self::fmt::writer::{self, Writer};
 use self::fmt::Formatter;
 
 /// The default name for the environment variable to read filters from.
-pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
+pub const DEFAULT_FILTER_ENV: &str = "RUST_LOG";
 
 /// The default name for the environment variable to read style preferences from.
-pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+pub const DEFAULT_WRITE_STYLE_ENV: &str = "RUST_LOG_STYLE";
 
 /// Set of environment variables to configure from.
 ///
