@@ -225,7 +225,7 @@
 //! ```
 //! use env_logger::Env;
 //!
-//! env_logger::from_env(Env::default().default_filter_or("warn")).init();
+//! env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //!
 //! [log-crate-url]: https://docs.rs/log/
@@ -1185,6 +1185,9 @@ where
 /// Create a new builder with the default environment variables.
 ///
 /// The builder can be configured before being initialized.
+/// This is a convenient way of calling [`Builder::from_default_env`].
+///
+/// [`Builder::from_default_env`]: struct.Builder.html#method.from_default_env
 pub fn builder() -> Builder {
     Builder::from_default_env()
 }
@@ -1192,6 +1195,10 @@ pub fn builder() -> Builder {
 /// Create a builder from the given environment variables.
 ///
 /// The builder can be configured before being initialized.
+#[deprecated(
+    since = "0.7.2",
+    note = "Prefer `env_logger::Builder::from_env()` instead."
+)]
 pub fn from_env<'a, E>(env: E) -> Builder
 where
     E: Into<Env<'a>>,
