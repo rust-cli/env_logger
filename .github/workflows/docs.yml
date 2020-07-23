@@ -8,6 +8,7 @@ on:
       - "**.rs"
       - "Cargo.toml"
       - "Cargo.lock"
+  workflow_dispatch:
 
 jobs:
   docs:
