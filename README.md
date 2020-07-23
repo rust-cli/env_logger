@@ -1,9 +1,9 @@
 # env_logger 
 [![Build Status](https://travis-ci.org/sebasmagri/env_logger.svg?branch=master)](https://travis-ci.org/sebasmagri/env_logger)
-[![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen.svg)](https://github.com/sebasmagri/env_logger)
+[![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen.svg)](https://github.com/env-logger-rs/env_logger)
 [![crates.io](https://img.shields.io/crates/v/env_logger.svg)](https://crates.io/crates/env_logger)
 [![Documentation](https://docs.rs/env_logger/badge.svg)](https://docs.rs/env_logger)
-[![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://env-logger-rs.github.io/env_logger)
+[![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://env-logger-rs.github.io/env_logger/index.html)
 ==========
 
 Implements a logger that can be configured via environment variables.
