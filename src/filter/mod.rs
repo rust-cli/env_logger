@@ -864,12 +864,12 @@ mod tests {
     #[test]
     fn parse_spec_name_canonicalization() {
         // accept binary names in both styles (`snake_case` and `kebab-case`)
-        let (dirs, _) = parse_spec("snake_case_crate=info,kebaba-case-crate=debug");
+        let (dirs, _) = parse_spec("snake_case_crate=info,kebab-case-crate=debug");
         assert_eq!(dirs.len(), 2);
         assert_eq!(dirs[0].name, Some("snake_case_crate".to_string()));
         assert_eq!(dirs[0].level, LevelFilter::Info);
 
-        assert_eq!(dirs[1].name, Some("kebaba_case_crate".to_string()));
+        assert_eq!(dirs[1].name, Some("kebab_case_crate".to_string()));
         assert_eq!(dirs[1].level, LevelFilter::Debug);
     }
 }
