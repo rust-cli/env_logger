@@ -232,7 +232,7 @@
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-    html_root_url = "https://docs.rs/env_logger/0.7.1"
+    html_root_url = "https://docs.rs/env_logger/0.8.0"
 )]
 #![cfg_attr(test, deny(warnings))]
 // When compiled for the rustc compiler itself we want to make sure that this is
@@ -1178,7 +1178,7 @@ pub fn builder() -> Builder {
 ///
 /// The builder can be configured before being initialized.
 #[deprecated(
-    since = "0.7.2",
+    since = "0.8.0",
     note = "Prefer `env_logger::Builder::from_env()` instead."
 )]
 pub fn from_env<'a, E>(env: E) -> Builder
