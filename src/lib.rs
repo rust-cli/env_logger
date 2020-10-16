@@ -15,20 +15,16 @@
 //! ## Example
 //!
 //! ```
-//! #[macro_use] extern crate log;
+//! use log::{debug, error, log_enabled, info, Level};
 //!
-//! use log::Level;
+//! env_logger::init();
 //!
-//! fn main() {
-//!     env_logger::init();
+//! debug!("this is a debug {}", "message");
+//! error!("this is printed by default");
 //!
-//!     debug!("this is a debug {}", "message");
-//!     error!("this is printed by default");
-//!
-//!     if log_enabled!(Level::Info) {
-//!         let x = 3 * 4; // expensive computation
-//!         info!("the answer was: {}", x);
-//!     }
+//! if log_enabled!(Level::Info) {
+//!     let x = 3 * 4; // expensive computation
+//!     info!("the answer was: {}", x);
 //! }
 //! ```
 //!
@@ -146,7 +142,6 @@
 //!
 //! ```
 //! # #[macro_use] extern crate log;
-//! # fn main() {}
 //! #[cfg(test)]
 //! mod tests {
 //!     fn init() {
@@ -245,7 +240,6 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 #![deny(missing_debug_implementations, missing_docs, warnings)]
-#![allow(clippy::needless_doctest_main)]
 
 use std::{borrow::Cow, cell::RefCell, env, io};
 
@@ -258,7 +252,7 @@ pub use self::fmt::glob::*;
 
 use self::filter::Filter;
 use self::fmt::writer::{self, Writer};
-use self::fmt::Formatter;
+use self::fmt::{FormatFn, Formatter};
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &str = "RUST_LOG";
@@ -310,8 +304,7 @@ struct Var<'a> {
 pub struct Logger {
     writer: Writer,
     filter: Filter,
-    #[allow(unknown_lints, bare_trait_objects)]
-    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+    format: FormatFn,
 }
 
 /// `Builder` acts as builder for initializing a `Logger`.
@@ -322,23 +315,20 @@ pub struct Logger {
 /// # Examples
 ///
 /// ```
-/// #[macro_use] extern crate log;
-///
-/// use std::env;
-/// use std::io::Write;
-/// use log::LevelFilter;
+/// # #[macro_use] extern crate log;
+/// # use std::io::Write;
 /// use env_logger::Builder;
+/// use log::LevelFilter;
 ///
-/// fn main() {
-///     let mut builder = Builder::from_default_env();
+/// let mut builder = Builder::from_default_env();
 ///
-///     builder.format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
-///            .filter(None, LevelFilter::Info)
-///            .init();
+/// builder
+///     .format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
+///     .filter(None, LevelFilter::Info)
+///     .init();
 ///
-///     error!("error message");
-///     info!("info message");
-/// }
+/// error!("error message");
+/// info!("info message");
 /// ```
 #[derive(Default)]
 pub struct Builder {
@@ -360,16 +350,15 @@ impl Builder {
     /// Create a new builder and configure filters and style:
     ///
     /// ```
-    /// # fn main() {
     /// use log::LevelFilter;
     /// use env_logger::{Builder, WriteStyle};
     ///
     /// let mut builder = Builder::new();
     ///
-    /// builder.filter(None, LevelFilter::Info)
-    ///        .write_style(WriteStyle::Always)
-    ///        .init();
-    /// # }
+    /// builder
+    ///     .filter(None, LevelFilter::Info)
+    ///     .write_style(WriteStyle::Always)
+    ///     .init();
     /// ```
     ///
     /// [`filter`]: #method.filter
@@ -612,14 +601,12 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// # fn main() {
-    /// use log::LevelFilter;
     /// use env_logger::Builder;
+    /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter_module("path::to::module", LevelFilter::Info);
-    /// # }
     /// ```
     pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
         self.filter.filter_module(module, level);
@@ -633,14 +620,12 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// # fn main() {
-    /// use log::LevelFilter;
     /// use env_logger::Builder;
+    /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter_level(LevelFilter::Info);
-    /// # }
     /// ```
     pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
         self.filter.filter_level(level);
@@ -657,14 +642,12 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// # fn main() {
-    /// use log::LevelFilter;
     /// use env_logger::Builder;
+    /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter(Some("path::to::module"), LevelFilter::Info);
-    /// # }
     /// ```
     pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
         self.filter.filter(module, level);
@@ -1125,7 +1108,6 @@ pub fn init() {
 /// and `MY_LOG_STYLE` for writing colors:
 ///
 /// ```
-/// # extern crate env_logger;
 /// use env_logger::{Builder, Env};
 ///
 /// # fn run() -> Result<(), Box<::std::error::Error>> {
@@ -1135,7 +1117,7 @@ pub fn init() {
 ///
 /// Ok(())
 /// # }
-/// # fn main() { run().unwrap(); }
+/// # run().unwrap();
 /// ```
 ///
 /// # Errors
