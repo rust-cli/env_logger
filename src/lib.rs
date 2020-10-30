@@ -714,6 +714,7 @@ impl Builder {
     ///
     /// If `is_test` is `true` then the logger will allow the testing framework to
     /// capture log records rather than printing them to the terminal directly.
+    #[allow(clippy::wrong_self_convention)]
     pub fn is_test(mut self, is_test: bool) -> Self {
         self.writer = self.writer.is_test(is_test);
         self
