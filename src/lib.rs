@@ -731,7 +731,7 @@ impl Builder {
     ///
     /// This function will fail if it is called more than once, or if another
     /// library has already initialized a global logger.
-    pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
+    pub fn try_init(self) -> Result<(), SetLoggerError> {
         let logger = self.build();
 
         let max_level = logger.filter();
@@ -753,7 +753,7 @@ impl Builder {
     ///
     /// This function will panic if it is called more than once, or if another
     /// library has already initialized a global logger.
-    pub fn init(&mut self) {
+    pub fn init(self) {
         self.try_init()
             .expect("Builder::init should not be called after logger initialized");
     }
@@ -762,10 +762,7 @@ impl Builder {
     ///
     /// The returned logger implements the `Log` trait and can be installed manually
     /// or nested within another logger.
-    pub fn build(&mut self) -> Logger {
-        assert!(!self.built, "attempt to re-use consumed builder");
-        self.built = true;
-
+    pub fn build(mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
@@ -1128,9 +1125,7 @@ pub fn try_init_from_env<'a, E>(env: E) -> Result<(), SetLoggerError>
 where
     E: Into<Env<'a>>,
 {
-    let mut builder = Builder::from_env(env);
-
-    builder.try_init()
+    Builder::from_env(env).try_init()
 }
 
 /// Initializes the global logger with an env logger from the given environment
