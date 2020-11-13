@@ -102,17 +102,14 @@ impl BufferWriter {
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
         if let Some(target) = self.test_target {
-            // This impl uses the `eprint` and `print` macros
-            // instead of `termcolor`'s buffer.
-            // This is so their output can be captured by `cargo test`
-            let log = String::from_utf8_lossy(buf.bytes());
-
+            // This impl writes directly to stderr / stdout instead of using
+            // `termcolor`'s buffer.  This is so their output can be captured by
+            // `cargo test`
             match target {
-                Target::Stderr => eprint!("{}", log),
-                Target::Stdout => print!("{}", log),
+                Target::Stderr => io::stderr().write_all(buf.bytes()),
+                Target::Stdout => io::stdout().write_all(buf.bytes()),
             }
-
-            Ok(())
+            .map(|_| ())
         } else {
             self.inner.print(&buf.inner)
         }

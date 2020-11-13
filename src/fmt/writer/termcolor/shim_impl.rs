@@ -28,17 +28,15 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        // This impl uses the `eprint` and `print` macros
-        // instead of using the streams directly.
-        // This is so their output can be captured by `cargo test`
-        let log = String::from_utf8_lossy(&buf.0);
+        use std::io::Write;
 
+        // This impl writes to stdout / stderr instead of using the streams
+        // directly.  This is so their output can be captured by `cargo test`
         match self.target {
-            Target::Stderr => eprint!("{}", log),
-            Target::Stdout => print!("{}", log),
+            Target::Stderr => io::stderr().write_all(&buf.0),
+            Target::Stdout => io::stdout().write_all(&buf.0),
         }
-
-        Ok(())
+        .map(|_| ())
     }
 }
 
