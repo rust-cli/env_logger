@@ -29,7 +29,7 @@
 //!
 //!         // Parse a directives string from an environment variable
 //!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
-//!            builder.parse(filter);
+//!            builder = builder.parse(filter);
 //!         }
 //!
 //!         MyLogger {
@@ -99,7 +99,7 @@ pub struct Filter {
 ///
 /// // Parse a logging filter from an environment variable.
 /// if let Ok(rust_log) = env::var("RUST_LOG") {
-///     builder.parse(&rust_log);
+///     builder = builder.parse(&rust_log);
 /// }
 ///
 /// let filter = builder.build();
@@ -128,11 +128,11 @@ impl Filter {
     /// use log::LevelFilter;
     /// use env_logger::filter::Builder;
     ///
-    /// let mut builder = Builder::new();
-    /// builder.filter(Some("module1"), LevelFilter::Info);
-    /// builder.filter(Some("module2"), LevelFilter::Error);
+    /// let filter = Builder::new()
+    ///     .filter(Some("module1"), LevelFilter::Info)
+    ///     .filter(Some("module2"), LevelFilter::Error)
+    ///     .build();
     ///
-    /// let filter = builder.build();
     /// assert_eq!(filter.filter(), LevelFilter::Info);
     /// ```
     pub fn filter(&self) -> LevelFilter {
@@ -182,19 +182,19 @@ impl Builder {
         let mut builder = Builder::new();
 
         if let Ok(s) = env::var(env) {
-            builder.parse(&s);
+            builder = builder.parse(&s);
         }
 
         builder
     }
 
     /// Adds a directive to the filter for a specific module.
-    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+    pub fn filter_module(self, module: &str, level: LevelFilter) -> Self {
         self.filter(Some(module), level)
     }
 
     /// Adds a directive to the filter for all modules.
-    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+    pub fn filter_level(self, level: LevelFilter) -> Self {
         self.filter(None, level)
     }
 
@@ -202,7 +202,7 @@ impl Builder {
     ///
     /// The given module (if any) will log at most the specified level provided.
     /// If no module is provided then the filter will apply to all log messages.
-    pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
+    pub fn filter(mut self, module: Option<&str>, level: LevelFilter) -> Self {
         self.directives.push(Directive {
             name: module.map(|s| s.to_string()),
             level,
@@ -215,7 +215,7 @@ impl Builder {
     /// See the [Enabling Logging] section for more details.
     ///
     /// [Enabling Logging]: ../index.html#enabling-logging
-    pub fn parse(&mut self, filters: &str) -> &mut Self {
+    pub fn parse(mut self, filters: &str) -> Self {
         let (directives, filter) = parse_spec(filters);
 
         self.filter = filter;

@@ -86,7 +86,7 @@ impl Builder {
     }
 
     /// Set the target to write to.
-    pub(crate) fn target(&mut self, target: Target) -> &mut Self {
+    pub(crate) fn target(mut self, target: Target) -> Self {
         self.target = target;
         self
     }
@@ -96,18 +96,19 @@ impl Builder {
     /// See the [Disabling colors] section for more details.
     ///
     /// [Disabling colors]: ../index.html#disabling-colors
-    pub(crate) fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
+    pub(crate) fn parse_write_style(self, write_style: &str) -> Self {
         self.write_style(parse_write_style(write_style))
     }
 
     /// Whether or not to print style characters when writing.
-    pub(crate) fn write_style(&mut self, write_style: WriteStyle) -> &mut Self {
+    pub(crate) fn write_style(mut self, write_style: WriteStyle) -> Self {
         self.write_style = write_style;
         self
     }
 
     /// Whether or not to capture logs for `cargo test`.
-    pub(crate) fn is_test(&mut self, is_test: bool) -> &mut Self {
+    #[allow(clippy::wrong_self_convention)]
+    pub(crate) fn is_test(mut self, is_test: bool) -> Self {
         self.is_test = is_test;
         self
     }

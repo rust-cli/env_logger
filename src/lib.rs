@@ -401,9 +401,7 @@ impl Builder {
     where
         E: Into<Env<'a>>,
     {
-        let mut builder = Builder::new();
-        builder.parse_env(env);
-        builder
+        Builder::new().parse_env(env)
     }
 
     /// Applies the configuration from the environment.
@@ -420,11 +418,10 @@ impl Builder {
     /// use log::LevelFilter;
     /// use env_logger::Builder;
     ///
-    /// let mut builder = Builder::new();
-    ///
-    /// builder.filter_level(LevelFilter::Off);
-    /// builder.parse_env("MY_LOG");
-    /// builder.init();
+    /// Builder::new()
+    ///     .filter_level(LevelFilter::Off)
+    ///     .parse_env("MY_LOG")
+    ///     .init();
     /// ```
     ///
     /// Initialise a logger with filter level `Off`, then use the `MY_LOG`
@@ -437,23 +434,23 @@ impl Builder {
     ///
     /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
     ///
-    /// let mut builder = Builder::new();
-    /// builder.filter_level(LevelFilter::Off);
-    /// builder.parse_env(env);
-    /// builder.init();
+    /// Builder::new()
+    ///     .filter_level(LevelFilter::Off)
+    ///     .parse_env(env)
+    ///     .init();
     /// ```
-    pub fn parse_env<'a, E>(&mut self, env: E) -> &mut Self
+    pub fn parse_env<'a, E>(mut self, env: E) -> Self
     where
         E: Into<Env<'a>>,
     {
         let env = env.into();
 
         if let Some(s) = env.get_filter() {
-            self.parse_filters(&s);
+            self = self.parse_filters(&s);
         }
 
         if let Some(s) = env.get_write_style() {
-            self.parse_write_style(&s);
+            self = self.parse_write_style(&s);
         }
 
         self
@@ -496,14 +493,14 @@ impl Builder {
     /// use log::LevelFilter;
     /// use env_logger::Builder;
     ///
-    /// let mut builder = Builder::new();
-    /// builder.filter_level(LevelFilter::Off);
-    /// builder.parse_default_env();
-    /// builder.init();
+    /// let mut builder = Builder::new()
+    ///     .filter_level(LevelFilter::Off)
+    ///     .parse_default_env()
+    ///     .init();
     /// ```
     ///
     /// [default environment variables]: struct.Env.html#default-environment-variables
-    pub fn parse_default_env(&mut self) -> &mut Self {
+    pub fn parse_default_env(self) -> Self {
         self.parse_env(Env::default())
     }
 
@@ -533,7 +530,7 @@ impl Builder {
     /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
+    pub fn format<F: 'static>(mut self, format: F) -> Self
     where
         F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send,
     {
@@ -544,53 +541,53 @@ impl Builder {
     /// Use the default format.
     ///
     /// This method will clear any custom format set on the builder.
-    pub fn default_format(&mut self) -> &mut Self {
+    pub fn default_format(mut self) -> Self {
         self.format = Default::default();
         self
     }
 
     /// Whether or not to write the level in the default format.
-    pub fn format_level(&mut self, write: bool) -> &mut Self {
+    pub fn format_level(mut self, write: bool) -> Self {
         self.format.format_level = write;
         self
     }
 
     /// Whether or not to write the module path in the default format.
-    pub fn format_module_path(&mut self, write: bool) -> &mut Self {
+    pub fn format_module_path(mut self, write: bool) -> Self {
         self.format.format_module_path = write;
         self
     }
 
     /// Configures the amount of spaces to use to indent multiline log records.
     /// A value of `None` disables any kind of indentation.
-    pub fn format_indent(&mut self, indent: Option<usize>) -> &mut Self {
+    pub fn format_indent(mut self, indent: Option<usize>) -> Self {
         self.format.format_indent = indent;
         self
     }
 
     /// Configures if timestamp should be included and in what precision.
-    pub fn format_timestamp(&mut self, timestamp: Option<fmt::TimestampPrecision>) -> &mut Self {
+    pub fn format_timestamp(mut self, timestamp: Option<fmt::TimestampPrecision>) -> Self {
         self.format.format_timestamp = timestamp;
         self
     }
 
     /// Configures the timestamp to use second precision.
-    pub fn format_timestamp_secs(&mut self) -> &mut Self {
+    pub fn format_timestamp_secs(self) -> Self {
         self.format_timestamp(Some(fmt::TimestampPrecision::Seconds))
     }
 
     /// Configures the timestamp to use millisecond precision.
-    pub fn format_timestamp_millis(&mut self) -> &mut Self {
+    pub fn format_timestamp_millis(self) -> Self {
         self.format_timestamp(Some(fmt::TimestampPrecision::Millis))
     }
 
     /// Configures the timestamp to use microsecond precision.
-    pub fn format_timestamp_micros(&mut self) -> &mut Self {
+    pub fn format_timestamp_micros(self) -> Self {
         self.format_timestamp(Some(fmt::TimestampPrecision::Micros))
     }
 
     /// Configures the timestamp to use nanosecond precision.
-    pub fn format_timestamp_nanos(&mut self) -> &mut Self {
+    pub fn format_timestamp_nanos(self) -> Self {
         self.format_timestamp(Some(fmt::TimestampPrecision::Nanos))
     }
 
@@ -608,8 +605,8 @@ impl Builder {
     ///
     /// builder.filter_module("path::to::module", LevelFilter::Info);
     /// ```
-    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
-        self.filter.filter_module(module, level);
+    pub fn filter_module(mut self, module: &str, level: LevelFilter) -> Self {
+        self.filter = self.filter.filter_module(module, level);
         self
     }
 
@@ -627,8 +624,8 @@ impl Builder {
     ///
     /// builder.filter_level(LevelFilter::Info);
     /// ```
-    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
-        self.filter.filter_level(level);
+    pub fn filter_level(mut self, level: LevelFilter) -> Self {
+        self.filter = self.filter.filter_level(level);
         self
     }
 
@@ -649,8 +646,8 @@ impl Builder {
     ///
     /// builder.filter(Some("path::to::module"), LevelFilter::Info);
     /// ```
-    pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
-        self.filter.filter(module, level);
+    pub fn filter(mut self, module: Option<&str>, level: LevelFilter) -> Self {
+        self.filter = self.filter.filter(module, level);
         self
     }
 
@@ -658,8 +655,8 @@ impl Builder {
     /// environment variable.
     ///
     /// See the module documentation for more details.
-    pub fn parse_filters(&mut self, filters: &str) -> &mut Self {
-        self.filter.parse(filters);
+    pub fn parse_filters(mut self, filters: &str) -> Self {
+        self.filter = self.filter.parse(filters);
         self
     }
 
@@ -678,8 +675,8 @@ impl Builder {
     ///
     /// builder.target(Target::Stdout);
     /// ```
-    pub fn target(&mut self, target: fmt::Target) -> &mut Self {
-        self.writer.target(target);
+    pub fn target(mut self, target: fmt::Target) -> Self {
+        self.writer = self.writer.target(target);
         self
     }
 
@@ -699,8 +696,8 @@ impl Builder {
     ///
     /// builder.write_style(WriteStyle::Never);
     /// ```
-    pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
-        self.writer.write_style(write_style);
+    pub fn write_style(mut self, write_style: fmt::WriteStyle) -> Self {
+        self.writer = self.writer.write_style(write_style);
         self
     }
 
@@ -708,8 +705,8 @@ impl Builder {
     /// environment variable.
     ///
     /// See the module documentation for more details.
-    pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
-        self.writer.parse_write_style(write_style);
+    pub fn parse_write_style(mut self, write_style: &str) -> Self {
+        self.writer = self.writer.parse_write_style(write_style);
         self
     }
 
@@ -717,8 +714,9 @@ impl Builder {
     ///
     /// If `is_test` is `true` then the logger will allow the testing framework to
     /// capture log records rather than printing them to the terminal directly.
-    pub fn is_test(&mut self, is_test: bool) -> &mut Self {
-        self.writer.is_test(is_test);
+    #[allow(clippy::wrong_self_convention)]
+    pub fn is_test(mut self, is_test: bool) -> Self {
+        self.writer = self.writer.is_test(is_test);
         self
     }
 
@@ -731,7 +729,7 @@ impl Builder {
     ///
     /// This function will fail if it is called more than once, or if another
     /// library has already initialized a global logger.
-    pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
+    pub fn try_init(self) -> Result<(), SetLoggerError> {
         let logger = self.build();
 
         let max_level = logger.filter();
@@ -753,7 +751,7 @@ impl Builder {
     ///
     /// This function will panic if it is called more than once, or if another
     /// library has already initialized a global logger.
-    pub fn init(&mut self) {
+    pub fn init(self) {
         self.try_init()
             .expect("Builder::init should not be called after logger initialized");
     }
@@ -762,10 +760,7 @@ impl Builder {
     ///
     /// The returned logger implements the `Log` trait and can be installed manually
     /// or nested within another logger.
-    pub fn build(&mut self) -> Logger {
-        assert!(!self.built, "attempt to re-use consumed builder");
-        self.built = true;
-
+    pub fn build(mut self) -> Logger {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
@@ -1128,9 +1123,7 @@ pub fn try_init_from_env<'a, E>(env: E) -> Result<(), SetLoggerError>
 where
     E: Into<Env<'a>>,
 {
-    let mut builder = Builder::from_env(env);
-
-    builder.try_init()
+    Builder::from_env(env).try_init()
 }
 
 /// Initializes the global logger with an env logger from the given environment
