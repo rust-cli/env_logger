@@ -558,6 +558,55 @@ mod tests {
     }
 
     #[test]
+    fn parse_spec_empty_level_isolated() {
+        // test parse_spec with "" as log level (and the entire spec str)
+        let (dirs, filter) = parse_spec(""); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated() {
+        // test parse_spec with a white-space-only string specified as the log
+        // level (and the entire spec str)
+        let (dirs, filter) = parse_spec("     "); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_comma_only() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so a comma-only string should be interpretted as two empty strings
+        // (which should both be treated as invalid, so ignored).
+        let (dirs, filter) = parse_spec(","); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_comma_blank() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so this bogus spec should be interpretted as containing one empty
+        // string and one blank string. Both should both be treated as
+        // invalid, so ignored.
+        let (dirs, filter) = parse_spec(",     "); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_blank_comma() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so this bogus spec should be interpretted as containing one blank
+        // string and one empty string. Both should both be treated as
+        // invalid, so ignored.
+        let (dirs, filter) = parse_spec("     ,"); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
     fn parse_spec_global() {
         // test parse_spec with no crate
         let (dirs, filter) = parse_spec("warn,crate2=debug");
