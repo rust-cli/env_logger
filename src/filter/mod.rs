@@ -299,7 +299,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         return (dirs, None);
     }
     if let Some(m) = mods {
-        for s in m.split(',') {
+        for s in m.split(',').map(|ss| ss.trim()) {
             if s.is_empty() {
                 continue;
             }
