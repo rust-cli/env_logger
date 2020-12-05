@@ -89,11 +89,12 @@
 //!
 //! ## Enabling logging
 //!
-//! Log levels are controlled on a per-module basis, and by default all logging
-//! is disabled except for `error!`. Logging is controlled via the **`RUST_LOG`**
-//! environment variable. The value of this environment variable is a
-//! comma-separated list of logging directives. A logging directive is of the
-//! form:
+//! Log levels are controlled on a per-module basis, and **by default all
+//! logging is disabled except for the `error` level**.
+//!
+//! Logging is controlled via the **`RUST_LOG`** environment variable. The
+//! value of this environment variable is a comma-separated list of logging
+//! directives. A logging directive is of the form:
 //!
 //! ```text
 //! path::to::module=level
@@ -105,15 +106,18 @@
 //! Furthermore, this path is a prefix-search, so all modules nested in the
 //! specified module will also have logging enabled.
 //!
-//! The actual `level` is optional to specify. If omitted, all logging will
-//! be enabled. If specified, it must be one of the strings `debug`, `error`,
-//! `info`, `warn`, or `trace`. The letter case is not significant for the
-//! logging level names; e.g., `debug`, `DEBUG`, and `dEbuG` all represent the
-//! same logging level.
+//! When providing the crate name or a module path, explicitly specifying the
+//! log level is optional. If omitted, all logging for the item (and its
+//! children) will be enabled.
+//!
+//! When specifying a logging level, the name provided must be one of the
+//! strings `debug`, `error`, `info`, `warn`, or `trace`. The letter case is
+//! not significant for the logging level names; e.g., `debug`, `DEBUG`, and
+//! `dEbuG` all represent the same logging level.
 //!
 //! As the log level for a module is optional, the module to enable logging for
-//! is also optional. If only a `level` is provided, then the global log
-//! level for all modules is set to this value.
+//! is also optional. **If only a level is provided, then the global log
+//! level for all modules is set to this value.**
 //!
 //! Some examples of valid values of `RUST_LOG` are:
 //!
