@@ -110,10 +110,18 @@
 //! log level is optional. If omitted, all logging for the item (and its
 //! children) will be enabled.
 //!
-//! When specifying a logging level, the name provided must be one of the
-//! strings `debug`, `error`, `info`, `warn`, or `trace`. The letter case is
-//! not significant for the logging level names; e.g., `debug`, `DEBUG`, and
-//! `dEbuG` all represent the same logging level.
+//! The names of the log levels that may be specified correspond to the
+//! variations of the [`log::Level`][level-enum] enum from the `log`
+//! crate. They are:
+//!
+//!    * `error`
+//!    * `warn`
+//!    * `info`
+//!    * `debug`
+//!    * `trace`
+//!
+//! The letter case is not significant for the logging level names; e.g.,
+//! `debug`, `DEBUG`, and `dEbuG` all represent the same logging level.
 //!
 //! As the log level for a module is optional, the module to enable logging for
 //! is also optional. **If only a level is provided, then the global log
@@ -238,6 +246,7 @@
 //! ```
 //!
 //! [gh-repo-examples]: https://github.com/env-logger-rs/env_logger/tree/master/examples
+//! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
 //! [`Builder::is_test`]: struct.Builder.html#method.is_test

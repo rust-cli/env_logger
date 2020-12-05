@@ -57,6 +57,17 @@ $ RUST_LOG=INFO ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
+The log levels that may be specified correspond to the [`log::Level`][level-enum]
+enum from the `log` crate. They are:
+
+   * `error`
+   * `warn`
+   * `info`
+   * `debug`
+   * `trace`
+
+[level-enum]:  https://docs.rs/log/latest/log/enum.Level.html  "log::Level (docs.rs)"
+
 `env_logger` can be configured in other ways besides an environment variable. See [the examples](https://github.com/env-logger-rs/env_logger/tree/master/examples) for more approaches.
 
 ### In tests
