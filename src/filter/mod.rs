@@ -570,6 +570,36 @@ mod tests {
     }
 
     #[test]
+    fn parse_spec_global_bare_warn_lc() {
+        // test parse_spec with no crate, in isolation, all lowercase
+        let (dirs, filter) = parse_spec("warn");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, None);
+        assert_eq!(dirs[0].level, LevelFilter::Warn);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_global_bare_warn_uc() {
+        // test parse_spec with no crate, in isolation, all uppercase
+        let (dirs, filter) = parse_spec("WARN");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, None);
+        assert_eq!(dirs[0].level, LevelFilter::Warn);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_global_bare_warn_mixed() {
+        // test parse_spec with no crate, in isolation, mixed case
+        let (dirs, filter) = parse_spec("wArN");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, None);
+        assert_eq!(dirs[0].level, LevelFilter::Warn);
+        assert!(filter.is_none());
+    }
+
+    #[test]
     fn parse_spec_valid_filter() {
         let (dirs, filter) = parse_spec("crate1::mod1=error,crate1::mod2,crate2=debug/abc");
         assert_eq!(dirs.len(), 3);
