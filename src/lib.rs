@@ -93,8 +93,8 @@
 //! logging is disabled except for the `error` level**.
 //!
 //! Logging is controlled via the **`RUST_LOG`** environment variable. The
-//! value of this environment variable is a comma-separated list of logging
-//! directives. A logging directive is of the form:
+//! value of this environment variable is a comma-separated list of *logging
+//! directives*. A logging directive is of the form:
 //!
 //! ```text
 //! path::to::module=level
