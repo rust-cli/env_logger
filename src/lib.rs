@@ -101,7 +101,9 @@
 //!
 //! The actual `level` is optional to specify. If omitted, all logging will
 //! be enabled. If specified, it must be one of the strings `debug`, `error`,
-//! `info`, `warn`, or `trace`.
+//! `info`, `warn`, or `trace`. The letter case is not significant for the
+//! logging level names; e.g., `debug`, `DEBUG`, and `dEbuG` all represent the
+//! same logging level.
 //!
 //! As the log level for a module is optional, the module to enable logging for
 //! is also optional. If only a `level` is provided, then the global log
@@ -111,7 +113,9 @@
 //!
 //! * `hello` turns on all logging for the 'hello' module
 //! * `info` turns on all info logging
+//! * `INFO` turns on all info logging (same as previous)
 //! * `hello=debug` turns on debug logging for 'hello'
+//! * `hello=DEBUG` turns on debug logging for 'hello' (same as previous)
 //! * `hello,std::option` turns on hello, and std's option logging
 //! * `error,hello=warn` turn on global error logging and also warn for hello
 //!

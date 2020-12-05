@@ -47,6 +47,16 @@ $ RUST_LOG=info ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
+The letter case is not significant for the logging level names; e.g., `debug`,
+`DEBUG`, and `dEbuG` all represent the same logging level. Therefore, the
+previous example could also have been written this way, specifying the log
+level as `INFO` rather than as `info`:
+
+```bash
+$ RUST_LOG=INFO ./main
+[2018-11-03T06:09:06Z INFO  default] starting up
+```
+
 `env_logger` can be configured in other ways besides an environment variable. See [the examples](https://github.com/env-logger-rs/env_logger/tree/master/examples) for more approaches.
 
 ### In tests
