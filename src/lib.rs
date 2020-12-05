@@ -8,9 +8,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A simple logger configured via environment variables which writes
-//! to stdout or stderr, for use with the logging facade exposed by the
-//! [`log` crate][log-crate-url].
+//! A simple logger that can be configured via environment variables, for use
+//! with the logging facade exposed by the [`log` crate][log-crate-url].
+//!
+//! Despite having "env" in its name, **`env_logger`** can also be configured by
+//! other means besides environment variables. See [the examples][gh-repo-examples]
+//! in the source repository for more approaches.
+//!
+//! By default, `env_logger` writes logs to `stderr`, but can be configured to
+//! instead write them to `stdout`.
 //!
 //! ## Example
 //!
@@ -227,6 +233,7 @@
 //! env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //!
+//! [gh-repo-examples]: https://github.com/env-logger-rs/env_logger/tree/master/examples
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
 //! [`Builder::is_test`]: struct.Builder.html#method.is_test
