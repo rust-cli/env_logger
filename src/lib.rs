@@ -123,6 +123,13 @@
 //! The letter case is not significant for the logging level names; e.g.,
 //! `debug`, `DEBUG`, and `dEbuG` all represent the same logging level.
 //!
+//! There is also a pseudo logging level, `off`, which may be specified to
+//! disable all logging for a given module or for the entire application. As
+//! with the logging levels, the letter case is not significant[^fn-off].
+//!
+//! [^fn-off]: Similar to the universe of log level names, the `off` pseudo
+//!    log level feature is also provided by the underlying `log` crate.
+//!
 //! As the log level for a module is optional, the module to enable logging for
 //! is also optional. **If only a level is provided, then the global log
 //! level for all modules is set to this value.**
@@ -130,12 +137,16 @@
 //! Some examples of valid values of `RUST_LOG` are:
 //!
 //! * `hello` turns on all logging for the 'hello' module
+//! * `trace` turns on all logging for the application, regardless of its name
+//! * `TRACE` turns on all logging for the application, regardless of its name (same as previous)
 //! * `info` turns on all info logging
 //! * `INFO` turns on all info logging (same as previous)
 //! * `hello=debug` turns on debug logging for 'hello'
 //! * `hello=DEBUG` turns on debug logging for 'hello' (same as previous)
 //! * `hello,std::option` turns on hello, and std's option logging
 //! * `error,hello=warn` turn on global error logging and also warn for hello
+//! * `error,hello=off`` turn on global error logging, but turn off logging for hello
+//! * `OFF` turns off all logging for the application
 //!
 //! ## Filtering results
 //!

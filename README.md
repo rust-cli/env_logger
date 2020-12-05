@@ -68,6 +68,10 @@ enum from the `log` crate. They are:
 
 [level-enum]:  https://docs.rs/log/latest/log/enum.Level.html  "log::Level (docs.rs)"
 
+There is also a pseudo logging level, `off`, which may be specified to disable
+all logging for a given module or for the entire application. As with the
+logging levels, the letter case is not significant.
+
 `env_logger` can be configured in other ways besides an environment variable. See [the examples](https://github.com/env-logger-rs/env_logger/tree/master/examples) for more approaches.
 
 ### In tests
