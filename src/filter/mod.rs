@@ -395,11 +395,191 @@ mod tests {
         assert!(!enabled(&logger.directives, Level::Debug, "crate2"));
     }
 
+    // Some of our tests are only correct or complete when they cover the full
+    // universe of variants for log::Level. In the unlikely event that a new
+    // variant is added in the future, this test will detect the scenario and
+    // alert us to the need to review and update the tests. In such a
+    // situation, this test will fail to compile, and the error message will
+    // look something like this:
+    //
+    //     error[E0004]: non-exhaustive patterns: `NewVariant` not covered
+    //        --> src/filter/mod.rs:413:15
+    //         |
+    //     413 |         match level_universe {
+    //         |               ^^^^^^^^^^^^^^ pattern `NewVariant` not covered
+    #[test]
+    fn ensure_tests_cover_level_universe() {
+        let level_universe: Level = Level::Trace; // use of trace variant is arbitrary
+        match level_universe {
+            Level::Error | Level::Warn | Level::Info | Level::Debug | Level::Trace => (),
+        }
+    }
+
     #[test]
     fn parse_default() {
         let logger = Builder::new().parse("info,crate1::mod1=warn").build();
         assert!(enabled(&logger.directives, Level::Warn, "crate1::mod1"));
         assert!(enabled(&logger.directives, Level::Info, "crate2::mod2"));
+    }
+
+    #[test]
+    fn parse_default_bare_level_off_lc() {
+        let logger = Builder::new().parse("off").build();
+        assert!(!enabled(&logger.directives, Level::Error, ""));
+        assert!(!enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_off_uc() {
+        let logger = Builder::new().parse("OFF").build();
+        assert!(!enabled(&logger.directives, Level::Error, ""));
+        assert!(!enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_error_lc() {
+        let logger = Builder::new().parse("error").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(!enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_error_uc() {
+        let logger = Builder::new().parse("ERROR").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(!enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_warn_lc() {
+        let logger = Builder::new().parse("warn").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_warn_uc() {
+        let logger = Builder::new().parse("WARN").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(!enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_info_lc() {
+        let logger = Builder::new().parse("info").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_info_uc() {
+        let logger = Builder::new().parse("INFO").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(!enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_debug_lc() {
+        let logger = Builder::new().parse("debug").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_debug_uc() {
+        let logger = Builder::new().parse("DEBUG").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(enabled(&logger.directives, Level::Debug, ""));
+        assert!(!enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_trace_lc() {
+        let logger = Builder::new().parse("trace").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(enabled(&logger.directives, Level::Debug, ""));
+        assert!(enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    #[test]
+    fn parse_default_bare_level_trace_uc() {
+        let logger = Builder::new().parse("TRACE").build();
+        assert!(enabled(&logger.directives, Level::Error, ""));
+        assert!(enabled(&logger.directives, Level::Warn, ""));
+        assert!(enabled(&logger.directives, Level::Info, ""));
+        assert!(enabled(&logger.directives, Level::Debug, ""));
+        assert!(enabled(&logger.directives, Level::Trace, ""));
+    }
+
+    // In practice, the desired log level is typically specified by a token
+    // that is either all lowercase (e.g., 'trace') or all uppercase (.e.g,
+    // 'TRACE'), but this tests serves as a reminder that
+    // log::Level::from_str() ignores all case variants.
+    #[test]
+    fn parse_default_bare_level_debug_mixed() {
+        {
+            let logger = Builder::new().parse("Debug").build();
+            assert!(enabled(&logger.directives, Level::Error, ""));
+            assert!(enabled(&logger.directives, Level::Warn, ""));
+            assert!(enabled(&logger.directives, Level::Info, ""));
+            assert!(enabled(&logger.directives, Level::Debug, ""));
+            assert!(!enabled(&logger.directives, Level::Trace, ""));
+        }
+        {
+            let logger = Builder::new().parse("debuG").build();
+            assert!(enabled(&logger.directives, Level::Error, ""));
+            assert!(enabled(&logger.directives, Level::Warn, ""));
+            assert!(enabled(&logger.directives, Level::Info, ""));
+            assert!(enabled(&logger.directives, Level::Debug, ""));
+            assert!(!enabled(&logger.directives, Level::Trace, ""));
+        }
+        {
+            let logger = Builder::new().parse("deBug").build();
+            assert!(enabled(&logger.directives, Level::Error, ""));
+            assert!(enabled(&logger.directives, Level::Warn, ""));
+            assert!(enabled(&logger.directives, Level::Info, ""));
+            assert!(enabled(&logger.directives, Level::Debug, ""));
+            assert!(!enabled(&logger.directives, Level::Trace, ""));
+        }
+        {
+            let logger = Builder::new().parse("DeBuG").build(); // LaTeX flavor!
+            assert!(enabled(&logger.directives, Level::Error, ""));
+            assert!(enabled(&logger.directives, Level::Warn, ""));
+            assert!(enabled(&logger.directives, Level::Info, ""));
+            assert!(enabled(&logger.directives, Level::Debug, ""));
+            assert!(!enabled(&logger.directives, Level::Trace, ""));
+        }
     }
 
     #[test]
