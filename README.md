@@ -39,7 +39,7 @@ fn main() {
 }
 ```
 
-Then when running the executable, specify a value for the `RUST_LOG`
+Then when running the executable, specify a value for the **`RUST_LOG`**
 environment variable that corresponds with the log messages you want to show.
 
 ```bash
