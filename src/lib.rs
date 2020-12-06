@@ -120,15 +120,18 @@
 //!    * `debug`
 //!    * `trace`
 //!
-//! The letter case is not significant for the logging level names; e.g.,
-//! `debug`, `DEBUG`, and `dEbuG` all represent the same logging level.
-//!
 //! There is also a pseudo logging level, `off`, which may be specified to
 //! disable all logging for a given module or for the entire application. As
 //! with the logging levels, the letter case is not significant[^fn-off].
 //!
 //! [^fn-off]: Similar to the universe of log level names, the `off` pseudo
 //!    log level feature is also provided by the underlying `log` crate.
+//!
+//! The letter case is not significant for the logging level names; e.g.,
+//! `debug`, `DEBUG`, and `dEbuG` all represent the same logging level. For
+//! consistency, our convention is to use the lower case names. Where our docs
+//! do use other forms, they do so in the context of specific examples, so you
+//! won't be surprised if you see similar usage in the wild.
 //!
 //! As the log level for a module is optional, the module to enable logging for
 //! is also optional. **If only a level is provided, then the global log
@@ -146,7 +149,8 @@
 //! * `hello,std::option` turns on hello, and std's option logging
 //! * `error,hello=warn` turn on global error logging and also warn for hello
 //! * `error,hello=off`` turn on global error logging, but turn off logging for hello
-//! * `OFF` turns off all logging for the application
+//! * `off` turns off all logging for the application
+//! * `OFF` turns off all logging for the application (same as previous)
 //!
 //! ## Filtering results
 //!

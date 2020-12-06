@@ -57,6 +57,11 @@ $ RUST_LOG=INFO ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
 
+So which form should you use? For consistency, our convention is to use lower
+case names. Where our docs do use other forms, they do so in the context of
+specific examples, so you won't be surprised if you see similar usage in the
+wild.
+
 The log levels that may be specified correspond to the [`log::Level`][level-enum]
 enum from the `log` crate. They are:
 
