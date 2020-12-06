@@ -231,7 +231,7 @@
 
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-    html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
+    html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico"
 )]
 #![cfg_attr(test, deny(warnings))]
 // When compiled for the rustc compiler itself we want to make sure that this is
