@@ -299,7 +299,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         return (dirs, None);
     }
     if let Some(m) = mods {
-        for s in m.split(',') {
+        for s in m.split(',').map(|ss| ss.trim()) {
             if s.is_empty() {
                 continue;
             }
@@ -734,6 +734,55 @@ mod tests {
         assert_eq!(dirs.len(), 1);
         assert_eq!(dirs[0].name, Some("crate2".to_string()));
         assert_eq!(dirs[0].level, LevelFilter::max());
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_empty_level_isolated() {
+        // test parse_spec with "" as log level (and the entire spec str)
+        let (dirs, filter) = parse_spec(""); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated() {
+        // test parse_spec with a white-space-only string specified as the log
+        // level (and the entire spec str)
+        let (dirs, filter) = parse_spec("     "); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_comma_only() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so a comma-only string should be interpretted as two empty strings
+        // (which should both be treated as invalid, so ignored).
+        let (dirs, filter) = parse_spec(","); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_comma_blank() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so this bogus spec should be interpretted as containing one empty
+        // string and one blank string. Both should both be treated as
+        // invalid, so ignored.
+        let (dirs, filter) = parse_spec(",     "); // should be ignored
+        assert_eq!(dirs.len(), 0);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_spec_blank_level_isolated_blank_comma() {
+        // The spec should contain zero or more comma-separated string slices,
+        // so this bogus spec should be interpretted as containing one blank
+        // string and one empty string. Both should both be treated as
+        // invalid, so ignored.
+        let (dirs, filter) = parse_spec("     ,"); // should be ignored
+        assert_eq!(dirs.len(), 0);
         assert!(filter.is_none());
     }
 
