@@ -148,7 +148,7 @@
 //! * `hello=DEBUG` turns on debug logging for 'hello' (same as previous)
 //! * `hello,std::option` turns on hello, and std's option logging
 //! * `error,hello=warn` turn on global error logging and also warn for hello
-//! * `error,hello=off`` turn on global error logging, but turn off logging for hello
+//! * `error,hello=off`  turn on global error logging, but turn off logging for hello
 //! * `off` turns off all logging for the application
 //! * `OFF` turns off all logging for the application (same as previous)
 //!
