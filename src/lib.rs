@@ -632,6 +632,12 @@ impl Builder {
         self.format_timestamp(Some(fmt::TimestampPrecision::Nanos))
     }
 
+    /// Configures the end of line suffix.
+    pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
+        self.format.format_suffix = suffix;
+        self
+    }
+
     /// Adds a directive to the filter for a specific module.
     ///
     /// # Examples
