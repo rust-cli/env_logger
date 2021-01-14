@@ -123,6 +123,9 @@ jobs:
           - firefox
           - chrome
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
       - name: Install wasm-pack
         uses: actions-rs/install@v0.1
         with:
