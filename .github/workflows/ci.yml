@@ -112,3 +112,23 @@ jobs:
         with:
           command: run
           args: --example default
+
+  wasm-test:
+    name: Test wasm support
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        browser:
+          - firefox
+          - chrome
+    steps:
+      - name: Install wasm-pack
+        uses: actions-rs/install@v0.1
+        with:
+          crate: wasm-pack
+          version: latest
+          use-tool-cache: true
+
+      - name: Test with browser
+        run: wasm-pack test --${{ matrix.browser }}

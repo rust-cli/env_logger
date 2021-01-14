@@ -8,14 +8,14 @@
 // use log::Level;
 use wasm_bindgen::prelude::*;
 
-use crate::fmt::glob::Target;
+// use crate::fmt::glob::Target;
 
-pub(in crate::fmt::writer) fn print(msg: &str, t: Target) {
-    // work around for unused variable
-    let _ = t;
+// pub(in crate::fmt::writer) fn print(msg: &str, t: Target) {
+//     // work around for unused variable
+//     let _ = t;
 
-    log(&msg);
-}
+//     log(&msg);
+// }
 
 #[wasm_bindgen]
 extern "C" {

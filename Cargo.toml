@@ -29,6 +29,9 @@ atty = { version = "0.2.5", optional = true }
 [target.wasm32-unknown-unknown.dependencies]
 wasm-bindgen = "^0.2.64"
 
+[target.wasm32-unknown-unknown.dev-dependencies]
+wasm-bindgen-test = "^0.3.19"
+
 [[test]]
 name = "regexp_filter"
 harness = false
@@ -43,6 +46,10 @@ harness = false
 
 [[test]]
 name = "init-twice-retains-filter"
+harness = false
+
+[[test]]
+name = "basic-wasm"
 harness = false
 
 [features]
