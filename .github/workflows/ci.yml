@@ -113,8 +113,31 @@ jobs:
           command: run
           args: --example default
 
-  wasm-prepare:
-    name: prepare wasm-pack environment
+  wasm-browser-test:
+    name: test wasm support for browser
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser:
+          - firefox
+          - chrome
+          - safari
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install wasm-pack
+        uses: actions-rs/install@v0.1
+        with:
+          crate: wasm-pack
+          version: latest
+          use-tool-cache: true
+
+      - name: test on browser
+        run: wasm-pack test --headless --${{ matrix.browser }} -- --test web
+
+  wasm-node-test:
+    name: test wasm support for node
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -127,24 +150,5 @@ jobs:
           version: latest
           use-tool-cache: true
 
-  wasm-browser-test:
-    name: test wasm support for browser
-    runs-on: ubuntu-latest
-    needs: wasm-prepare
-    strategy:
-      matrix:
-        browser:
-          - firefox
-          - chrome
-          - safari
-    steps:
-      - name: test on browser
-        run: wasm-pack test --headless --${{ matrix.browser }} -- --test web
-
-  wasm-node-test:
-    name: test wasm support for node
-    runs-on: ubuntu-latest
-    needs: wasm-prepare
-    steps:
-      - name: test on browser
-        run: wasm-pack test --node -- --test web
+      - name: test on node
+        run: wasm-pack test --node -- --test node
