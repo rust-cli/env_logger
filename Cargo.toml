@@ -49,7 +49,11 @@ name = "init-twice-retains-filter"
 harness = false
 
 [[test]]
-name = "basic-wasm"
+name = "web"
+harness = false
+
+[[test]]
+name = "node"
 harness = false
 
 [features]

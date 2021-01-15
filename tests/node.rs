@@ -14,15 +14,15 @@ or `auto` to enable them:
 $ export MY_LOG_STYLE=never
 ```
 */
+#![cfg(test)]
 
-#[macro_use]
-extern crate log;
-
+use log::{trace, debug, info, warn, error};
 use env_logger::Env;
 
 #[cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen_test::*;
 
+#[wasm_bindgen_test]
 fn main() {
     // The `Env` lets us tweak what the environment
     // variables to read are and what the default
@@ -38,12 +38,4 @@ fn main() {
     info!("some information log");
     warn!("some warning log");
     error!("some error log");
-}
-
-#[cfg_attr(
-    all(target_arch = "wasm32", target_vendor = "unknown"),
-    wasm_bindgen(start)
-)]
-pub fn start() {
-    main();
 }
