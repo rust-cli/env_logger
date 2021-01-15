@@ -1,6 +1,6 @@
 mod atty;
 mod termcolor;
-mod web;
+mod wasm;
 
 use self::atty::{is_stderr, is_stdout};
 use self::termcolor::BufferWriter;

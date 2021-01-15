@@ -1,7 +1,7 @@
 use std::io;
 
 #[cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
-use crate::fmt::writer::web;
+use crate::fmt::writer::wasm;
 use crate::fmt::{Target, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {}
@@ -36,7 +36,7 @@ impl BufferWriter {
         let log = String::from_utf8_lossy(&buf.0);
 
         #[cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
-        web::print(&log, self.target);
+        wasm::print(&log, self.target);
 
         #[cfg(not(all(target_arch = "wasm32", target_vendor = "unknown")))]
         match self.target {

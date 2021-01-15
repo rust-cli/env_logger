@@ -16,8 +16,8 @@ $ export MY_LOG_STYLE=never
 */
 #![cfg(test)]
 
-use log::{trace, debug, info, warn, error};
 use env_logger::Env;
+use log::{debug, error, info, trace, warn};
 
 #[cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
 use wasm_bindgen_test::*;
