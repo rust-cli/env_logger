@@ -1,4 +1,5 @@
 #![cfg(test)]
+#![cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
 
 use env_logger::Env;
 use log::{debug, error, info, trace, warn};

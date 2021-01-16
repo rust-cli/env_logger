@@ -48,13 +48,5 @@ harness = false
 name = "init-twice-retains-filter"
 harness = false
 
-[[test]]
-name = "web"
-harness = false
-
-[[test]]
-name = "node"
-harness = false
-
 [features]
 default = ["termcolor", "atty", "humantime", "regex"]

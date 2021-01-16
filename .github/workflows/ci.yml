@@ -133,7 +133,7 @@ jobs:
           version: latest
           use-tool-cache: true
 
-      - name: test on browser
+      - name: Test on browser
         run: wasm-pack test --headless --${{ matrix.browser }} -- --no-default-features --test web
 
   wasm-node-test:
@@ -150,5 +150,5 @@ jobs:
           version: latest
           use-tool-cache: true
 
-      - name: test on node
+      - name: Test on node
         run: wasm-pack test --node -- --no-default-features --test node

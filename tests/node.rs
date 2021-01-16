@@ -1,3 +1,4 @@
+#![cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
 #![cfg(test)]
 
 use env_logger::Env;
