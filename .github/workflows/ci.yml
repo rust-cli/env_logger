@@ -134,7 +134,7 @@ jobs:
           use-tool-cache: true
 
       - name: test on browser
-        run: wasm-pack test --headless --${{ matrix.browser }} -- --test web
+        run: wasm-pack test --headless --${{ matrix.browser }} -- --no-default-features --test web
 
   wasm-node-test:
     name: test wasm support for node
@@ -151,4 +151,4 @@ jobs:
           use-tool-cache: true
 
       - name: test on node
-        run: wasm-pack test --node -- --test node
+        run: wasm-pack test --node -- --no-default-features --test node
