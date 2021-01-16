@@ -117,6 +117,7 @@ jobs:
     name: test wasm support for browser
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         browser:
           - firefox
