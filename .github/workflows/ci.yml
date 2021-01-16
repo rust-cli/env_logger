@@ -122,7 +122,6 @@ jobs:
         browser:
           - firefox
           - chrome
-          - safari
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
