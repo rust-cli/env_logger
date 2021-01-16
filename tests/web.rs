@@ -4,7 +4,6 @@
 use env_logger::Env;
 use log::{debug, error, info, trace, warn};
 
-#[cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);

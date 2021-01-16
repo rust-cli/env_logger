@@ -3,6 +3,7 @@
 //! Here use the one-param logging functions, all messages should be transformed
 //! to string before passing to the functions. Note that we only need this
 //! module for `wasm32-unknown-unknown` target
+#![cfg(not(feature = "termcolor"))]
 #![cfg(all(target_arch = "wasm32", target_vendor = "unknown"))]
 
 // use log::Level;
