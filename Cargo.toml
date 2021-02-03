@@ -13,6 +13,7 @@ variable.
 """
 categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
+include = ["src/**/*", "LICENSE-*", "README.md", "CHANGELOG.md"]
 
 [workspace]
 members = [
