@@ -23,7 +23,7 @@ pub enum Target {
     Stdout,
     /// Logs will be sent to standard error.
     Stderr,
-    /// Logs will be send to a custom pipe.
+    /// Logs will be sent to a custom pipe.
     Pipe,
 }
 
