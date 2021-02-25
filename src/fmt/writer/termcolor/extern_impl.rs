@@ -255,7 +255,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_color(&mut self, color: Color) -> &mut Style {
-        self.spec.set_fg(color.into_termcolor());
+        self.spec.set_fg(Some(color.into_termcolor()));
         self
     }
 
@@ -334,7 +334,7 @@ impl Style {
     /// });
     /// ```
     pub fn set_bg(&mut self, color: Color) -> &mut Style {
-        self.spec.set_bg(color.into_termcolor());
+        self.spec.set_bg(Some(color.into_termcolor()));
         self
     }
 
@@ -467,18 +467,18 @@ pub enum Color {
 }
 
 impl Color {
-    fn into_termcolor(self) -> Option<termcolor::Color> {
+    fn into_termcolor(self) -> termcolor::Color {
         match self {
-            Color::Black => Some(termcolor::Color::Black),
-            Color::Blue => Some(termcolor::Color::Blue),
-            Color::Green => Some(termcolor::Color::Green),
-            Color::Red => Some(termcolor::Color::Red),
-            Color::Cyan => Some(termcolor::Color::Cyan),
-            Color::Magenta => Some(termcolor::Color::Magenta),
-            Color::Yellow => Some(termcolor::Color::Yellow),
-            Color::White => Some(termcolor::Color::White),
-            Color::Ansi256(value) => Some(termcolor::Color::Ansi256(value)),
-            Color::Rgb(r, g, b) => Some(termcolor::Color::Rgb(r, g, b)),
+            Color::Black => termcolor::Color::Black,
+            Color::Blue => termcolor::Color::Blue,
+            Color::Green => termcolor::Color::Green,
+            Color::Red => termcolor::Color::Red,
+            Color::Cyan => termcolor::Color::Cyan,
+            Color::Magenta => termcolor::Color::Magenta,
+            Color::Yellow => termcolor::Color::Yellow,
+            Color::White => termcolor::Color::White,
+            Color::Ansi256(value) => termcolor::Color::Ansi256(value),
+            Color::Rgb(r, g, b) => termcolor::Color::Rgb(r, g, b),
         }
     }
 }

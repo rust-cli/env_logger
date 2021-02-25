@@ -17,7 +17,7 @@ use env_logger::filter::{Builder, Filter};
 
 use log::{Log, Metadata, Record, SetLoggerError};
 
-const FILTER_ENV: &'static str = "MY_LOG_LEVEL";
+const FILTER_ENV: &str = "MY_LOG_LEVEL";
 
 struct MyLogger {
     inner: Filter,
