@@ -709,6 +709,7 @@ impl Builder {
     /// Sets the target for the log output.
     ///
     /// Env logger can log to either stdout or stderr. The default is stderr.
+    /// If you want to set the target to a custom pipe, use [`target_pipe`], this will panic if given [`Target::Pipe`].
     ///
     /// # Examples
     ///
@@ -721,8 +722,37 @@ impl Builder {
     ///
     /// builder.target(Target::Stdout);
     /// ```
+    ///
+    /// [`target_pipe`]: #method.target_pipe
+    /// [`Target::Pipe`]: enum.Target.html#variant.Pipe
     pub fn target(&mut self, target: fmt::Target) -> &mut Self {
         self.writer.target(target);
+        self
+    }
+
+    /// Sets the target for the log output to a custom pipe.
+    ///
+    /// Replaces the target set by [`target`] if executed and the other way around.
+    ///
+    /// This can be used to send the log to a file directly or something more complex.
+    /// It is advertised to use a wrapper for log files, so that rollover and slow FSs are handled well.
+    ///
+    /// # Examples
+    ///
+    /// Write log message to file `example.log`:
+    ///
+    /// ```
+    /// use env_logger::{Builder};
+    /// use std::fs::File;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.target_pipe(File::open("example.log").unwrap());
+    /// ```
+    ///
+    /// [`target`]: #method.target
+    pub fn target_pipe<W: io::Write + Send + 'static>(&mut self, target_pipe: W) -> &mut Self {
+        self.writer.target_pipe(target_pipe);
         self
     }
 
