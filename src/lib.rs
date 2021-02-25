@@ -747,7 +747,9 @@ impl Builder {
     ///
     /// let mut builder = Builder::new();
     ///
-    /// builder.target_pipe(File::open("example.log").unwrap());
+    /// builder.target_pipe(
+    ///     File::open("example.log").unwrap_or_else(|_| File::create("example.log").unwrap()),
+    /// );
     /// ```
     ///
     /// [`target`]: #method.target
