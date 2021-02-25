@@ -3,7 +3,10 @@ mod termcolor;
 
 use self::atty::{is_stderr, is_stdout};
 use self::termcolor::BufferWriter;
-use std::{fmt, io};
+use std::{
+    fmt, io,
+    sync::{Arc, Mutex},
+};
 
 pub(in crate::fmt) mod glob {
     pub use super::termcolor::glob::*;
@@ -14,11 +17,14 @@ pub(in crate::fmt) use self::termcolor::Buffer;
 
 /// Log target, either `stdout` or `stderr`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum Target {
     /// Logs will be sent to standard output.
     Stdout,
     /// Logs will be sent to standard error.
     Stderr,
+    /// Logs will be send to a custom pipe.
+    Pipe,
 }
 
 impl Default for Target {
@@ -69,6 +75,7 @@ impl Writer {
 /// The target and style choice can be configured before building.
 pub(crate) struct Builder {
     target: Target,
+    target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
     write_style: WriteStyle,
     is_test: bool,
     built: bool,
@@ -79,6 +86,7 @@ impl Builder {
     pub(crate) fn new() -> Self {
         Builder {
             target: Default::default(),
+            target_pipe: None,
             write_style: Default::default(),
             is_test: false,
             built: false,
@@ -87,7 +95,24 @@ impl Builder {
 
     /// Set the target to write to.
     pub(crate) fn target(&mut self, target: Target) -> &mut Self {
+        if let Target::Pipe = target {
+            panic!("Can not set target to Target::Pipe, use the target_pipe method for that");
+        }
         self.target = target;
+        self.target_pipe = None;
+        self
+    }
+
+    /// Set the target to write to a custom pipe.
+    ///
+    /// This can be used to send the log to a file directly or something more complex.
+    /// It is advertised to use a handle for log files, so that rollover and slow FSs are handled well.
+    pub(crate) fn target_pipe<W: io::Write + Send + 'static>(
+        &mut self,
+        target_pipe: W,
+    ) -> &mut Self {
+        self.target_pipe = Some(Arc::new(Mutex::new(target_pipe)));
+        self.target = Target::Pipe;
         self
     }
 
@@ -122,6 +147,7 @@ impl Builder {
                 if match self.target {
                     Target::Stderr => is_stderr(),
                     Target::Stdout => is_stdout(),
+                    Target::Pipe => false,
                 } {
                     WriteStyle::Auto
                 } else {
@@ -134,6 +160,9 @@ impl Builder {
         let writer = match self.target {
             Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
             Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
+            Target::Pipe => {
+                BufferWriter::pipe(color_choice, self.target_pipe.as_ref().unwrap().clone())
+            }
         };
 
         Writer {

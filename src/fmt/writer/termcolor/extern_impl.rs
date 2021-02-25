@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::io::{self, Write};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use log::Level;
 use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
@@ -71,6 +72,7 @@ impl Formatter {
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
     test_target: Option<Target>,
+    target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
 }
 
 pub(in crate::fmt) struct Buffer {
@@ -83,6 +85,7 @@ impl BufferWriter {
         BufferWriter {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
             test_target: if is_test { Some(Target::Stderr) } else { None },
+            target_pipe: None,
         }
     }
 
@@ -90,6 +93,19 @@ impl BufferWriter {
         BufferWriter {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
             test_target: if is_test { Some(Target::Stdout) } else { None },
+            target_pipe: None,
+        }
+    }
+
+    pub(in crate::fmt::writer) fn pipe(
+        write_style: WriteStyle,
+        target_pipe: Arc<Mutex<dyn io::Write + Send + 'static>>,
+    ) -> Self {
+        BufferWriter {
+            // The inner Buffer is never printed from, but it is still needed to handle coloring and other formating
+            inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
+            test_target: None,
+            target_pipe: Some(target_pipe),
         }
     }
 
@@ -101,7 +117,9 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let Some(target) = self.test_target {
+        if let Some(pipe) = &self.target_pipe {
+            pipe.lock().unwrap().write_all(&buf.bytes())
+        } else if let Some(target) = self.test_target {
             // This impl uses the `eprint` and `print` macros
             // instead of `termcolor`'s buffer.
             // This is so their output can be captured by `cargo test`
@@ -110,6 +128,7 @@ impl BufferWriter {
             match target {
                 Target::Stderr => eprint!("{}", log),
                 Target::Stdout => print!("{}", log),
+                Target::Pipe => unreachable!(),
             }
 
             Ok(())
