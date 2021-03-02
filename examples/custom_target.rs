@@ -18,7 +18,7 @@ $ export MY_LOG_STYLE=never
 #[macro_use]
 extern crate log;
 
-use env_logger::{Builder, Env};
+use env_logger::{Builder, Env, Target};
 use std::{
     io,
     sync::mpsc::{channel, Sender},
@@ -58,7 +58,7 @@ fn main() {
     Builder::from_env(env)
         // The Sender of the channel is given to the logger
         // The wrapper is used, because Sender itself doesn't implement io::Write
-        .target_pipe(WriteAdapter { sender: rx })
+        .target(Target::Pipe(Box::new(WriteAdapter { sender: rx })))
         .init();
 
     trace!("some trace log");
