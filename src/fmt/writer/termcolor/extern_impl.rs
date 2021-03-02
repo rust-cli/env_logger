@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use log::Level;
 use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 
-use crate::fmt::{Formatter, Target, WriteStyle};
+use crate::fmt::{Formatter, TargetType, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {
     pub use super::*;
@@ -71,20 +71,24 @@ impl Formatter {
 
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
-    test_target: Option<Target>,
+    test_target_type: Option<TargetType>,
     target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
 }
 
 pub(in crate::fmt) struct Buffer {
     inner: termcolor::Buffer,
-    test_target: Option<Target>,
+    test_target_type: Option<TargetType>,
 }
 
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: if is_test { Some(Target::Stderr) } else { None },
+            test_target_type: if is_test {
+                Some(TargetType::Stderr)
+            } else {
+                None
+            },
             target_pipe: None,
         }
     }
@@ -92,7 +96,11 @@ impl BufferWriter {
     pub(in crate::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
-            test_target: if is_test { Some(Target::Stdout) } else { None },
+            test_target_type: if is_test {
+                Some(TargetType::Stdout)
+            } else {
+                None
+            },
             target_pipe: None,
         }
     }
@@ -104,7 +112,7 @@ impl BufferWriter {
         BufferWriter {
             // The inner Buffer is never printed from, but it is still needed to handle coloring and other formating
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: None,
+            test_target_type: None,
             target_pipe: Some(target_pipe),
         }
     }
@@ -112,23 +120,23 @@ impl BufferWriter {
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer {
             inner: self.inner.buffer(),
-            test_target: self.test_target,
+            test_target_type: self.test_target_type,
         }
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
         if let Some(pipe) = &self.target_pipe {
             pipe.lock().unwrap().write_all(&buf.bytes())
-        } else if let Some(target) = self.test_target {
+        } else if let Some(target) = self.test_target_type {
             // This impl uses the `eprint` and `print` macros
             // instead of `termcolor`'s buffer.
             // This is so their output can be captured by `cargo test`
             let log = String::from_utf8_lossy(buf.bytes());
 
             match target {
-                Target::Stderr => eprint!("{}", log),
-                Target::Stdout => print!("{}", log),
-                Target::Pipe => unreachable!(),
+                TargetType::Stderr => eprint!("{}", log),
+                TargetType::Stdout => print!("{}", log),
+                TargetType::Pipe => unreachable!(),
             }
 
             Ok(())
@@ -157,7 +165,7 @@ impl Buffer {
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if self.test_target.is_none() {
+        if self.test_target_type.is_none() {
             self.inner.set_color(spec)
         } else {
             Ok(())
@@ -166,7 +174,7 @@ impl Buffer {
 
     fn reset(&mut self) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if self.test_target.is_none() {
+        if self.test_target_type.is_none() {
             self.inner.reset()
         } else {
             Ok(())
