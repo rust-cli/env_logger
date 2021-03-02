@@ -3,12 +3,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::fmt::{Target, WriteStyle};
+use crate::fmt::{TargetType, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {}
 
 pub(in crate::fmt::writer) struct BufferWriter {
-    target: Target,
+    target: TargetType,
     target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
 }
 
@@ -17,14 +17,14 @@ pub(in crate::fmt) struct Buffer(Vec<u8>);
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: Target::Stderr,
+            target: TargetType::Stderr,
             target_pipe: None,
         }
     }
 
     pub(in crate::fmt::writer) fn stdout(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: Target::Stdout,
+            target: TargetType::Stdout,
             target_pipe: None,
         }
     }
@@ -34,7 +34,7 @@ impl BufferWriter {
         target_pipe: Arc<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
         BufferWriter {
-            target: Target::Pipe,
+            target: TargetType::Pipe,
             target_pipe: Some(target_pipe),
         }
     }
@@ -44,7 +44,7 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let Target::Pipe = self.target {
+        if let TargetType::Pipe = self.target {
             self.target_pipe
                 .as_ref()
                 .unwrap()
@@ -58,9 +58,9 @@ impl BufferWriter {
             let log = String::from_utf8_lossy(&buf.0);
 
             match self.target {
-                Target::Stderr => eprint!("{}", log),
-                Target::Stdout => print!("{}", log),
-                Target::Pipe => unreachable!(),
+                TargetType::Stderr => eprint!("{}", log),
+                TargetType::Stdout => print!("{}", log),
+                TargetType::Pipe => unreachable!(),
             }
 
             Ok(())
