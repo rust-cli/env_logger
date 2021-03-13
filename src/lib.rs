@@ -710,8 +710,8 @@ impl Builder {
     ///
     /// Env logger can log to either stdout, stderr or a custom pipe. The default is stderr.
     ///
-    /// The custom pipe can be used to send the log to a file directly or something more complex.
-    /// It is advertised to use a wrapper for log files, so that rollover and slow FSs are handled well.
+    /// The custom pipe can be used to send the log messages to a custom sink (for example a file).
+    /// Do note that direct writes to a file can become a bottleneck due to IO operation times.
     ///
     /// # Examples
     ///
