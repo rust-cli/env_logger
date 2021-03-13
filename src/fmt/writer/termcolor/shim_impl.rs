@@ -44,27 +44,22 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let TargetType::Pipe = self.target {
-            self.target_pipe
+        // This impl uses the `eprint` and `print` macros
+        // instead of using the streams directly.
+        // This is so their output can be captured by `cargo test`.
+        match self.target {
+            // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
+            TargetType::Pipe => self
+                .target_pipe
                 .as_ref()
                 .unwrap()
                 .lock()
                 .unwrap()
-                .write_all(&buf.0)
-        } else {
-            // This impl uses the `eprint` and `print` macros
-            // instead of using the streams directly.
-            // This is so their output can be captured by `cargo test`
-            let log = String::from_utf8_lossy(&buf.0);
-
-            match self.target {
-                TargetType::Stderr => eprint!("{}", log),
-                TargetType::Stdout => print!("{}", log),
-                TargetType::Pipe => unreachable!(),
-            }
-
-            Ok(())
+                .write_all(&buf.0)?,
+            TargetType::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
+            TargetType::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
         }
+        Ok(())
     }
 }
 
