@@ -49,7 +49,7 @@ fn main() {
     // value is if they're missing
     let env = Env::default()
         .filter_or("MY_LOG_LEVEL", "trace")
-        // Normaly using a pipe as target would asume this as false, but this forces it to true
+        // Normally using a pipe as a target would mean a value of false, but this forces it to be true.
         .write_style_or("MY_LOG_STYLE", "always");
 
     // Create the channel for the log messages
