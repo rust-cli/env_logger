@@ -57,7 +57,7 @@ fn main() {
 
     Builder::from_env(env)
         // The Sender of the channel is given to the logger
-        // The wrapper is used, because Sender itself doesn't implement io::Write
+        // A wrapper is needed, because the `Sender` itself doesn't implement `std::io::Write`.
         .target(Target::Pipe(Box::new(WriteAdapter { sender: rx })))
         .init();
 
