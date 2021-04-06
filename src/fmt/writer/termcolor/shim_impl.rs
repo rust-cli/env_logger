@@ -59,6 +59,7 @@ impl BufferWriter {
             TargetType::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
             TargetType::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
         }
+
         Ok(())
     }
 }
