@@ -221,8 +221,9 @@ impl Builder {
         self.filter = filter;
 
         // Overwrite existing directives with the same name.
-        self.directives
-            .retain(|d| directives.iter().all(|n| n.name != d.name));
+        self.directives.retain(|d| {
+            directives.iter().all(|n| n.name != d.name)
+        });
 
         for directive in directives {
             self.directives.push(directive);
