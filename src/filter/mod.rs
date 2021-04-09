@@ -59,6 +59,7 @@
 //! [`Filter::matches`]: struct.Filter.html#method.matches
 
 use log::{Level, LevelFilter, Metadata, Record};
+use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::mem;
@@ -107,7 +108,7 @@ pub struct Filter {
 ///
 /// [`Filter`]: struct.Filter.html
 pub struct Builder {
-    directives: Vec<Directive>,
+    directives: HashMap<Option<String>, LevelFilter>,
     filter: Option<inner::Filter>,
     built: bool,
 }
@@ -171,7 +172,7 @@ impl Builder {
     /// Initializes the filter builder with defaults.
     pub fn new() -> Builder {
         Builder {
-            directives: Vec::new(),
+            directives: HashMap::new(),
             filter: None,
             built: false,
         }
@@ -203,10 +204,7 @@ impl Builder {
     /// The given module (if any) will log at most the specified level provided.
     /// If no module is provided then the filter will apply to all log messages.
     pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
-        self.directives.push(Directive {
-            name: module.map(|s| s.to_string()),
-            level,
-        });
+        self.directives.insert(module.map(|s| s.to_string()), level);
         self
     }
 
@@ -221,7 +219,7 @@ impl Builder {
         self.filter = filter;
 
         for directive in directives {
-            self.directives.push(directive);
+            self.directives.insert(directive.name, directive.level);
         }
         self
     }
@@ -231,16 +229,23 @@ impl Builder {
         assert!(!self.built, "attempt to re-use consumed builder");
         self.built = true;
 
+        let mut directives = Vec::new();
         if self.directives.is_empty() {
             // Adds the default filter if none exist
-            self.directives.push(Directive {
+            directives.push(Directive {
                 name: None,
                 level: LevelFilter::Error,
             });
         } else {
+            // Consume map of directives.
+            let directives_map = mem::replace(&mut self.directives, HashMap::new());
+            directives = directives_map
+                .into_iter()
+                .map(|(name, level)| Directive { name, level })
+                .collect();
             // Sort the directives by length of their name, this allows a
             // little more efficient lookup at runtime.
-            self.directives.sort_by(|a, b| {
+            directives.sort_by(|a, b| {
                 let alen = a.name.as_ref().map(|a| a.len()).unwrap_or(0);
                 let blen = b.name.as_ref().map(|b| b.len()).unwrap_or(0);
                 alen.cmp(&blen)
@@ -248,7 +253,7 @@ impl Builder {
         }
 
         Filter {
-            directives: mem::replace(&mut self.directives, Vec::new()),
+            directives: mem::replace(&mut directives, Vec::new()),
             filter: mem::replace(&mut self.filter, None),
         }
     }
