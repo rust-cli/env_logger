@@ -285,6 +285,7 @@ impl fmt::Debug for Builder {
 /// Parse a logging specification string (e.g: "crate1,crate2::mod3,crate3::x=error/foo")
 /// and return a vector with log directives.
 fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
+    let spec = spec.replace("-", "_");
     let mut dirs = Vec::new();
 
     let mut parts = spec.split('/');
