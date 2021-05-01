@@ -71,6 +71,19 @@ impl Default for WritableTarget {
     }
 }
 
+impl fmt::Debug for WritableTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Stdout => "stdout",
+                Self::Stderr => "stderr",
+                Self::Pipe(_) => "pipe",
+            }
+        )
+    }
+}
 /// Whether or not to print styles to the target.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WriteStyle {
@@ -111,6 +124,7 @@ impl Writer {
 /// A builder for a terminal writer.
 ///
 /// The target and style choice can be configured before building.
+#[derive(Debug)]
 pub(crate) struct Builder {
     target: WritableTarget,
     write_style: WriteStyle,
@@ -192,14 +206,6 @@ impl Builder {
 impl Default for Builder {
     fn default() -> Self {
         Builder::new()
-    }
-}
-
-impl fmt::Debug for Builder {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Logger")
-            .field("write_style", &self.write_style)
-            .finish()
     }
 }
 
