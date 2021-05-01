@@ -6,7 +6,7 @@ where
 {
     let mut permutations = BTreeSet::new();
 
-    if input.len() == 0 {
+    if input.is_empty() {
         return permutations;
     }
 

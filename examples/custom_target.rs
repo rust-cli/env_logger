@@ -71,10 +71,10 @@ fn main() {
     String::from_utf8(tx.try_iter().collect::<Vec<u8>>())
         .unwrap()
         // Split the result into lines so a prefix can be added to each line
-        .split("\n")
+        .split('\n')
         .for_each(|msg| {
             // Print the message with a prefix if it has any content
-            if msg.len() > 0 {
+            if !msg.is_empty() {
                 println!("from pipe: {}", msg)
             }
         });

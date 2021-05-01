@@ -29,7 +29,7 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
-    if failed.len() > 0 {
+    if !failed.is_empty() {
         for failed in failed {
             eprintln!("FAIL: {:?}", failed);
         }
