@@ -9,7 +9,7 @@ pub(in crate::fmt::writer) mod glob {}
 
 pub(in crate::fmt::writer) struct BufferWriter {
     target: TargetType,
-    target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
+    target_pipe: Option<Box<Mutex<dyn io::Write + Send + 'static>>>,
 }
 
 pub(in crate::fmt) struct Buffer(Vec<u8>);
@@ -31,7 +31,7 @@ impl BufferWriter {
 
     pub(in crate::fmt::writer) fn pipe(
         _write_style: WriteStyle,
-        target_pipe: Arc<Mutex<dyn io::Write + Send + 'static>>,
+        target_pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
         BufferWriter {
             target: TargetType::Pipe,

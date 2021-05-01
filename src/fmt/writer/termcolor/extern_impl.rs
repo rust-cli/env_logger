@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::io::{self, Write};
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use log::Level;
 use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
@@ -72,7 +72,7 @@ impl Formatter {
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
     test_target_type: Option<TargetType>,
-    target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
+    target_pipe: Option<Box<Mutex<dyn io::Write + Send + 'static>>>,
 }
 
 pub(in crate::fmt) struct Buffer {
@@ -107,7 +107,7 @@ impl BufferWriter {
 
     pub(in crate::fmt::writer) fn pipe(
         write_style: WriteStyle,
-        target_pipe: Arc<Mutex<dyn io::Write + Send + 'static>>,
+        target_pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
         BufferWriter {
             // The inner Buffer is never printed from, but it is still needed to handle coloring and other formating

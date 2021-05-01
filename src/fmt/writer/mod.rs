@@ -3,10 +3,7 @@ mod termcolor;
 
 use self::atty::{is_stderr, is_stdout};
 use self::termcolor::BufferWriter;
-use std::{
-    fmt, io,
-    sync::{Arc, Mutex},
-};
+use std::{fmt, io, sync::Mutex};
 
 pub(in crate::fmt) mod glob {
     pub use super::termcolor::glob::*;
@@ -116,7 +113,7 @@ impl Writer {
 /// The target and style choice can be configured before building.
 pub(crate) struct Builder {
     target_type: TargetType,
-    target_pipe: Option<Arc<Mutex<dyn io::Write + Send + 'static>>>,
+    target_pipe: Option<Box<Mutex<dyn io::Write + Send + 'static>>>,
     write_style: WriteStyle,
     is_test: bool,
     built: bool,
@@ -139,7 +136,7 @@ impl Builder {
         self.target_type = TargetType::from(&target);
         self.target_pipe = match target {
             Target::Stdout | Target::Stderr => None,
-            Target::Pipe(pipe) => Some(Arc::new(Mutex::new(pipe))),
+            Target::Pipe(pipe) => Some(Box::new(Mutex::new(pipe))),
         };
         self
     }
@@ -188,9 +185,7 @@ impl Builder {
         let writer = match self.target_type {
             TargetType::Stderr => BufferWriter::stderr(self.is_test, color_choice),
             TargetType::Stdout => BufferWriter::stdout(self.is_test, color_choice),
-            TargetType::Pipe => {
-                BufferWriter::pipe(color_choice, self.target_pipe.as_ref().unwrap().clone())
-            }
+            TargetType::Pipe => BufferWriter::pipe(color_choice, self.target_pipe.take().unwrap()),
         };
 
         Writer {
