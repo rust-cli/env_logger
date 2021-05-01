@@ -5,12 +5,12 @@ use self::atty::{is_stderr, is_stdout};
 use self::termcolor::BufferWriter;
 use std::{fmt, io, sync::Mutex};
 
-pub(in crate::fmt) mod glob {
+pub(super) mod glob {
     pub use super::termcolor::glob::*;
     pub use super::*;
 }
 
-pub(in crate::fmt) use self::termcolor::Buffer;
+pub(super) use self::termcolor::Buffer;
 
 /// Log target, either `stdout`, `stderr` or a custom pipe.
 #[non_exhaustive]
@@ -46,7 +46,7 @@ impl fmt::Debug for Target {
 /// Log target, either `stdout`, `stderr` or a custom pipe.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
-pub(in crate::fmt) enum TargetType {
+pub(super) enum TargetType {
     /// Logs will be sent to standard output.
     Stdout,
     /// Logs will be sent to standard error.
@@ -99,11 +99,11 @@ impl Writer {
         self.write_style
     }
 
-    pub(in crate::fmt) fn buffer(&self) -> Buffer {
+    pub(super) fn buffer(&self) -> Buffer {
         self.inner.buffer()
     }
 
-    pub(in crate::fmt) fn print(&self, buf: &Buffer) -> io::Result<()> {
+    pub(super) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.inner.print(buf)
     }
 }
