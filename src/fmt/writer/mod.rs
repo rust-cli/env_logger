@@ -3,7 +3,7 @@ mod termcolor;
 
 use self::atty::{is_stderr, is_stdout};
 use self::termcolor::BufferWriter;
-use std::{fmt, io, sync::Mutex};
+use std::{fmt, io, mem, sync::Mutex};
 
 pub(super) mod glob {
     pub use super::termcolor::glob::*;
@@ -44,30 +44,30 @@ impl fmt::Debug for Target {
 }
 
 /// Log target, either `stdout`, `stderr` or a custom pipe.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[non_exhaustive]
-pub(super) enum TargetType {
+///
+/// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
+pub(super) enum WritableTarget {
     /// Logs will be sent to standard output.
     Stdout,
     /// Logs will be sent to standard error.
     Stderr,
     /// Logs will be sent to a custom pipe.
-    Pipe,
+    Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
 
-impl From<&Target> for TargetType {
-    fn from(target: &Target) -> Self {
+impl From<Target> for WritableTarget {
+    fn from(target: Target) -> Self {
         match target {
             Target::Stdout => Self::Stdout,
             Target::Stderr => Self::Stderr,
-            Target::Pipe(_) => Self::Pipe,
+            Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe))),
         }
     }
 }
 
-impl Default for TargetType {
+impl Default for WritableTarget {
     fn default() -> Self {
-        Self::from(&Target::default())
+        Self::from(Target::default())
     }
 }
 
@@ -112,8 +112,7 @@ impl Writer {
 ///
 /// The target and style choice can be configured before building.
 pub(crate) struct Builder {
-    target_type: TargetType,
-    target_pipe: Option<Box<Mutex<dyn io::Write + Send + 'static>>>,
+    target: WritableTarget,
     write_style: WriteStyle,
     is_test: bool,
     built: bool,
@@ -123,8 +122,7 @@ impl Builder {
     /// Initialize the writer builder with defaults.
     pub(crate) fn new() -> Self {
         Builder {
-            target_type: Default::default(),
-            target_pipe: None,
+            target: Default::default(),
             write_style: Default::default(),
             is_test: false,
             built: false,
@@ -133,11 +131,7 @@ impl Builder {
 
     /// Set the target to write to.
     pub(crate) fn target(&mut self, target: Target) -> &mut Self {
-        self.target_type = TargetType::from(&target);
-        self.target_pipe = match target {
-            Target::Stdout | Target::Stderr => None,
-            Target::Pipe(pipe) => Some(Box::new(Mutex::new(pipe))),
-        };
+        self.target = target.into();
         self
     }
 
@@ -169,10 +163,10 @@ impl Builder {
 
         let color_choice = match self.write_style {
             WriteStyle::Auto => {
-                if match self.target_type {
-                    TargetType::Stderr => is_stderr(),
-                    TargetType::Stdout => is_stdout(),
-                    TargetType::Pipe => false,
+                if match &self.target {
+                    WritableTarget::Stderr => is_stderr(),
+                    WritableTarget::Stdout => is_stdout(),
+                    WritableTarget::Pipe(_) => false,
                 } {
                     WriteStyle::Auto
                 } else {
@@ -182,10 +176,10 @@ impl Builder {
             color_choice => color_choice,
         };
 
-        let writer = match self.target_type {
-            TargetType::Stderr => BufferWriter::stderr(self.is_test, color_choice),
-            TargetType::Stdout => BufferWriter::stdout(self.is_test, color_choice),
-            TargetType::Pipe => BufferWriter::pipe(color_choice, self.target_pipe.take().unwrap()),
+        let writer = match mem::take(&mut self.target) {
+            WritableTarget::Stderr => BufferWriter::stderr(self.is_test, color_choice),
+            WritableTarget::Stdout => BufferWriter::stdout(self.is_test, color_choice),
+            WritableTarget::Pipe(pipe) => BufferWriter::pipe(self.is_test, color_choice, pipe),
         };
 
         Writer {
@@ -204,7 +198,6 @@ impl Default for Builder {
 impl fmt::Debug for Builder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Logger")
-            .field("target", &self.target_type)
             .field("write_style", &self.write_style)
             .finish()
     }

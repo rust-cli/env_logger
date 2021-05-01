@@ -1,15 +1,11 @@
-use std::{
-    io,
-    sync::{Arc, Mutex},
-};
+use std::{io, sync::Mutex};
 
-use crate::fmt::{TargetType, WriteStyle};
+use crate::fmt::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {}
 
 pub(in crate::fmt::writer) struct BufferWriter {
-    target: TargetType,
-    target_pipe: Option<Box<Mutex<dyn io::Write + Send + 'static>>>,
+    target: WritableTarget,
 }
 
 pub(in crate::fmt) struct Buffer(Vec<u8>);
@@ -17,25 +13,23 @@ pub(in crate::fmt) struct Buffer(Vec<u8>);
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: TargetType::Stderr,
-            target_pipe: None,
+            target: WritableTarget::Stderr,
         }
     }
 
     pub(in crate::fmt::writer) fn stdout(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: TargetType::Stdout,
-            target_pipe: None,
+            target: WritableTarget::Stdout,
         }
     }
 
     pub(in crate::fmt::writer) fn pipe(
+        _is_test: bool,
         _write_style: WriteStyle,
-        target_pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
+        pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
         BufferWriter {
-            target: TargetType::Pipe,
-            target_pipe: Some(target_pipe),
+            target: WritableTarget::Pipe(pipe),
         }
     }
 
@@ -47,17 +41,11 @@ impl BufferWriter {
         // This impl uses the `eprint` and `print` macros
         // instead of using the streams directly.
         // This is so their output can be captured by `cargo test`.
-        match self.target {
+        match &self.target {
             // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
-            TargetType::Pipe => self
-                .target_pipe
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .write_all(&buf.0)?,
-            TargetType::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
-            TargetType::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
+            WritableTarget::Pipe(pipe) => pipe.lock().unwrap().write_all(&buf.0)?,
+            WritableTarget::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
+            WritableTarget::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
         }
 
         Ok(())
