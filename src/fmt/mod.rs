@@ -141,6 +141,7 @@ pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record) -> io::Result<()>
 pub(crate) struct Builder {
     pub format_timestamp: Option<TimestampPrecision>,
     pub format_module_path: bool,
+    pub honor_target: bool,
     pub format_level: bool,
     pub format_indent: Option<usize>,
     pub custom_format: Option<FormatFn>,
@@ -153,6 +154,7 @@ impl Default for Builder {
         Builder {
             format_timestamp: Some(Default::default()),
             format_module_path: true,
+            honor_target: true,
             format_level: true,
             format_indent: Some(4),
             custom_format: None,
@@ -186,6 +188,7 @@ impl Builder {
                 let fmt = DefaultFormat {
                     timestamp: built.format_timestamp,
                     module_path: built.format_module_path,
+                    honor_target: built.honor_target,
                     level: built.format_level,
                     written_header_value: false,
                     indent: built.format_indent,
@@ -210,6 +213,7 @@ type SubtleStyle = &'static str;
 struct DefaultFormat<'a> {
     timestamp: Option<TimestampPrecision>,
     module_path: bool,
+    honor_target: bool,
     level: bool,
     written_header_value: bool,
     indent: Option<usize>,
@@ -302,6 +306,10 @@ impl<'a> DefaultFormat<'a> {
     fn write_module_path(&mut self, record: &Record) -> io::Result<()> {
         if !self.module_path {
             return Ok(());
+        }
+
+        if self.honor_target {
+            return self.write_header_value(record.target());
         }
 
         if let Some(module_path) = record.module_path() {
