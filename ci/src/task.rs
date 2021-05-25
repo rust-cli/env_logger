@@ -21,12 +21,12 @@ impl Default for TestArgs {
 
 impl TestArgs {
     fn features_string(&self) -> Option<String> {
-        if self.features.len() == 0 {
+        if self.features.is_empty() {
             return None;
         }
 
         let s = self.features.iter().fold(String::new(), |mut s, f| {
-            if s.len() > 0 {
+            if !s.is_empty() {
                 s.push_str(" ");
             }
             s.push_str(f);
