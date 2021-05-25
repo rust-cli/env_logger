@@ -76,7 +76,7 @@ pub(in crate::fmt::writer) struct BufferWriter {
 
 pub(in crate::fmt) struct Buffer {
     inner: termcolor::Buffer,
-    test_target: bool,
+    has_test_target: bool,
 }
 
 impl BufferWriter {
@@ -121,7 +121,7 @@ impl BufferWriter {
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer {
             inner: self.inner.buffer(),
-            test_target: self.test_target.is_some(),
+            has_test_target: self.test_target.is_some(),
         }
     }
 
@@ -164,7 +164,7 @@ impl Buffer {
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if !self.test_target {
+        if !self.has_test_target {
             self.inner.set_color(spec)
         } else {
             Ok(())
@@ -173,7 +173,7 @@ impl Buffer {
 
     fn reset(&mut self) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if !self.test_target {
+        if !self.has_test_target {
             self.inner.reset()
         } else {
             Ok(())
