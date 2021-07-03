@@ -153,8 +153,8 @@ impl Default for Builder {
     fn default() -> Self {
         Builder {
             format_timestamp: Some(Default::default()),
-            format_module_path: true,
-            format_target: false,
+            format_module_path: false,
+            format_target: true,
             format_level: true,
             format_indent: Some(4),
             custom_format: None,
