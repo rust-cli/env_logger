@@ -97,28 +97,38 @@
 //! directives*. A logging directive is of the form:
 //!
 //! ```text
-//! path::to::module=level
+//! example::log::target=level
 //! ```
 //!
-//! The path to the module is rooted in the name of the crate it was compiled
-//! for, so if your program is contained in a file `hello.rs`, for example, to
-//! turn on logging for this file you would use a value of `RUST_LOG=hello`.
-//! Furthermore, this path is a prefix-search, so all modules nested in the
-//! specified module will also have logging enabled.
+//! The log target is typically equal to the path of the module the message
+//! in question originated from, though it can be overriden.
+//!
+//! The path is rooted in the name of the crate it was compiled for, so if
+//! your program is in a file called, for example, `hello.rs`, the path would
+//! simply be be `hello`.
+//!
+//! Furthermore, the the log can be filtered using prefix-search based on the
+//! specified log target. A value of, for example, `RUST_LOG=example`, would
+//! match all of the messages with targets:
+//!
+//! * `example`
+//! * `example::test`
+//! * `example::test::module::submodule`
+//! * `examples::and_more_examples`
 //!
 //! When providing the crate name or a module path, explicitly specifying the
-//! log level is optional. If omitted, all logging for the item (and its
-//! children) will be enabled.
+//! log level is optional. If omitted, all logging for the item will be
+//! enabled.
 //!
 //! The names of the log levels that may be specified correspond to the
 //! variations of the [`log::Level`][level-enum] enum from the `log`
 //! crate. They are:
 //!
-//!    * `error`
-//!    * `warn`
-//!    * `info`
-//!    * `debug`
-//!    * `trace`
+//! * `error`
+//! * `warn`
+//! * `info`
+//! * `debug`
+//! * `trace`
 //!
 //! There is also a pseudo logging level, `off`, which may be specified to
 //! disable all logging for a given module or for the entire application. As
