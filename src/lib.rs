@@ -598,6 +598,12 @@ impl Builder {
         self
     }
 
+    /// Whether or not to write the target in the default format.
+    pub fn format_target(&mut self, write: bool) -> &mut Self {
+        self.format.format_target = write;
+        self
+    }
+
     /// Configures the amount of spaces to use to indent multiline log records.
     /// A value of `None` disables any kind of indentation.
     pub fn format_indent(&mut self, indent: Option<usize>) -> &mut Self {
