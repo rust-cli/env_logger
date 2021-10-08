@@ -8,7 +8,7 @@ use std::sync::Mutex;
 use log::Level;
 use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
 
-use crate::fmt::{Formatter, WritableTarget, WriteStyle};
+use crate::fmt::{Formatter, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {
     pub use super::*;
@@ -69,9 +69,16 @@ impl Formatter {
     }
 }
 
-pub(in crate::fmt::writer) struct BufferWriter {
-    inner: termcolor::BufferWriter,
-    test_target: Option<WritableTarget>,
+pub(in crate::fmt::writer) enum BufferWriter {
+    Stderr {
+        inner: termcolor::BufferWriter,
+        is_test: bool,
+    },
+    Stdout {
+        inner: termcolor::BufferWriter,
+        is_test: bool,
+    },
+    Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
 
 pub(in crate::fmt) struct Buffer {
@@ -81,67 +88,74 @@ pub(in crate::fmt) struct Buffer {
 
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
-        BufferWriter {
+        BufferWriter::Stderr {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: if is_test {
-                Some(WritableTarget::Stderr)
-            } else {
-                None
-            },
+            is_test,
         }
     }
 
     pub(in crate::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
-        BufferWriter {
+        BufferWriter::Stdout {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
-            test_target: if is_test {
-                Some(WritableTarget::Stdout)
-            } else {
-                None
-            },
+            is_test,
         }
     }
 
     pub(in crate::fmt::writer) fn pipe(
-        is_test: bool,
         write_style: WriteStyle,
         pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
-        BufferWriter {
-            // The inner Buffer is never printed from, but it is still needed to handle coloring and other formating
-            inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: if is_test {
-                Some(WritableTarget::Pipe(pipe))
-            } else {
-                None
-            },
-        }
+        BufferWriter::Pipe(pipe)
     }
 
-    pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
-        Buffer {
-            inner: self.inner.buffer(),
-            has_test_target: self.test_target.is_some(),
+    pub(in crate::fmt::writer) fn buffer(&self) -> Option<Buffer> {
+        match self {
+            Self::Stderr { inner, is_test } | Self::Stdout { inner, is_test } => Some(Buffer {
+                inner: inner.buffer(),
+                has_test_target: *is_test,
+            }),
+            _ => None,
         }
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let Some(target) = &self.test_target {
-            // This impl uses the `eprint` and `print` macros
-            // instead of `termcolor`'s buffer.
-            // This is so their output can be captured by `cargo test`
-            let log = String::from_utf8_lossy(buf.bytes());
-
-            match target {
-                WritableTarget::Stderr => eprint!("{}", log),
-                WritableTarget::Stdout => print!("{}", log),
-                WritableTarget::Pipe(pipe) => write!(pipe.lock().unwrap(), "{}", log)?,
+        match self {
+            // For `is_test`, the `eprint` and `print` macros are used instead of `termcolor`'s buffer.
+            // This is so the output can be captured by `cargo test`.
+            Self::Stderr {
+                inner,
+                is_test: true,
+            } => {
+                eprint!("{}", String::from_utf8_lossy(buf.bytes()));
+            }
+            Self::Stdout {
+                inner,
+                is_test: true,
+            } => {
+                println!("{}", String::from_utf8_lossy(buf.bytes()))
             }
 
-            Ok(())
-        } else {
-            self.inner.print(&buf.inner)
+            BufferWriter::Stderr {
+                inner,
+                is_test: false,
+            }
+            | BufferWriter::Stdout {
+                inner,
+                is_test: false,
+            } => {
+                inner.print(&buf.inner);
+            }
+
+            Self::Pipe(pipe) => {
+                write!(
+                    pipe.lock().unwrap(),
+                    "{}",
+                    String::from_utf8_lossy(buf.bytes()),
+                )?;
+            }
         }
+
+        Ok(())
     }
 }
 

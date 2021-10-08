@@ -779,6 +779,8 @@ impl Builder {
     ///
     /// If `is_test` is `true` then the logger will allow the testing framework to
     /// capture log records rather than printing them to the terminal directly.
+    ///
+    /// Has no effect if the target is [`Target::Pipe`][fmt::Target::Pipe].
     pub fn is_test(&mut self, is_test: bool) -> &mut Self {
         self.writer.is_test(is_test);
         self
