@@ -27,7 +27,7 @@ impl TestArgs {
 
         let s = self.features.iter().fold(String::new(), |mut s, f| {
             if !s.is_empty() {
-                s.push_str(" ");
+                s.push(' ');
             }
             s.push_str(f);
 
