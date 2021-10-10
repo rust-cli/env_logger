@@ -453,7 +453,7 @@ impl_styled_value_fmt!(
     fmt::LowerExp
 );
 
-// The `Color` type is copied from https://github.com/BurntSushi/ripgrep/tree/master/termcolor
+// The `Color` type is copied from https://github.com/BurntSushi/termcolor
 
 /// The set of available colors for the terminal foreground/background.
 ///
