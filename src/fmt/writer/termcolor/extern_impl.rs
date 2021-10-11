@@ -339,6 +339,33 @@ impl Style {
         self
     }
 
+    /// Set whether the text is dimmed.
+    ///
+    /// If `yes` is true then text will be written in a dimmer color.
+    /// If `yes` is false then text will be written in the default color.
+    ///
+    /// # Examples
+    ///
+    /// Create a style with dimmed text:
+    ///
+    /// ```
+    /// use std::io::Write;
+    ///
+    /// let mut builder = env_logger::Builder::new();
+    ///
+    /// builder.format(|buf, record| {
+    ///     let mut style = buf.style();
+    ///
+    ///     style.set_dimmed(true);
+    ///
+    ///     writeln!(buf, "{}", style.value(record.args()))
+    /// });
+    /// ```
+    pub fn set_dimmed(&mut self, yes: bool) -> &mut Style {
+        self.spec.set_dimmed(yes);
+        self
+    }
+
     /// Set the background color.
     ///
     /// # Examples
