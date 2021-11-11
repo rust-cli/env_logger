@@ -676,7 +676,7 @@ impl Builder {
     ///
     /// # Examples
     ///
-    /// Only include messages for info and above for logs in `path::to::module`:
+    /// Only include messages for info and above for logs globally:
     ///
     /// ```
     /// use env_logger::Builder;
