@@ -603,8 +603,27 @@ impl Builder {
     }
 
     /// Whether or not to write the module path in the default format.
+    /// 
+    /// Cannot be used in combination with [format_file_location](Self::format_file_location).
     pub fn format_module_path(&mut self, write: bool) -> &mut Self {
-        self.format.format_module_path = write;
+        if write && self.format.format_file_location {
+            println!("Cannot use both `format_module_path` and `format_log_location`!")
+        } else {
+            self.format.format_module_path = write;
+        }
+        self
+    }
+
+    /// Whether or not to write the location of the log (file and line number)
+    /// in the default format.
+    /// 
+    /// Cannot be used in combination with [format_module_path](Self::format_file_location).
+    pub fn format_file_location(&mut self, write: bool) -> &mut Self {
+        if write && self.format.format_module_path {
+            println!("Cannot use both `format_module_path` and `format_log_location`!")
+        } else {
+            self.format.format_file_location = write;
+        }
         self
     }
 
