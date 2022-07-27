@@ -62,6 +62,19 @@ case names. Where our docs do use other forms, they do so in the context of
 specific examples, so you won't be surprised if you see similar usage in the
 wild.
 
+### local time feature 
+
+```toml
+ [dependencies]
+log = "0.4.0"
+env_logger = {version="0.9.1",features = ["localtime"]}
+
+# output
+[2022-07-27T10:34:44+08:00 INFO  log] starting up
+```
+
+
+
 The log levels that may be specified correspond to the [`log::Level`][level-enum]
 enum from the `log` crate. They are:
 

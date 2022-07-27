@@ -105,6 +105,7 @@ impl fmt::Debug for Timestamp {
 }
 
 impl fmt::Display for Timestamp {
+    /// still receive argument SystemTime ,but ignore it and return datetime in localtime
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let formatter = match self.precision {
             TimestampPrecision::Seconds => format_rfc3339_seconds,

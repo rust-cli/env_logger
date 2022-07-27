@@ -36,8 +36,9 @@ use std::rc::Rc;
 use std::{fmt, io, mem};
 
 use log::Record;
-
 mod humantime;
+#[cfg(feature = "localtime")]
+mod localtime;
 pub(crate) mod writer;
 
 pub use self::humantime::glob::*;
@@ -247,7 +248,10 @@ impl<'a> DefaultFormat<'a> {
             text
         }
     }
-
+    /// print  value in debug format `2022-07-26T02:30:55Z`
+    /// ```
+    ///   println!("write_header_value {}",&value);
+    /// ```
     fn write_header_value<T>(&mut self, value: T) -> io::Result<()>
     where
         T: Display,
@@ -282,7 +286,8 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
-        #[cfg(feature = "humantime")]
+        // #[cfg(feature = "humantime")]
+        #[cfg(not(feature = "localtime"))]
         {
             use self::TimestampPrecision::*;
             let ts = match self.timestamp {
@@ -292,9 +297,28 @@ impl<'a> DefaultFormat<'a> {
                 Some(Micros) => self.buf.timestamp_micros(),
                 Some(Nanos) => self.buf.timestamp_nanos(),
             };
-
-            self.write_header_value(ts)
+            self.write_header_value(ts)?;
+            Ok(())
         }
+
+        // this will override humantime block of code above If localtime is enabled.
+        // let return variable ts be string type.
+        #[cfg(feature = "localtime")]
+        {
+            use self::TimestampPrecision::*;
+            use localtime::LocalTimestamp;
+            let ts = match self.timestamp {
+                None => return Ok(()),
+                Some(Seconds) => LocalTimestamp::timestamp_seconds(),
+                Some(Millis) => LocalTimestamp::timestamp_millis(),
+                Some(Micros) => LocalTimestamp::timestamp_micros(),
+                Some(Nanos) => LocalTimestamp::timestamp_nanos(),
+            };
+
+            self.write_header_value(ts)?;
+            Ok(())
+        }
+
         #[cfg(not(feature = "humantime"))]
         {
             // Trick the compiler to think we have used self.timestamp
@@ -302,6 +326,7 @@ impl<'a> DefaultFormat<'a> {
             let _ = self.timestamp;
             Ok(())
         }
+        // Ok(())
     }
 
     fn write_module_path(&mut self, record: &Record) -> io::Result<()> {
