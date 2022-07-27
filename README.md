@@ -21,7 +21,7 @@ It must be added along with `log` to the project dependencies:
 ```toml
 [dependencies]
 log = "0.4.0"
-env_logger = "0.8.4"
+env_logger = "0.9.1"
 ```
 
 `env_logger` must be initialized as early as possible in the project. After it's initialized, you can use the `log` macros to do actual logging.
@@ -62,7 +62,7 @@ case names. Where our docs do use other forms, they do so in the context of
 specific examples, so you won't be surprised if you see similar usage in the
 wild.
 
-### local time feature 
+### local time zone feature 
 
 ```toml
  [dependencies]
@@ -101,7 +101,7 @@ Tests can use the `env_logger` crate to see log messages generated during that t
 log = "0.4.0"
 
 [dev-dependencies]
-env_logger = "0.8.4"
+env_logger = "0.9.1"
 ```
 
 ```rust

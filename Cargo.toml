@@ -5,7 +5,7 @@ version = "0.9.1"
 authors = ["The Rust Project Developers"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/env-logger-rs/env_logger/"
+repository = "https://github.com/dobefore/env_logger_rs"
 documentation = "https://docs.rs/env_logger"
 description = """
 A logging implementation for `log` which is configured via an environment
