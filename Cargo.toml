@@ -1,5 +1,5 @@
 [package]
-name = "env_logger"
+name = "env_logger_successor"
 edition = "2018"
 version = "0.9.1"
 authors = ["The Rust Project Developers"]

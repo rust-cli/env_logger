@@ -1,4 +1,4 @@
-extern crate env_logger;
+extern crate env_logger_successor;
 extern crate log;
 
 use std::env;
@@ -8,13 +8,13 @@ use std::str;
 fn main() {
     if env::var("YOU_ARE_TESTING_NOW").is_ok() {
         // Init from the env (which should set the max level to `Debug`)
-        env_logger::init();
+        env_logger_successor::init();
 
         assert_eq!(log::LevelFilter::Debug, log::max_level());
 
         // Init again using a different max level
         // This shouldn't clobber the level that was previously set
-        env_logger::Builder::new()
+        env_logger_successor::Builder::new()
             .parse_filters("info")
             .try_init()
             .unwrap_err();

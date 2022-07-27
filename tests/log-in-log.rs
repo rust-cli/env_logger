@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate log;
-extern crate env_logger;
+extern crate env_logger_successor;
 
 use std::env;
 use std::fmt;
@@ -17,7 +17,7 @@ impl fmt::Display for Foo {
 }
 
 fn main() {
-    env_logger::init();
+    env_logger_successor::init();
     if env::var("YOU_ARE_TESTING_NOW").is_ok() {
         return info!("{}", Foo);
     }
