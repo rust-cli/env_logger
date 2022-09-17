@@ -107,7 +107,7 @@
 //! your program is in a file called, for example, `hello.rs`, the path would
 //! simply be be `hello`.
 //!
-//! Furthermore, the the log can be filtered using prefix-search based on the
+//! Furthermore, the log can be filtered using prefix-search based on the
 //! specified log target. A value of, for example, `RUST_LOG=example`, would
 //! match all of the messages with targets:
 //!
