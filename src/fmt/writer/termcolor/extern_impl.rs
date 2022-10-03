@@ -110,7 +110,7 @@ impl BufferWriter {
         BufferWriter {
             // The inner Buffer is never printed from, but it is still needed to handle coloring and other formating
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            uncolored_target: Some(WritableTarget::Pipe(pipe))
+            uncolored_target: Some(WritableTarget::Pipe(pipe)),
         }
     }
 
