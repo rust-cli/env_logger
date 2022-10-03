@@ -20,10 +20,6 @@ pub enum Target {
     /// Logs will be sent to standard error.
     Stderr,
     /// Logs will be sent to a custom pipe.
-    #[deprecated = "\
-        This functionality is [broken](https://github.com/env-logger-rs/env_logger/issues/208) \
-        and nobody is working on fixing it\
-    "]
     Pipe(Box<dyn io::Write + Send + 'static>),
 }
 
@@ -41,7 +37,6 @@ impl fmt::Debug for Target {
             match self {
                 Self::Stdout => "stdout",
                 Self::Stderr => "stderr",
-                #[allow(deprecated)]
                 Self::Pipe(_) => "pipe",
             }
         )
@@ -65,7 +60,6 @@ impl From<Target> for WritableTarget {
         match target {
             Target::Stdout => Self::Stdout,
             Target::Stderr => Self::Stderr,
-            #[allow(deprecated)]
             Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe))),
         }
     }
