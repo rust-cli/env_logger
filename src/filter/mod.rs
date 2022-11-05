@@ -59,7 +59,6 @@
 //! [`Filter::matches`]: struct.Filter.html#method.matches
 
 use log::{Level, LevelFilter, Metadata, Record};
-use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::mem;
@@ -108,7 +107,7 @@ pub struct Filter {
 ///
 /// [`Filter`]: struct.Filter.html
 pub struct Builder {
-    directives: HashMap<Option<String>, LevelFilter>,
+    directives: Vec<Directive>,
     filter: Option<inner::Filter>,
     built: bool,
 }
@@ -172,7 +171,7 @@ impl Builder {
     /// Initializes the filter builder with defaults.
     pub fn new() -> Builder {
         Builder {
-            directives: HashMap::new(),
+            directives: Vec::new(),
             filter: None,
             built: false,
         }
@@ -187,6 +186,19 @@ impl Builder {
         }
 
         builder
+    }
+
+    /// Insert the directive replacing any directive with the same name.
+    fn insert_directive(&mut self, mut directive: Directive) {
+        if let Some(pos) = self
+            .directives
+            .iter()
+            .position(|d| d.name == directive.name)
+        {
+            mem::swap(&mut self.directives[pos], &mut directive);
+        } else {
+            self.directives.push(directive);
+        }
     }
 
     /// Adds a directive to the filter for a specific module.
@@ -204,7 +216,10 @@ impl Builder {
     /// The given module (if any) will log at most the specified level provided.
     /// If no module is provided then the filter will apply to all log messages.
     pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
-        self.directives.insert(module.map(|s| s.to_string()), level);
+        self.insert_directive(Directive {
+            name: module.map(|s| s.to_string()),
+            level,
+        });
         self
     }
 
@@ -219,7 +234,7 @@ impl Builder {
         self.filter = filter;
 
         for directive in directives {
-            self.directives.insert(directive.name, directive.level);
+            self.insert_directive(directive);
         }
         self
     }
@@ -237,12 +252,8 @@ impl Builder {
                 level: LevelFilter::Error,
             });
         } else {
-            // Consume map of directives.
-            let directives_map = mem::take(&mut self.directives);
-            directives = directives_map
-                .into_iter()
-                .map(|(name, level)| Directive { name, level })
-                .collect();
+            // Consume directives.
+            directives = mem::take(&mut self.directives);
             // Sort the directives by length of their name, this allows a
             // little more efficient lookup at runtime.
             directives.sort_by(|a, b| {
