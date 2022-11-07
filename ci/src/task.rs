@@ -57,8 +57,8 @@ pub fn test(args: TestArgs) -> bool {
         command.arg("--lib");
     }
 
-    if let Some(ref features) = features {
-        command.args(["--features", features]);
+    if let Some(features) = &features {
+        command.args(&["--features", features]);
     }
 
     println!("running {:?}", command);
