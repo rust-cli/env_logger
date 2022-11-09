@@ -1,114 +1,130 @@
-name: Continuous Integration
+name: CI
+
+permissions:
+  contents: read
 
 on:
   pull_request:
-    paths:
-      - "**.rs"
-      - "Cargo.toml"
-      - "Cargo.lock"
+  push:
+    branches:
+    - main
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CLICOLOR: 1
 
 jobs:
-  fmt:
-    name: Source formatting check
+  ci:
+    permissions:
+      contents: none
+    name: CI
+    needs: [test, msrv, docs, rustfmt, clippy]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: rustfmt
-
-      - name: Check formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
-
-  check:
-    name: Compilation check
-    runs-on: ubuntu-latest
+      - name: Done
+        run: exit 0
+  test:
+    name: Test
     strategy:
-      fail-fast: true
       matrix:
-        rust:
-          - stable
-          - beta
-          - nightly
-          - 1.41.0
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        rust: ["stable"]
+    continue-on-error: ${{ matrix.rust != 'stable' }}
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: Build
+      run: cargo test --no-run --workspace --all-features
+    - name: Default features
+      run: cargo test --workspace
+    - name: All features
+      run: cargo test --workspace --all-features
+    - name: No-default features
+      run: cargo test --workspace --no-default-features
+    - name: Check feature combinations
+      run: cargo run -p ci
+    - name: Run crate example
+      run: cargo run --example default
+  msrv:
+    name: "Check MSRV: 1.41.0"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.41.0  # MSRV
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: Default features
+      run: cargo check --workspace --all-targets
+    - name: All features
+      run: cargo check --workspace --all-targets --all-features
+    - name: No-default features
+      run: cargo check --workspace --all-targets --no-default-features
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: Check documentation
+      env:
+        RUSTDOCFLAGS: -D warnings
+      run: cargo doc --workspace --all-features --no-deps --document-private-items
+  rustfmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        # Not MSRV because its harder to jump between versions and people are
+        # more likely to have stable
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt
+    - uses: Swatinem/rust-cache@v1
+    - name: Check formatting
+      run: cargo fmt --all -- --check
   clippy:
-    name: Lint check
+    name: clippy
     runs-on: ubuntu-latest
+    permissions:
+      checks: write # to create check (actions-rs/audit-check)
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: clippy
-
-      - name: Run lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-
-  ci-crate:
-    name: CI crate check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-
-      - name: Run ci crate
-        uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: -p ci
-
-  crate-example:
-    name: Crate example check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-
-      - name: Run crate example
-        uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: --example default
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.41.0  # MSRV
+        profile: minimal
+        override: true
+        components: clippy
+    - uses: Swatinem/rust-cache@v1
+    - uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --workspace --all-features --all-targets -- -D warnings --allow deprecated

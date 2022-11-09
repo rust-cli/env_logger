@@ -1,23 +1,43 @@
-[package]
-name = "env_logger"
-edition = "2018"
-version = "0.9.3"
-license = "MIT OR Apache-2.0"
-readme = "README.md"
-repository = "https://github.com/env-logger-rs/env_logger/"
-documentation = "https://docs.rs/env_logger"
-description = """
-A logging implementation for `log` which is configured via an environment
-variable.
-"""
-categories = ["development-tools::debugging"]
-keywords = ["logging", "log", "logger"]
-include = ["src/**/*", "tests", "LICENSE-*", "README.md", "CHANGELOG.md"]
-
 [workspace]
 members = [
     "ci"
 ]
+
+[package]
+name = "env_logger"
+version = "0.9.3"
+description = """
+A logging implementation for `log` which is configured via an environment
+variable.
+"""
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rust-cli/env_logger/"
+categories = ["development-tools::debugging"]
+keywords = ["logging", "log", "logger"]
+edition = "2018"
+rust-version = "1.41.0"  # MSRV
+include = [
+  "build.rs",
+  "src/**/*",
+  "Cargo.toml",
+  "LICENSE*",
+  "README.md",
+  "tests/**/*",
+  "benches/**/*",
+  "examples/**/*"
+]
+
+[package.metadata.release]
+pre-release-replacements = [
+  {file="CHANGELOG.md", search="Unreleased", replace="{{version}}", min=1},
+  {file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
+  {file="CHANGELOG.md", search="ReleaseDate", replace="{{date}}", min=1},
+  {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n## [Unreleased] - ReleaseDate\n", exactly=1},
+  {file="CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://github.com/rust-cli/env_logger/compare/{{tag_name}}...HEAD", exactly=1},
+]
+
+[features]
+default = ["termcolor", "atty", "humantime", "regex"]
 
 [dependencies]
 log = { version = "0.4.8", features = ["std"] }
@@ -41,6 +61,3 @@ harness = false
 [[test]]
 name = "init-twice-retains-filter"
 harness = false
-
-[features]
-default = ["termcolor", "atty", "humantime", "regex"]
