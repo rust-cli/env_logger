@@ -1,0 +1,2 @@
+owners = ["rust-cli:Maintainers"]
+allow-branch = ["main"]
