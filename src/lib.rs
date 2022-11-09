@@ -97,7 +97,7 @@
 //! ```
 //!
 //! The log target is typically equal to the path of the module the message
-//! in question originated from, though it can be overriden.
+//! in question originated from, though it can be overridden.
 //!
 //! The path is rooted in the name of the crate it was compiled for, so if
 //! your program is in a file called, for example, `hello.rs`, the path would
@@ -907,7 +907,7 @@ impl Log for Logger {
     fn log(&self, record: &Record) {
         if self.matches(record) {
             // Log records are written to a thread-local buffer before being printed
-            // to the terminal. We clear these buffers afterwards, but they aren't shrinked
+            // to the terminal. We clear these buffers afterwards, but they aren't shrunk
             // so will always at least have capacity for the largest log record formatted
             // on that thread.
             //
