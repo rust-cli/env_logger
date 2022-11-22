@@ -37,14 +37,14 @@ pre-release-replacements = [
 ]
 
 [features]
-default = ["termcolor", "atty", "humantime", "regex"]
+default = ["termcolor", "is-terminal", "humantime", "regex"]
 
 [dependencies]
 log = { version = "0.4.8", features = ["std"] }
 regex = { version = "1.0.3", optional = true, default-features=false, features=["std", "perf"] }
 termcolor = { version = "1.1.1", optional = true }
 humantime = { version = "2.0.0", optional = true }
-atty = { version = "0.2.5", optional = true }
+is-terminal = { version = "0.4.0", optional = true }
 
 [[test]]
 name = "regexp_filter"

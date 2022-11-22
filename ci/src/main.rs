@@ -2,7 +2,7 @@ mod permute;
 mod task;
 
 fn main() {
-    let features = ["termcolor", "humantime", "atty", "regex"];
+    let features = ["termcolor", "humantime", "is-terminal", "regex"];
 
     // Run a default build
     if !task::test(Default::default()) {
