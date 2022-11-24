@@ -37,7 +37,11 @@ pre-release-replacements = [
 ]
 
 [features]
-default = ["termcolor", "atty", "humantime", "regex"]
+default = ["auto-color", "humantime", "regex"]
+color = ["dep:termcolor"]
+auto-color = ["dep:atty", "color"]
+humantime = ["dep:humantime"]
+regex = ["dep:regex"]
 
 [dependencies]
 log = { version = "0.4.8", features = ["std"] }
