@@ -14,8 +14,8 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/rust-cli/env_logger/"
 categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
-edition = "2018"
-rust-version = "1.41.0"  # MSRV
+edition = "2021"
+rust-version = "1.60.0"  # MSRV
 include = [
   "build.rs",
   "src/**/*",
