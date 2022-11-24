@@ -1168,7 +1168,7 @@ pub fn init() {
 /// ```
 /// use env_logger::{Builder, Env};
 ///
-/// # fn run() -> Result<(), Box<::std::error::Error>> {
+/// # fn run() -> Result<(), Box<dyn ::std::error::Error>> {
 /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
 ///
 /// env_logger::try_init_from_env(env)?;

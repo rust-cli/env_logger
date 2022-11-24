@@ -58,7 +58,7 @@ pub fn test(args: TestArgs) -> bool {
     }
 
     if let Some(features) = &features {
-        command.args(&["--features", features]);
+        command.args(["--features", features]);
     }
 
     println!("running {:?}", command);
