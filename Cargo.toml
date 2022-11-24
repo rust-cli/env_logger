@@ -5,7 +5,7 @@ members = [
 
 [package]
 name = "env_logger"
-version = "0.9.3"
+version = "0.10.0"
 description = """
 A logging implementation for `log` which is configured via an environment
 variable.
