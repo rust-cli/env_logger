@@ -16,7 +16,7 @@ Implements a logger that can be configured via environment variables.
 
 It must be added along with `log` to the project dependencies:
 
-```bash
+```console
 $ cargo add log env_logger
 ```
 
@@ -83,7 +83,7 @@ Tests can use the `env_logger` crate to see log messages generated during that t
 log = "0.4.0"
 
 [dev-dependencies]
-env_logger = "0.9.0"
+env_logger = "0.10.0"
 ```
 
 ```rust
