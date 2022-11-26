@@ -256,9 +256,9 @@
 //! env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //!
-//! [gh-repo-examples]: https://github.com/env-logger-rs/env_logger/tree/main/examples
+//! [gh-repo-examples]: https://github.com/rust-cli/env_logger/tree/main/examples
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
-//! [log-crate-url]: https://docs.rs/log/
+//! [log-crate-url]: https://docs.rs/log
 //! [`Builder`]: struct.Builder.html
 //! [`Builder::is_test`]: struct.Builder.html#method.is_test
 //! [`Env`]: struct.Env.html
@@ -329,7 +329,7 @@ struct Var<'a> {
 /// the associated [`Builder`] and install it with the
 /// [`log` crate][log-crate-url] directly.
 ///
-/// [log-crate-url]: https://docs.rs/log/
+/// [log-crate-url]: https://docs.rs/log
 /// [`init()`]: fn.init.html
 /// [`try_init()`]: fn.try_init.html
 /// [`Builder::init()`]: struct.Builder.html#method.init
