@@ -37,10 +37,10 @@ use std::{fmt, io, mem};
 
 use log::Record;
 
-mod humantime;
+mod chrono;
 pub(crate) mod writer;
 
-pub use self::humantime::glob::*;
+pub use self::chrono::glob::*;
 pub use self::writer::glob::*;
 
 use self::writer::{Buffer, Writer};
@@ -282,7 +282,7 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
-        #[cfg(feature = "humantime")]
+        #[cfg(feature = "chrono")]
         {
             use self::TimestampPrecision::*;
             let ts = match self.timestamp {
@@ -295,7 +295,7 @@ impl<'a> DefaultFormat<'a> {
 
             self.write_header_value(ts)
         }
-        #[cfg(not(feature = "humantime"))]
+        #[cfg(not(feature = "chrono"))]
         {
             // Trick the compiler to think we have used self.timestamp
             // Workaround for "field is never used: `timestamp`" compiler nag.

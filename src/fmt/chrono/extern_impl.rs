@@ -1,9 +1,7 @@
-use std::fmt;
+use std::fmt::{self, write};
 use std::time::SystemTime;
 
-use humantime::{
-    format_rfc3339_micros, format_rfc3339_millis, format_rfc3339_nanos, format_rfc3339_seconds,
-};
+use chrono::{DateTime, Utc};
 
 use crate::fmt::{Formatter, TimestampPrecision};
 
@@ -33,7 +31,7 @@ impl Formatter {
     /// [`Timestamp`]: struct.Timestamp.html
     pub fn timestamp(&self) -> Timestamp {
         Timestamp {
-            time: SystemTime::now(),
+            time: Utc::now(),
             precision: TimestampPrecision::Seconds,
         }
     }
@@ -42,7 +40,7 @@ impl Formatter {
     /// second precision.
     pub fn timestamp_seconds(&self) -> Timestamp {
         Timestamp {
-            time: SystemTime::now(),
+            time: Utc::now(),
             precision: TimestampPrecision::Seconds,
         }
     }
@@ -51,7 +49,7 @@ impl Formatter {
     /// millisecond precision.
     pub fn timestamp_millis(&self) -> Timestamp {
         Timestamp {
-            time: SystemTime::now(),
+            time: Utc::now(),
             precision: TimestampPrecision::Millis,
         }
     }
@@ -60,7 +58,7 @@ impl Formatter {
     /// microsecond precision.
     pub fn timestamp_micros(&self) -> Timestamp {
         Timestamp {
-            time: SystemTime::now(),
+            time: Utc::now(),
             precision: TimestampPrecision::Micros,
         }
     }
@@ -69,7 +67,7 @@ impl Formatter {
     /// nanosecond precision.
     pub fn timestamp_nanos(&self) -> Timestamp {
         Timestamp {
-            time: SystemTime::now(),
+            time: Utc::now(),
             precision: TimestampPrecision::Nanos,
         }
     }
@@ -83,7 +81,7 @@ impl Formatter {
 /// [`Display`]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
 /// [`Formatter`]: struct.Formatter.html
 pub struct Timestamp {
-    time: SystemTime,
+    time: DateTime<Utc>,
     precision: TimestampPrecision,
 }
 
@@ -106,13 +104,17 @@ impl fmt::Debug for Timestamp {
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let formatter = match self.precision {
-            TimestampPrecision::Seconds => format_rfc3339_seconds,
-            TimestampPrecision::Millis => format_rfc3339_millis,
-            TimestampPrecision::Micros => format_rfc3339_micros,
-            TimestampPrecision::Nanos => format_rfc3339_nanos,
-        };
+        // let formatter = match self.precision {
+        //     TimestampPrecision::Seconds => format_rfc3339_seconds,
+        //     TimestampPrecision::Millis => format_rfc3339_millis,
+        //     TimestampPrecision::Micros => format_rfc3339_micros,
+        //     TimestampPrecision::Nanos => format_rfc3339_nanos,
+        // };
 
-        formatter(self.time).fmt(f)
+        // formatter(self.time).fmt(f)
+
+        // self.time.to_rfc3339().fmt(f)
+
+        write!(f, "Hello")
     }
 }
