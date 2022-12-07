@@ -286,6 +286,7 @@
 
 use std::{borrow::Cow, cell::RefCell, env, io};
 
+use fmt::TimestampFormat;
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 
 pub mod filter;
@@ -617,30 +618,58 @@ impl Builder {
         self
     }
 
-    /// Configures if timestamp should be included and in what precision.
-    pub fn format_timestamp(&mut self, timestamp: Option<fmt::TimestampPrecision>) -> &mut Self {
-        self.format.format_timestamp = timestamp;
+    /// Configures if timestamp should be included and in what precision and style.
+    pub fn format_timestamp(&mut self, style: Option<fmt::TimestampStyle>) -> &mut Self {
+        self.format.format_timestamp = style;
         self
     }
 
     /// Configures the timestamp to use second precision.
     pub fn format_timestamp_secs(&mut self) -> &mut Self {
-        self.format_timestamp(Some(fmt::TimestampPrecision::Seconds))
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::default(),
+            TimestampPrecision::Seconds,
+        )))
     }
 
     /// Configures the timestamp to use millisecond precision.
     pub fn format_timestamp_millis(&mut self) -> &mut Self {
-        self.format_timestamp(Some(fmt::TimestampPrecision::Millis))
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::default(),
+            TimestampPrecision::Millis,
+        )))
     }
 
     /// Configures the timestamp to use microsecond precision.
     pub fn format_timestamp_micros(&mut self) -> &mut Self {
-        self.format_timestamp(Some(fmt::TimestampPrecision::Micros))
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::default(),
+            TimestampPrecision::Micros,
+        )))
     }
 
     /// Configures the timestamp to use nanosecond precision.
     pub fn format_timestamp_nanos(&mut self) -> &mut Self {
-        self.format_timestamp(Some(fmt::TimestampPrecision::Nanos))
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::default(),
+            TimestampPrecision::Nanos,
+        )))
+    }
+
+    /// Configures the timestamp to use second precision, formatted as a 12-hour clock.
+    pub fn format_timestamp_12hour(&mut self) -> &mut Self {
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::Human12Hour,
+            TimestampPrecision::Seconds,
+        )))
+    }
+
+    /// Configures the timestamp to use second precision, formatted as a 24-hour clock.
+    pub fn format_timestamp_24hour(&mut self) -> &mut Self {
+        self.format_timestamp(Some(fmt::TimestampStyle::new(
+            TimestampFormat::Human24Hour,
+            TimestampPrecision::Seconds,
+        )))
     }
 
     /// Configures the end of line suffix.
