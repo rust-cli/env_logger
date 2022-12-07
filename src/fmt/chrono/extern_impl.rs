@@ -1,7 +1,7 @@
 use std::fmt::{self, write};
 use std::time::SystemTime;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 
 use crate::fmt::{Formatter, TimestampPrecision};
 
@@ -104,17 +104,16 @@ impl fmt::Debug for Timestamp {
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // let formatter = match self.precision {
-        //     TimestampPrecision::Seconds => format_rfc3339_seconds,
-        //     TimestampPrecision::Millis => format_rfc3339_millis,
-        //     TimestampPrecision::Micros => format_rfc3339_micros,
-        //     TimestampPrecision::Nanos => format_rfc3339_nanos,
-        // };
-
-        // formatter(self.time).fmt(f)
-
-        // self.time.to_rfc3339().fmt(f)
-
-        write!(f, "Hello")
+        self.time
+            .to_rfc3339_opts(
+                match self.precision {
+                    TimestampPrecision::Seconds => SecondsFormat::Secs,
+                    TimestampPrecision::Millis => SecondsFormat::Millis,
+                    TimestampPrecision::Micros => SecondsFormat::Micros,
+                    TimestampPrecision::Nanos => SecondsFormat::Nanos,
+                },
+                true,
+            )
+            .fmt(f)
     }
 }
