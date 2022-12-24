@@ -119,7 +119,7 @@ impl fmt::Display for Timestamp {
                     panic!("Sorry, currently with the new human timestamp formats, we only support second precision.");
                 }
 
-                self.time.format("%v %p").fmt(f)
+                self.time.format("%v %r").fmt(f)
             }
             TimestampFormat::Human24Hour => {
                 if self.precision != TimestampPrecision::Seconds {
