@@ -37,10 +37,10 @@ use std::{fmt, io, mem};
 
 use log::Record;
 
-mod humantime;
+mod chrono;
 pub(crate) mod writer;
 
-pub use self::humantime::glob::*;
+pub use self::chrono::glob::*;
 pub use self::writer::glob::*;
 
 use self::writer::{Buffer, Writer};
@@ -54,7 +54,7 @@ pub(crate) mod glob {
 /// Seconds give precision of full seconds, milliseconds give thousands of a
 /// second (3 decimal digits), microseconds are millionth of a second (6 decimal
 /// digits) and nanoseconds are billionth of a second (9 decimal digits).
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TimestampPrecision {
     /// Full second precision (0 decimal digits)
     Seconds,
@@ -70,6 +70,52 @@ pub enum TimestampPrecision {
 impl Default for TimestampPrecision {
     fn default() -> Self {
         TimestampPrecision::Seconds
+    }
+}
+
+/// Standard used for formatting of timestamps.
+///
+/// RFC339 is the default and is a widely used internet standard, however it is not particularly human-readable.
+/// Currently, we also support human-readable formats with either a 12 or 24 hour clock. Note that this currently only works with `TimestampPrecision::Seconds`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TimestampFormat {
+    /// Full RFC3339 conformance
+    RFC3339,
+    /// A human-readable standard of the form "YYYY:MM:DD HH:MM:SS AM/PM".
+    Human12Hour,
+    /// A human-readable standard of the form "YYYY:MM:DD HH:MM:SS"
+    Human24Hour,
+}
+
+/// The default timestamp style is the RFC3339 standard.
+impl Default for TimestampFormat {
+    fn default() -> Self {
+        TimestampFormat::RFC3339
+    }
+}
+
+/// A styled timestamp, with precision and formatting.
+///
+/// Defaults to `TimestampFormat::RFC3339` and `TimestampPrecision::Seconds`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+pub struct TimestampStyle {
+    /// The format used for this style.
+    ///
+    /// Determines how the timestamp is displayed. E.G. HH:MM:SS or YY:MM:DD
+    pub format: TimestampFormat,
+
+    /// The precision used for this style.
+    ///
+    /// Determines how accurate the displayed timestamp is.
+    pub precision: TimestampPrecision,
+}
+
+impl TimestampStyle {
+    /// Create a new `TimestampStyle` from a format and precision.
+    ///
+    /// Rust's constructors can also be used instead of this method.
+    pub fn new(format: TimestampFormat, precision: TimestampPrecision) -> Self {
+        Self { format, precision }
     }
 }
 
@@ -139,7 +185,7 @@ impl fmt::Debug for Formatter {
 pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>;
 
 pub(crate) struct Builder {
-    pub format_timestamp: Option<TimestampPrecision>,
+    pub format_timestamp: Option<TimestampStyle>,
     pub format_module_path: bool,
     pub format_target: bool,
     pub format_level: bool,
@@ -211,7 +257,7 @@ type SubtleStyle = &'static str;
 ///
 /// This format needs to work with any combination of crate features.
 struct DefaultFormat<'a> {
-    timestamp: Option<TimestampPrecision>,
+    timestamp: Option<TimestampStyle>,
     module_path: bool,
     target: bool,
     level: bool,
@@ -282,20 +328,19 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
-        #[cfg(feature = "humantime")]
+        #[cfg(feature = "chrono")]
         {
-            use self::TimestampPrecision::*;
-            let ts = match self.timestamp {
-                None => return Ok(()),
-                Some(Seconds) => self.buf.timestamp_seconds(),
-                Some(Millis) => self.buf.timestamp_millis(),
-                Some(Micros) => self.buf.timestamp_micros(),
-                Some(Nanos) => self.buf.timestamp_nanos(),
+            // Make sure that timestamp is defined, otherwise omit writing the timestamp.
+            let ts = if let Some(timestamp) = self.timestamp {
+                self.buf
+                    .timestamp_custom(timestamp.precision, timestamp.format)
+            } else {
+                return Ok(());
             };
 
             self.write_header_value(ts)
         }
-        #[cfg(not(feature = "humantime"))]
+        #[cfg(not(feature = "chrono"))]
         {
             // Trick the compiler to think we have used self.timestamp
             // Workaround for "field is never used: `timestamp`" compiler nag.
