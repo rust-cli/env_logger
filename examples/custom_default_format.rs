@@ -17,8 +17,7 @@ $ export MY_LOG_STYLE=never
 If you want to control the logging output completely, see the `custom_logger` example.
 */
 
-#[macro_use]
-extern crate log;
+use log::info;
 
 use env_logger::{Builder, Env};
 

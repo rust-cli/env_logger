@@ -11,13 +11,12 @@ cargo test --example in_tests
 You should see the `it_does_not_work` test fail and include its log output.
 */
 
-#[cfg_attr(test, macro_use)]
-extern crate log;
-
 fn main() {}
 
 #[cfg(test)]
 mod tests {
+    use log::debug;
+
     fn init_logger() {
         let _ = env_logger::builder()
             // Include all events in tests

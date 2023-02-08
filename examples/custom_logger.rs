@@ -10,12 +10,9 @@ $ export MY_LOG_LEVEL='info'
 If you only want to change the way logs are formatted, look at the `custom_format` example.
 */
 
-#[macro_use]
-extern crate log;
-
 use env_logger::filter::{Builder, Filter};
 
-use log::{Log, Metadata, Record, SetLoggerError};
+use log::{info, Log, Metadata, Record, SetLoggerError};
 
 const FILTER_ENV: &str = "MY_LOG_LEVEL";
 

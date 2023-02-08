@@ -23,8 +23,7 @@ $ cargo add log env_logger
 `env_logger` must be initialized as early as possible in the project. After it's initialized, you can use the `log` macros to do actual logging.
 
 ```rust
-#[macro_use]
-extern crate log;
+use log::info;
 
 fn main() {
     env_logger::init();
@@ -88,9 +87,6 @@ env_logger = "0.9.0"
 ```
 
 ```rust
-#[macro_use]
-extern crate log;
-
 fn add_one(num: i32) -> i32 {
     info!("add_one called with {}", num);
     num + 1
@@ -99,6 +95,7 @@ fn add_one(num: i32) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use log::info;
 
     fn init() {
         let _ = env_logger::builder().is_test(true).try_init();

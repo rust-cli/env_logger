@@ -184,9 +184,10 @@
 //! The [`Builder::is_test`] method can be used in unit tests to ensure logs will be captured:
 //!
 //! ```
-//! # #[macro_use] extern crate log;
 //! #[cfg(test)]
 //! mod tests {
+//!     use log::info;
+//!
 //!     fn init() {
 //!         let _ = env_logger::builder().is_test(true).try_init();
 //!     }
@@ -359,10 +360,9 @@ pub struct Logger {
 /// # Examples
 ///
 /// ```
-/// # #[macro_use] extern crate log;
 /// # use std::io::Write;
 /// use env_logger::Builder;
-/// use log::LevelFilter;
+/// use log::{LevelFilter, error, info};
 ///
 /// let mut builder = Builder::from_default_env();
 ///

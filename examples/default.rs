@@ -15,8 +15,7 @@ $ export MY_LOG_STYLE=never
 ```
 */
 
-#[macro_use]
-extern crate log;
+use log::{debug, error, info, trace, warn};
 
 use env_logger::Env;
 
