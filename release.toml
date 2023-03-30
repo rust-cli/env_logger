@@ -1,2 +1,3 @@
 owners = ["rust-cli:Maintainers"]
+dependent-version = "fix"
 allow-branch = ["main"]

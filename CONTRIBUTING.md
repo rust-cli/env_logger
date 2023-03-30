@@ -56,13 +56,13 @@ Pre-requisites
 - Running `cargo login`
 - A member of `rust-cli:Maintainers`
 - Push permission to the repo
+- [`cargo-release`](https://github.com/crate-ci/cargo-release/)
 
 When we're ready to release, a project owner should do the following
-1. Update the changelog
+1. Update the changelog (see `cargo release changes` for ideas)
 2. Determine what the next version is, according to semver
 3. Run [`cargo release -x <level>`](https://github.com/crate-ci/cargo-release)
 
 [issues]: https://github.com/rust-cli/env_logger/issues
 [new issue]: https://github.com/rust-cli/env_logger/issues/new
 [all issues]: https://github.com/rust-cli/env_logger/issues?utf8=%E2%9C%93&q=is%3Aissue
-[travis]: https://github.com/rust-cli/env_logger/blob/master/.travis.yml

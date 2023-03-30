@@ -36,17 +36,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Build
       run: cargo test --no-run --workspace --all-features
     - name: Test
-      run: cargo hack test --feature-powerset
+      run: cargo hack test --workspace --feature-powerset
     - name: Run crate example
       run: cargo run --example default
   msrv:
@@ -56,15 +54,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: 1.60.0  # MSRV
-        profile: minimal
-        override: true
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Check
-      run: cargo hack check --feature-powerset
+      run: cargo hack check --workspace --all-targets --feature-powerset
   docs:
     name: Docs
     runs-on: ubuntu-latest
@@ -72,11 +68,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-        profile: minimal
-        override: true
     - uses: Swatinem/rust-cache@v2
     - name: Check documentation
       env:
@@ -89,13 +83,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         # Not MSRV because its harder to jump between versions and people are
         # more likely to have stable
         toolchain: stable
-        profile: minimal
-        override: true
         components: rustfmt
     - uses: Swatinem/rust-cache@v2
     - name: Check formatting
@@ -104,19 +96,29 @@ jobs:
     name: clippy
     runs-on: ubuntu-latest
     permissions:
-      checks: write # to create check (actions-rs/audit-check)
+      security-events: write # to upload sarif results
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: 1.60.0  # MSRV
-        profile: minimal
-        override: true
         components: clippy
     - uses: Swatinem/rust-cache@v2
-    - uses: actions-rs/clippy-check@v1
+    - name: Install SARIF tools
+      run: cargo install clippy-sarif --version 0.3.4 --locked  # Held back due to msrv
+    - name: Install SARIF tools
+      run: cargo install sarif-fmt --version 0.3.4 --locked # Held back due to msrv
+    - name: Check
+      run: >
+        cargo clippy --workspace --all-features --all-targets --message-format=json -- -D warnings --allow deprecated
+        | clippy-sarif
+        | tee clippy-results.sarif
+        | sarif-fmt
+      continue-on-error: true
+    - name: Upload
+      uses: github/codeql-action/upload-sarif@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --workspace --all-features --all-targets -- -D warnings --allow deprecated
+        sarif_file: clippy-results.sarif
+        wait-for-processing: true
