@@ -1,7 +1,0 @@
-[package]
-name = "ci"
-edition = "2018"
-version = "0.0.0"
-publish = false
-
-[dependencies]
