@@ -2,8 +2,8 @@
 
 repository:
   description: A logging implementation for `log` which is configured via an environment variable.
-  homepage: https://docs.rs/env_logger
-  topics: rust logging
+  homepage: "https://docs.rs/env_logger"
+  topics: "rust logging"
   has_issues: true
   has_projects: false
   has_wiki: false
