@@ -1,7 +1,7 @@
 # These settings are synced to GitHub by https://probot.github.io/apps/settings/
 
 repository:
-  description: A logging implementation for `log` which is configured via an environment variable.
+  description: "A logging implementation for `log` which is configured via an environment variable."
   homepage: "https://docs.rs/env_logger"
   topics: "rust logging"
   has_issues: true
