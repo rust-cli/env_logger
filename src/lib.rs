@@ -101,7 +101,7 @@
 //!
 //! The path is rooted in the name of the crate it was compiled for, so if
 //! your program is in a file called, for example, `hello.rs`, the path would
-//! simply be be `hello`.
+//! simply be `hello`.
 //!
 //! Furthermore, the log can be filtered using prefix-search based on the
 //! specified log target. A value of, for example, `RUST_LOG=example`, would
