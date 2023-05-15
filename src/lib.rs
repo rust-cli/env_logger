@@ -7,11 +7,11 @@
 //! A simple logger that can be configured via environment variables, for use
 //! with the logging facade exposed by the [`log` crate][log-crate-url].
 //!
-//! Despite having "env" in its name, **`env_logger`** can also be configured by
+//! Despite having "env" in its name, **`ros_logger`** can also be configured by
 //! other means besides environment variables. See [the examples][gh-repo-examples]
 //! in the source repository for more approaches.
 //!
-//! By default, `env_logger` writes logs to `stderr`, but can be configured to
+//! By default, `ros_logger` writes logs to `stderr`, but can be configured to
 //! instead write them to `stdout`.
 //!
 //! ## Example
@@ -19,7 +19,7 @@
 //! ```
 //! use log::{debug, error, log_enabled, info, Level};
 //!
-//! env_logger::init();
+//! ros_logger::init();
 //!
 //! debug!("this is a debug {}", "message");
 //! error!("this is printed by default");
@@ -188,7 +188,7 @@
 //! #[cfg(test)]
 //! mod tests {
 //!     fn init() {
-//!         let _ = env_logger::builder().is_test(true).try_init();
+//!         let _ = ros_logger::builder().is_test(true).try_init();
 //!     }
 //!
 //!     #[test]
@@ -222,7 +222,7 @@
 //! The following example excludes the timestamp from the log output:
 //!
 //! ```
-//! env_logger::builder()
+//! ros_logger::builder()
 //!     .format_timestamp(None)
 //!     .init();
 //! ```
@@ -233,7 +233,7 @@
 //! guarantees about the stability of its output across major, minor or patch version
 //! bumps during `0.x`.
 //!
-//! If you want to capture or interpret the output of `env_logger` programmatically
+//! If you want to capture or interpret the output of `ros_logger` programmatically
 //! then you should use a custom format.
 //!
 //! ### Using a custom format
@@ -244,7 +244,7 @@
 //! ```
 //! use std::io::Write;
 //!
-//! env_logger::builder()
+//! ros_logger::builder()
 //!     .format(|buf, record| {
 //!         writeln!(buf, "{}: {}", record.level(), record.args())
 //!     })
@@ -255,18 +255,18 @@
 //!
 //! ## Specifying defaults for environment variables
 //!
-//! `env_logger` can read configuration from environment variables.
+//! `ros_logger` can read configuration from environment variables.
 //! If these variables aren't present, the default value to use can be tweaked with the [`Env`] type.
 //! The following example defaults to log `warn` and above if the `RUST_LOG` environment variable
 //! isn't set:
 //!
 //! ```
-//! use env_logger::Env;
+//! use ros_logger::Env;
 //!
-//! env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
+//! ros_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //!
-//! [gh-repo-examples]: https://github.com/env-logger-rs/env_logger/tree/main/examples
+//! [gh-repo-examples]: https://github.com/env-logger-rs/ros_logger/tree/main/examples
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log/
 //! [`Builder`]: struct.Builder.html
@@ -287,7 +287,7 @@
 
 use std::{borrow::Cow, cell::RefCell, env, io};
 
-use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
+use log::{Level, LevelFilter, Log, Metadata, Record, SetLoggerError};
 
 pub mod filter;
 pub mod fmt;
@@ -361,7 +361,7 @@ pub struct Logger {
 /// ```
 /// # #[macro_use] extern crate log;
 /// # use std::io::Write;
-/// use env_logger::Builder;
+/// use ros_logger::Builder;
 /// use log::LevelFilter;
 ///
 /// let mut builder = Builder::from_default_env();
@@ -395,7 +395,7 @@ impl Builder {
     ///
     /// ```
     /// use log::LevelFilter;
-    /// use env_logger::{Builder, WriteStyle};
+    /// use ros_logger::{Builder, WriteStyle};
     ///
     /// let mut builder = Builder::new();
     ///
@@ -424,7 +424,7 @@ impl Builder {
     /// called `MY_LOG`:
     ///
     /// ```
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     ///
     /// let mut builder = Builder::from_env("MY_LOG");
     /// builder.init();
@@ -434,7 +434,7 @@ impl Builder {
     /// `MY_LOG_STYLE` for whether or not to write styles:
     ///
     /// ```
-    /// use env_logger::{Builder, Env};
+    /// use ros_logger::{Builder, Env};
     ///
     /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
     ///
@@ -462,7 +462,7 @@ impl Builder {
     ///
     /// ```
     /// use log::LevelFilter;
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     ///
     /// let mut builder = Builder::new();
     ///
@@ -477,7 +477,7 @@ impl Builder {
     ///
     /// ```
     /// use log::LevelFilter;
-    /// use env_logger::{Builder, Env};
+    /// use ros_logger::{Builder, Env};
     ///
     /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
     ///
@@ -514,7 +514,7 @@ impl Builder {
     /// Initialise a logger using the default environment variables:
     ///
     /// ```
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     ///
     /// let mut builder = Builder::from_default_env();
     /// builder.init();
@@ -538,7 +538,7 @@ impl Builder {
     ///
     /// ```
     /// use log::LevelFilter;
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     ///
     /// let mut builder = Builder::new();
     /// builder.filter_level(LevelFilter::Off);
@@ -559,7 +559,7 @@ impl Builder {
     /// The format function is expected to output the string directly to the
     /// `Formatter` so that implementations can use the [`std::fmt`] macros
     /// to format and output without intermediate heap allocations. The default
-    /// `env_logger` formatter takes advantage of this.
+    /// `ros_logger` formatter takes advantage of this.
     ///
     /// # Examples
     ///
@@ -567,7 +567,7 @@ impl Builder {
     ///
     /// ```
     /// use std::io::Write;
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     ///
     /// let mut builder = Builder::new();
     ///
@@ -657,7 +657,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -676,7 +676,7 @@ impl Builder {
     /// Only include messages for info and above for logs globally:
     ///
     /// ```
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -698,7 +698,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use env_logger::Builder;
+    /// use ros_logger::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -731,7 +731,7 @@ impl Builder {
     /// Write log message to `stdout`:
     ///
     /// ```
-    /// use env_logger::{Builder, Target};
+    /// use ros_logger::{Builder, Target};
     ///
     /// let mut builder = Builder::new();
     ///
@@ -752,7 +752,7 @@ impl Builder {
     /// Never attempt to write styles:
     ///
     /// ```
-    /// use env_logger::{Builder, WriteStyle};
+    /// use ros_logger::{Builder, WriteStyle};
     ///
     /// let mut builder = Builder::new();
     ///
@@ -845,7 +845,7 @@ impl Logger {
     /// called `MY_LOG`:
     ///
     /// ```
-    /// use env_logger::Logger;
+    /// use ros_logger::Logger;
     ///
     /// let logger = Logger::from_env("MY_LOG");
     /// ```
@@ -854,7 +854,7 @@ impl Logger {
     /// `MY_LOG_STYLE` for whether or not to write styles:
     ///
     /// ```
-    /// use env_logger::{Logger, Env};
+    /// use ros_logger::{Logger, Env};
     ///
     /// let env = Env::new().filter_or("MY_LOG", "info").write_style_or("MY_LOG_STYLE", "always");
     ///
@@ -878,7 +878,7 @@ impl Logger {
     /// Creates a logger using the default environment variables:
     ///
     /// ```
-    /// use env_logger::Logger;
+    /// use ros_logger::Logger;
     ///
     /// let logger = Logger::from_default_env();
     /// ```
@@ -907,6 +907,35 @@ impl Log for Logger {
 
     fn log(&self, record: &Record) {
         if self.matches(record) {
+            match record.level() {
+                Level::Error => tracing::event!(
+                    tracing::Level::ERROR,
+                    target = record.target(),
+                    message = format!("{:#?}", record.args())
+                ),
+
+                Level::Warn => tracing::event!(
+                    tracing::Level::WARN,
+                    target = record.target(),
+                    message = format!("{:#?}", record.args())
+                ),
+                Level::Info => tracing::event!(
+                    tracing::Level::INFO,
+                    target = record.target(),
+                    message = format!("{:#?}", record.args())
+                ),
+                Level::Debug => tracing::event!(
+                    tracing::Level::DEBUG,
+                    target = record.target(),
+                    message = format!("{:#?}", record.args())
+                ),
+                Level::Trace => tracing::event!(
+                    tracing::Level::TRACE,
+                    target = record.target(),
+                    message = format!("{:#?}", record.args())
+                ),
+            }
+
             // Log records are written to a thread-local buffer before being printed
             // to the terminal. We clear these buffers afterwards, but they aren't shrunk
             // so will always at least have capacity for the largest log record formatted
@@ -1152,7 +1181,7 @@ pub fn try_init() -> Result<(), SetLoggerError> {
 /// This function will panic if it is called more than once, or if another
 /// library has already initialized a global logger.
 pub fn init() {
-    try_init().expect("env_logger::init should not be called after logger initialized");
+    try_init().expect("ros_logger::init should not be called after logger initialized");
 }
 
 /// Attempts to initialize the global logger with an env logger from the given
@@ -1167,12 +1196,12 @@ pub fn init() {
 /// and `MY_LOG_STYLE` for writing colors:
 ///
 /// ```
-/// use env_logger::{Builder, Env};
+/// use ros_logger::{Builder, Env};
 ///
 /// # fn run() -> Result<(), Box<dyn ::std::error::Error>> {
 /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
 ///
-/// env_logger::try_init_from_env(env)?;
+/// ros_logger::try_init_from_env(env)?;
 ///
 /// Ok(())
 /// # }
@@ -1204,11 +1233,11 @@ where
 /// and `MY_LOG_STYLE` for writing colors:
 ///
 /// ```
-/// use env_logger::{Builder, Env};
+/// use ros_logger::{Builder, Env};
 ///
 /// let env = Env::new().filter("MY_LOG").write_style("MY_LOG_STYLE");
 ///
-/// env_logger::init_from_env(env);
+/// ros_logger::init_from_env(env);
 /// ```
 ///
 /// # Panics
@@ -1220,7 +1249,7 @@ where
     E: Into<Env<'a>>,
 {
     try_init_from_env(env)
-        .expect("env_logger::init_from_env should not be called after logger initialized");
+        .expect("ros_logger::init_from_env should not be called after logger initialized");
 }
 
 /// Create a new builder with the default environment variables.
@@ -1238,7 +1267,7 @@ pub fn builder() -> Builder {
 /// The builder can be configured before being initialized.
 #[deprecated(
     since = "0.8.0",
-    note = "Prefer `env_logger::Builder::from_env()` instead."
+    note = "Prefer `ros_logger::Builder::from_env()` instead."
 )]
 pub fn from_env<'a, E>(env: E) -> Builder
 where

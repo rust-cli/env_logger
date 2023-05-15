@@ -23,9 +23,9 @@ impl Formatter {
     ///
     /// ```
     /// use std::io::Write;
-    /// use env_logger::fmt::Color;
+    /// use ros_logger::fmt::Color;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut level_style = buf.style();
@@ -199,9 +199,9 @@ impl WriteStyle {
 ///
 /// ```
 /// use std::io::Write;
-/// use env_logger::fmt::Color;
+/// use ros_logger::fmt::Color;
 ///
-/// let mut builder = env_logger::Builder::new();
+/// let mut builder = ros_logger::Builder::new();
 ///
 /// builder.format(|buf, record| {
 ///     let mut level_style = buf.style();
@@ -218,9 +218,9 @@ impl WriteStyle {
 ///
 /// ```
 /// use std::io::Write;
-/// use env_logger::fmt::Color;
+/// use ros_logger::fmt::Color;
 ///
-/// let mut builder = env_logger::Builder::new();
+/// let mut builder = ros_logger::Builder::new();
 ///
 /// builder.format(|buf, record| {
 ///     let mut bold = buf.style();
@@ -263,9 +263,9 @@ impl Style {
     ///
     /// ```
     /// use std::io::Write;
-    /// use env_logger::fmt::Color;
+    /// use ros_logger::fmt::Color;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
@@ -292,7 +292,7 @@ impl Style {
     /// ```
     /// use std::io::Write;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
@@ -319,7 +319,7 @@ impl Style {
     /// ```
     /// use std::io::Write;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
@@ -346,7 +346,7 @@ impl Style {
     /// ```
     /// use std::io::Write;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
@@ -369,9 +369,9 @@ impl Style {
     ///
     /// ```
     /// use std::io::Write;
-    /// use env_logger::fmt::Color;
+    /// use ros_logger::fmt::Color;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();
@@ -396,9 +396,9 @@ impl Style {
     ///
     /// ```
     /// use std::io::Write;
-    /// use env_logger::fmt::Color;
+    /// use ros_logger::fmt::Color;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let mut style = buf.style();

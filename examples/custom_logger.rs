@@ -1,5 +1,5 @@
 /*!
-Using `env_logger` to drive a custom logger.
+Using `ros_logger` to drive a custom logger.
 
 Before running this example, try setting the `MY_LOG_LEVEL` environment variable to `info`:
 
@@ -13,7 +13,7 @@ If you only want to change the way logs are formatted, look at the `custom_forma
 #[macro_use]
 extern crate log;
 
-use env_logger::filter::{Builder, Filter};
+use ros_logger::filter::{Builder, Filter};
 
 use log::{Log, Metadata, Record, SetLoggerError};
 

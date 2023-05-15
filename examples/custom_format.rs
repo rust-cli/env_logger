@@ -19,7 +19,7 @@ If you want to control the logging output completely, see the `custom_logger` ex
 
 #[cfg(all(feature = "color", feature = "humantime"))]
 fn main() {
-    use env_logger::{fmt::Color, Builder, Env};
+    use ros_logger::{fmt::Color, Builder, Env};
 
     use std::io::Write;
 

@@ -1,5 +1,5 @@
-extern crate env_logger;
 extern crate log;
+extern crate ros_logger;
 
 use std::env;
 use std::process;
@@ -8,13 +8,13 @@ use std::str;
 fn main() {
     if env::var("YOU_ARE_TESTING_NOW").is_ok() {
         // Init from the env (which should set the max level to `Debug`)
-        env_logger::init();
+        ros_logger::init();
 
         assert_eq!(log::LevelFilter::Debug, log::max_level());
 
         // Init again using a different max level
         // This shouldn't clobber the level that was previously set
-        env_logger::Builder::new()
+        ros_logger::Builder::new()
             .parse_filters("info")
             .try_init()
             .unwrap_err();

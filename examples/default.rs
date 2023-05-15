@@ -1,5 +1,5 @@
 /*!
-Using `env_logger`.
+Using `ros_logger`.
 
 Before running this example, try setting the `MY_LOG_LEVEL` environment variable to `info`:
 
@@ -18,7 +18,7 @@ $ export MY_LOG_STYLE=never
 #[macro_use]
 extern crate log;
 
-use env_logger::Env;
+use ros_logger::Env;
 
 fn main() {
     // The `Env` lets us tweak what the environment
@@ -28,7 +28,7 @@ fn main() {
         .filter_or("MY_LOG_LEVEL", "trace")
         .write_style_or("MY_LOG_STYLE", "always");
 
-    env_logger::init_from_env(env);
+    ros_logger::init_from_env(env);
 
     trace!("some trace log");
     debug!("some debug log");

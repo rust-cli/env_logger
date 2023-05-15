@@ -2,7 +2,7 @@ use std::io::Write;
 
 fn main() {
     match std::env::var("RUST_LOG_STYLE") {
-        Ok(s) if s == "SYSTEMD" => env_logger::builder()
+        Ok(s) if s == "SYSTEMD" => ros_logger::builder()
             .format(|buf, record| {
                 writeln!(
                     buf,
@@ -19,6 +19,6 @@ fn main() {
                 )
             })
             .init(),
-        _ => env_logger::init(),
+        _ => ros_logger::init(),
     };
 }

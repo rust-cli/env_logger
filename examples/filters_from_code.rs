@@ -5,7 +5,7 @@ Specify logging filters in code instead of using an environment variable.
 #[macro_use]
 extern crate log;
 
-use env_logger::Builder;
+use ros_logger::Builder;
 
 use log::LevelFilter;
 

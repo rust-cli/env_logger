@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate log;
-extern crate env_logger;
+extern crate ros_logger;
 
 use std::env;
 use std::process;
@@ -15,7 +15,7 @@ fn main() {
 }
 
 fn child_main() {
-    env_logger::init();
+    ros_logger::init();
     info!("XYZ Message");
 }
 

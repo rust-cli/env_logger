@@ -20,7 +20,7 @@ If you want to control the logging output completely, see the `custom_logger` ex
 #[macro_use]
 extern crate log;
 
-use env_logger::{Builder, Env};
+use ros_logger::{Builder, Env};
 
 fn init_logger() {
     let env = Env::default()

@@ -21,7 +21,7 @@ impl Formatter {
     /// ```
     /// use std::io::Write;
     ///
-    /// let mut builder = env_logger::Builder::new();
+    /// let mut builder = ros_logger::Builder::new();
     ///
     /// builder.format(|buf, record| {
     ///     let ts = buf.timestamp();

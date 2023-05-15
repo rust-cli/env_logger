@@ -1,5 +1,5 @@
 /*!
-Using `env_logger` in tests.
+Using `ros_logger` in tests.
 
 Log events will be captured by `cargo` and only printed if the test fails.
 You can run this example by calling:
@@ -19,7 +19,7 @@ fn main() {}
 #[cfg(test)]
 mod tests {
     fn init_logger() {
-        let _ = env_logger::builder()
+        let _ = ros_logger::builder()
             // Include all events in tests
             .filter_level(log::LevelFilter::max())
             // Ensure events are captured by `cargo test`

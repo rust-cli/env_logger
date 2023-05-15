@@ -1,10 +1,10 @@
 /*!
-Using `env_logger::Logger` and the `log::Log` trait directly.
+Using `ros_logger::Logger` and the `log::Log` trait directly.
 
 This example doesn't rely on environment variables, or having a static logger installed.
 */
 
-use env_logger::{Builder, WriteStyle};
+use ros_logger::{Builder, WriteStyle};
 
 use log::{Level, LevelFilter, Log, MetadataBuilder, Record};
 
