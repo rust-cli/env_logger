@@ -16,10 +16,8 @@ Implements a logger that can be configured via environment variables.
 
 It must be added along with `log` to the project dependencies:
 
-```toml
-[dependencies]
-log = "0.4.0"
-env_logger = "0.10.0"
+```bash
+$ cargo add log env_logger
 ```
 
 `env_logger` must be initialized as early as possible in the project. After it's initialized, you can use the `log` macros to do actual logging.
