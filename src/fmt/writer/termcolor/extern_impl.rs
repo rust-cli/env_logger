@@ -71,34 +71,26 @@ impl Formatter {
 
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
-    uncolored_target: Option<WritableTarget>,
+    alt_target: Option<WritableTarget>,
 }
 
 pub(in crate::fmt) struct Buffer {
     inner: termcolor::Buffer,
-    has_uncolored_target: bool,
+    has_alt_target: bool,
 }
 
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            uncolored_target: if is_test {
-                Some(WritableTarget::Stderr)
-            } else {
-                None
-            },
+            alt_target: is_test.then_some(WritableTarget::Stderr),
         }
     }
 
     pub(in crate::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
-            uncolored_target: if is_test {
-                Some(WritableTarget::Stdout)
-            } else {
-                None
-            },
+            alt_target: is_test.then_some(WritableTarget::Stdout),
         }
     }
 
@@ -109,19 +101,22 @@ impl BufferWriter {
         BufferWriter {
             // The inner Buffer is never printed from, but it is still needed to handle coloring and other formatting
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            uncolored_target: Some(WritableTarget::Pipe(pipe)),
+            alt_target: Some(WritableTarget::Pipe(pipe)),
         }
     }
 
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer {
             inner: self.inner.buffer(),
-            has_uncolored_target: self.uncolored_target.is_some(),
+            has_alt_target: matches!(
+                self.alt_target,
+                Some(WritableTarget::Stderr | WritableTarget::Stdout)
+            ),
         }
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let Some(target) = &self.uncolored_target {
+        if let Some(target) = &self.alt_target {
             // This impl uses the `eprint` and `print` macros
             // instead of `termcolor`'s buffer.
             // This is so their output can be captured by `cargo test`
@@ -159,7 +154,7 @@ impl Buffer {
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if !self.has_uncolored_target {
+        if !self.has_alt_target {
             self.inner.set_color(spec)
         } else {
             Ok(())
@@ -168,7 +163,7 @@ impl Buffer {
 
     fn reset(&mut self) -> io::Result<()> {
         // Ignore styles for test captured logs because they can't be printed
-        if !self.has_uncolored_target {
+        if !self.has_alt_target {
             self.inner.reset()
         } else {
             Ok(())

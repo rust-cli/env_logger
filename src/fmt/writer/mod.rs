@@ -199,7 +199,7 @@ impl Builder {
 
         Writer {
             inner: writer,
-            write_style: self.write_style,
+            write_style: color_choice,
         }
     }
 }
