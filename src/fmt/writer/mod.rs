@@ -60,7 +60,7 @@ impl From<Target> for WritableTarget {
         match target {
             Target::Stdout => Self::Stdout,
             Target::Stderr => Self::Stderr,
-            Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe))),
+            Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe) as Mutex<_>)),
         }
     }
 }
