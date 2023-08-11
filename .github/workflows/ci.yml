@@ -61,6 +61,18 @@ jobs:
     - uses: taiki-e/install-action@cargo-hack
     - name: Check
       run: cargo hack check --workspace --all-targets --feature-powerset
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    - uses: Swatinem/rust-cache@v2
+    - name: "Is lockfile updated?"
+      run: cargo fetch --locked
   docs:
     name: Docs
     runs-on: ubuntu-latest

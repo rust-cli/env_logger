@@ -39,3 +39,22 @@ jobs:
       run: cargo hack test --workspace --feature-powerset
     - name: Run crate example
       run: cargo run --example default
+  latest:
+    name: "Check latest dependencies"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    - uses: Swatinem/rust-cache@v2
+    - name: Update dependencues
+      run: cargo update
+    - name: Build
+      run: cargo test --no-run --workspace --all-features
+    - name: Test
+      run: cargo hack test --workspace --feature-powerset
+    - name: Run crate example
+      run: cargo run --example default
