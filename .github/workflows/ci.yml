@@ -48,7 +48,7 @@ jobs:
     - name: Run crate example
       run: cargo run --example default
   msrv:
-    name: "Check MSRV: 1.60.0"
+    name: "Check MSRV: 1.66.0"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -56,7 +56,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.60.0  # MSRV
+        toolchain: 1.66.0  # MSRV
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Check
@@ -115,7 +115,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.60.0  # MSRV
+        toolchain: 1.66.0  # MSRV
         components: clippy
     - uses: Swatinem/rust-cache@v2
     - name: Install SARIF tools
