@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+MSRV changed to 1.70 for `std::io::IsTerminal`.
+
+### Improvements
+
+- Switch from `is-terminal` to `std::io::IsTerminal`, removing several dependencies.
+
 ## [0.10.0] - 2022-11-24
 
 MSRV changed to 1.60 to hide optional dependencies

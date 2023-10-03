@@ -8,7 +8,7 @@ printed.
 
 #[cfg(feature = "auto-color")]
 mod imp {
-    use is_terminal::IsTerminal;
+    use std::io::IsTerminal;
 
     pub(in crate::fmt) fn is_stdout() -> bool {
         std::io::stdout().is_terminal()
