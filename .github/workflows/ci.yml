@@ -56,7 +56,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.60.0  # MSRV
+        toolchain: "1.60"  # MSRV
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Check
@@ -115,7 +115,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.60.0  # MSRV
+        toolchain: "1.60"  # MSRV
         components: clippy
     - uses: Swatinem/rust-cache@v2
     - name: Install SARIF tools
