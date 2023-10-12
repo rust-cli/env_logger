@@ -141,6 +141,7 @@ pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record) -> io::Result<()>
 pub(crate) struct Builder {
     pub format_timestamp: Option<TimestampPrecision>,
     pub format_module_path: bool,
+    pub format_file_location: bool,
     pub format_target: bool,
     pub format_level: bool,
     pub format_indent: Option<usize>,
@@ -154,6 +155,7 @@ impl Default for Builder {
         Builder {
             format_timestamp: Some(Default::default()),
             format_module_path: false,
+            format_file_location: false,
             format_target: true,
             format_level: true,
             format_indent: Some(4),
@@ -188,6 +190,7 @@ impl Builder {
                 let fmt = DefaultFormat {
                     timestamp: built.format_timestamp,
                     module_path: built.format_module_path,
+                    location: built.format_file_location,
                     target: built.format_target,
                     level: built.format_level,
                     written_header_value: false,
@@ -213,6 +216,7 @@ type SubtleStyle = &'static str;
 struct DefaultFormat<'a> {
     timestamp: Option<TimestampPrecision>,
     module_path: bool,
+    location: bool,
     target: bool,
     level: bool,
     written_header_value: bool,
@@ -226,6 +230,7 @@ impl<'a> DefaultFormat<'a> {
         self.write_timestamp()?;
         self.write_level(record)?;
         self.write_module_path(record)?;
+        self.write_location(record)?;
         self.write_target(record)?;
         self.finish_header()?;
 
@@ -311,6 +316,21 @@ impl<'a> DefaultFormat<'a> {
 
         if let Some(module_path) = record.module_path() {
             self.write_header_value(module_path)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn write_location(&mut self, record: &Record) -> io::Result<()> {
+        if !self.location {
+            return Ok(());
+        }
+
+        if let Some((file, line)) = record
+            .file()
+            .and_then(|file| record.line().map(|line| (file, line)))
+        {
+            self.write_header_value(format!("{file}:{line}"))
         } else {
             Ok(())
         }
@@ -425,7 +445,7 @@ mod tests {
     }
 
     #[test]
-    fn format_with_header() {
+    fn format_with_module_header() {
         let writer = writer::Builder::new()
             .write_style(WriteStyle::Never)
             .build();
@@ -435,6 +455,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
+            location: false,
             target: false,
             level: true,
             written_header_value: false,
@@ -444,6 +465,29 @@ mod tests {
         });
 
         assert_eq!("[INFO  test::path] log\nmessage\n", written);
+    }
+
+    #[test]
+    fn format_with_location_header() {
+        let writer = writer::Builder::new()
+            .write_style(WriteStyle::Never)
+            .build();
+
+        let mut f = Formatter::new(&writer);
+
+        let written = write(DefaultFormat {
+            timestamp: None,
+            module_path: false,
+            location: true,
+            target: false,
+            level: true,
+            written_header_value: false,
+            indent: None,
+            suffix: "\n",
+            buf: &mut f,
+        });
+
+        assert_eq!("[INFO  test.rs:144] log\nmessage\n", written);
     }
 
     #[test]
@@ -457,6 +501,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
+            location: false,
             target: false,
             level: false,
             written_header_value: false,
@@ -479,6 +524,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
+            location: false,
             target: false,
             level: true,
             written_header_value: false,
@@ -501,6 +547,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
+            location: false,
             target: false,
             level: true,
             written_header_value: false,
@@ -523,6 +570,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
+            location: false,
             target: false,
             level: false,
             written_header_value: false,
@@ -545,6 +593,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
+            location: false,
             target: false,
             level: false,
             written_header_value: false,
@@ -567,6 +616,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: false,
+            location: false,
             target: false,
             level: false,
             written_header_value: false,
@@ -591,6 +641,7 @@ mod tests {
             DefaultFormat {
                 timestamp: None,
                 module_path: true,
+                location: false,
                 target: true,
                 level: true,
                 written_header_value: false,
@@ -614,6 +665,7 @@ mod tests {
         let written = write(DefaultFormat {
             timestamp: None,
             module_path: true,
+            location: false,
             target: true,
             level: true,
             written_header_value: false,
@@ -638,6 +690,7 @@ mod tests {
             DefaultFormat {
                 timestamp: None,
                 module_path: true,
+                location: false,
                 target: false,
                 level: true,
                 written_header_value: false,
