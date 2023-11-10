@@ -2,12 +2,9 @@
 Specify logging filters in code instead of using an environment variable.
 */
 
-#[macro_use]
-extern crate log;
-
 use env_logger::Builder;
 
-use log::LevelFilter;
+use log::{debug, error, info, trace, warn, LevelFilter};
 
 fn main() {
     Builder::new().filter_level(LevelFilter::max()).init();
