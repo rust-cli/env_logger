@@ -85,78 +85,67 @@
 //!
 //! ## Enabling logging
 //!
-//! Log levels are controlled on a per-module basis, and **by default all
-//! logging is disabled except for the `error` level**.
+//! **By default all logging is disabled except for the `error` level**
 //!
-//! Logging is controlled via the **`RUST_LOG`** environment variable. The
-//! value of this environment variable is a comma-separated list of *logging
-//! directives*. A logging directive is of the form:
-//!
+//! The **`RUST_LOG`** environment variable controls logging with the syntax:
 //! ```text
-//! example::log::target=level
+//! RUST_LOG=[target][=][level][,...]
+//! ```
+//! Or in other words, its a comma-separated list of directives.
+//! Directives can filter by **target**, by **level**, or both (using `=`).
+//!
+//! For example,
+//! ```text
+//! RUST_LOG=data=debug,hardware=debug
 //! ```
 //!
-//! The log target is typically equal to the path of the module the message
+//! **target** is typically the path of the module the message
 //! in question originated from, though it can be overridden.
-//!
 //! The path is rooted in the name of the crate it was compiled for, so if
 //! your program is in a file called, for example, `hello.rs`, the path would
 //! simply be `hello`.
 //!
 //! Furthermore, the log can be filtered using prefix-search based on the
-//! specified log target. A value of, for example, `RUST_LOG=example`, would
-//! match all of the messages with targets:
+//! specified log target.
 //!
-//! * `example`
-//! * `example::test`
-//! * `example::test::module::submodule`
-//! * `examples::and_more_examples`
+//! For example, `RUST_LOG=example` would match the following targets:
+//! - `example`
+//! - `example::test`
+//! - `example::test::module::submodule`
+//! - `examples::and_more_examples`
 //!
 //! When providing the crate name or a module path, explicitly specifying the
 //! log level is optional. If omitted, all logging for the item will be
 //! enabled.
 //!
-//! The names of the log levels that may be specified correspond to the
-//! variations of the [`log::Level`][level-enum] enum from the `log`
-//! crate. They are:
+//! **level** is the maximum [`log::Level`][level-enum] to be shown and includes:
+//! - `error`
+//! - `warn`
+//! - `info`
+//! - `debug`
+//! - `trace`
+//! - `off` (pseudo level to disable all logging for the target)
 //!
-//! * `error`
-//! * `warn`
-//! * `info`
-//! * `debug`
-//! * `trace`
-//!
-//! There is also a pseudo logging level, `off`, which may be specified to
-//! disable all logging for a given module or for the entire application. As
-//! with the logging levels, the letter case is not significant[^fn-off].
-//!
-//! [^fn-off]: Similar to the universe of log level names, the `off` pseudo
-//!    log level feature is also provided by the underlying `log` crate.
-//!
-//! The letter case is not significant for the logging level names; e.g.,
+//! Logging level names are case-insensitive; e.g.,
 //! `debug`, `DEBUG`, and `dEbuG` all represent the same logging level. For
 //! consistency, our convention is to use the lower case names. Where our docs
 //! do use other forms, they do so in the context of specific examples, so you
 //! won't be surprised if you see similar usage in the wild.
 //!
-//! As the log level for a module is optional, the module to enable logging for
-//! is also optional. **If only a level is provided, then the global log
-//! level for all modules is set to this value.**
-//!
 //! Some examples of valid values of `RUST_LOG` are:
 //!
-//! * `hello` turns on all logging for the 'hello' module
-//! * `trace` turns on all logging for the application, regardless of its name
-//! * `TRACE` turns on all logging for the application, regardless of its name (same as previous)
-//! * `info` turns on all info logging
-//! * `INFO` turns on all info logging (same as previous)
-//! * `hello=debug` turns on debug logging for 'hello'
-//! * `hello=DEBUG` turns on debug logging for 'hello' (same as previous)
-//! * `hello,std::option` turns on hello, and std's option logging
-//! * `error,hello=warn` turn on global error logging and also warn for hello
-//! * `error,hello=off`  turn on global error logging, but turn off logging for hello
-//! * `off` turns off all logging for the application
-//! * `OFF` turns off all logging for the application (same as previous)
+//! - `RUST_LOG=hello` turns on all logging for the `hello` module
+//! - `RUST_LOG=trace` turns on all logging for the application, regardless of its name
+//! - `RUST_LOG=TRACE` turns on all logging for the application, regardless of its name (same as previous)
+//! - `RUST_LOG=info` turns on all info logging
+//! - `RUST_LOG=INFO` turns on all info logging (same as previous)
+//! - `RUST_LOG=hello=debug` turns on debug logging for `hello`
+//! - `RUST_LOG=hello=DEBUG` turns on debug logging for `hello` (same as previous)
+//! - `RUST_LOG=hello,std::option` turns on `hello`, and std's option logging
+//! - `RUST_LOG=error,hello=warn` turn on global error logging and also warn for `hello`
+//! - `RUST_LOG=error,hello=off`  turn on global error logging, but turn off logging for `hello`
+//! - `RUST_LOG=off` turns off all logging for the application
+//! - `RUST_LOG=OFF` turns off all logging for the application (same as previous)
 //!
 //! ## Filtering results
 //!
