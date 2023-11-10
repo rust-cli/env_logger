@@ -7,10 +7,6 @@ use humantime::{
 
 use crate::fmt::{Formatter, TimestampPrecision};
 
-pub(in crate::fmt) mod glob {
-    pub use super::*;
-}
-
 impl Formatter {
     /// Get a [`Timestamp`] for the current date and time in UTC.
     ///

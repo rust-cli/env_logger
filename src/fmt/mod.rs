@@ -37,10 +37,12 @@ use std::{fmt, io, mem};
 
 use log::Record;
 
+#[cfg(feature = "humantime")]
 mod humantime;
 pub(crate) mod writer;
 
-pub use self::humantime::glob::*;
+#[cfg(feature = "humantime")]
+pub use self::humantime::Timestamp;
 pub use self::writer::glob::*;
 
 use self::writer::{Buffer, Writer};
@@ -149,21 +151,6 @@ pub(crate) struct Builder {
     built: bool,
 }
 
-impl Default for Builder {
-    fn default() -> Self {
-        Builder {
-            format_timestamp: Some(Default::default()),
-            format_module_path: false,
-            format_target: true,
-            format_level: true,
-            format_indent: Some(4),
-            custom_format: None,
-            format_suffix: "\n",
-            built: false,
-        }
-    }
-}
-
 impl Builder {
     /// Convert the format into a callable function.
     ///
@@ -198,6 +185,21 @@ impl Builder {
 
                 fmt.write(record)
             })
+        }
+    }
+}
+
+impl Default for Builder {
+    fn default() -> Self {
+        Builder {
+            format_timestamp: Some(Default::default()),
+            format_module_path: false,
+            format_target: true,
+            format_level: true,
+            format_indent: Some(4),
+            custom_format: None,
+            format_suffix: "\n",
+            built: false,
         }
     }
 }
