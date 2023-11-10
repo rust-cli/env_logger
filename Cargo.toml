@@ -19,7 +19,8 @@ include = [
   "LICENSE*",
   "README.md",
   "benches/**/*",
-  "examples/**/*"
+  "examples/**/*",
+  "tests/**/*",
 ]
 
 [package.metadata.docs.rs]
