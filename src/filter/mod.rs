@@ -198,7 +198,7 @@ impl Builder {
 
         Filter {
             directives: mem::take(&mut directives),
-            filter: mem::replace(&mut self.filter, None),
+            filter: mem::take(&mut self.filter),
         }
     }
 }
