@@ -1,6 +1,6 @@
 [package]
 name = "env_logger"
-version = "0.10.0"
+version = "0.10.1"
 description = """
 A logging implementation for `log` which is configured via an environment
 variable.
