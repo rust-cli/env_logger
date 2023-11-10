@@ -71,18 +71,6 @@ mod inner;
 #[path = "string.rs"]
 mod inner;
 
-/// A log filter.
-///
-/// This struct can be used to determine whether or not a log record
-/// should be written to the output.
-/// Use the [`Builder`] type to parse and construct a `Filter`.
-///
-/// [`Builder`]: struct.Builder.html
-pub struct Filter {
-    directives: Vec<Directive>,
-    filter: Option<inner::Filter>,
-}
-
 /// A builder for a log filter.
 ///
 /// It can be used to parse a set of directives from a string before building
@@ -110,61 +98,6 @@ pub struct Builder {
     directives: Vec<Directive>,
     filter: Option<inner::Filter>,
     built: bool,
-}
-
-#[derive(Debug)]
-struct Directive {
-    name: Option<String>,
-    level: LevelFilter,
-}
-
-impl Filter {
-    /// Returns the maximum `LevelFilter` that this filter instance is
-    /// configured to output.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use log::LevelFilter;
-    /// use env_logger::filter::Builder;
-    ///
-    /// let mut builder = Builder::new();
-    /// builder.filter(Some("module1"), LevelFilter::Info);
-    /// builder.filter(Some("module2"), LevelFilter::Error);
-    ///
-    /// let filter = builder.build();
-    /// assert_eq!(filter.filter(), LevelFilter::Info);
-    /// ```
-    pub fn filter(&self) -> LevelFilter {
-        self.directives
-            .iter()
-            .map(|d| d.level)
-            .max()
-            .unwrap_or(LevelFilter::Off)
-    }
-
-    /// Checks if this record matches the configured filter.
-    pub fn matches(&self, record: &Record) -> bool {
-        if !self.enabled(record.metadata()) {
-            return false;
-        }
-
-        if let Some(filter) = self.filter.as_ref() {
-            if !filter.is_match(&record.args().to_string()) {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    /// Determines if a log message with the specified metadata would be logged.
-    pub fn enabled(&self, metadata: &Metadata) -> bool {
-        let level = metadata.level();
-        let target = metadata.target();
-
-        enabled(&self.directives, level, target)
-    }
 }
 
 impl Builder {
@@ -265,7 +198,7 @@ impl Builder {
 
         Filter {
             directives: mem::take(&mut directives),
-            filter: mem::replace(&mut self.filter, None),
+            filter: mem::take(&mut self.filter),
         }
     }
 }
@@ -273,15 +206,6 @@ impl Builder {
 impl Default for Builder {
     fn default() -> Self {
         Builder::new()
-    }
-}
-
-impl fmt::Debug for Filter {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Filter")
-            .field("filter", &self.filter)
-            .field("directives", &self.directives)
-            .finish()
     }
 }
 
@@ -295,6 +219,82 @@ impl fmt::Debug for Builder {
                 .field("directives", &self.directives)
                 .finish()
         }
+    }
+}
+
+#[derive(Debug)]
+struct Directive {
+    name: Option<String>,
+    level: LevelFilter,
+}
+
+/// A log filter.
+///
+/// This struct can be used to determine whether or not a log record
+/// should be written to the output.
+/// Use the [`Builder`] type to parse and construct a `Filter`.
+///
+/// [`Builder`]: struct.Builder.html
+pub struct Filter {
+    directives: Vec<Directive>,
+    filter: Option<inner::Filter>,
+}
+
+impl Filter {
+    /// Returns the maximum `LevelFilter` that this filter instance is
+    /// configured to output.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use log::LevelFilter;
+    /// use env_logger::filter::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    /// builder.filter(Some("module1"), LevelFilter::Info);
+    /// builder.filter(Some("module2"), LevelFilter::Error);
+    ///
+    /// let filter = builder.build();
+    /// assert_eq!(filter.filter(), LevelFilter::Info);
+    /// ```
+    pub fn filter(&self) -> LevelFilter {
+        self.directives
+            .iter()
+            .map(|d| d.level)
+            .max()
+            .unwrap_or(LevelFilter::Off)
+    }
+
+    /// Checks if this record matches the configured filter.
+    pub fn matches(&self, record: &Record) -> bool {
+        if !self.enabled(record.metadata()) {
+            return false;
+        }
+
+        if let Some(filter) = self.filter.as_ref() {
+            if !filter.is_match(&record.args().to_string()) {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Determines if a log message with the specified metadata would be logged.
+    pub fn enabled(&self, metadata: &Metadata) -> bool {
+        let level = metadata.level();
+        let target = metadata.target();
+
+        enabled(&self.directives, level, target)
+    }
+}
+
+impl fmt::Debug for Filter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Filter")
+            .field("filter", &self.filter)
+            .field("directives", &self.directives)
+            .finish()
     }
 }
 
