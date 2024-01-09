@@ -312,6 +312,13 @@ impl Builder {
         self
     }
 
+    /// Configures if keys and values should be included.
+    #[cfg(feature = "kv_unstable")]
+    pub fn format_key_values(&mut self, value: bool) -> &mut Self {
+        self.format.format_key_values = value;
+        self
+    }
+
     /// Adds a directive to the filter for a specific module.
     ///
     /// # Examples

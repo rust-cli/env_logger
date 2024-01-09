@@ -51,6 +51,9 @@ pub(crate) mod glob {
     pub use super::{Target, TimestampPrecision, WriteStyle};
 }
 
+#[cfg(feature = "kv_unstable")]
+use log::kv;
+
 /// Formatting precision of timestamps.
 ///
 /// Seconds give precision of full seconds, milliseconds give thousands of a
@@ -149,6 +152,9 @@ pub(crate) struct Builder {
     pub custom_format: Option<FormatFn>,
     pub format_suffix: &'static str,
     built: bool,
+
+    #[cfg(feature = "kv_unstable")]
+    pub format_key_values: bool,
 }
 
 impl Builder {
@@ -181,6 +187,9 @@ impl Builder {
                     indent: built.format_indent,
                     suffix: built.format_suffix,
                     buf,
+
+                    #[cfg(feature = "kv_unstable")]
+                    key_values: built.format_key_values,
                 };
 
                 fmt.write(record)
@@ -200,6 +209,9 @@ impl Default for Builder {
             custom_format: None,
             format_suffix: "\n",
             built: false,
+
+            #[cfg(feature = "kv_unstable")]
+            format_key_values: true,
         }
     }
 }
@@ -221,6 +233,9 @@ struct DefaultFormat<'a> {
     indent: Option<usize>,
     buf: &'a mut Formatter,
     suffix: &'a str,
+
+    #[cfg(feature = "kv_unstable")]
+    key_values: bool,
 }
 
 impl<'a> DefaultFormat<'a> {
@@ -230,6 +245,9 @@ impl<'a> DefaultFormat<'a> {
         self.write_module_path(record)?;
         self.write_target(record)?;
         self.finish_header()?;
+
+        #[cfg(feature = "kv_unstable")]
+        self.write_key_values(record)?;
 
         self.write_args(record)
     }
@@ -337,6 +355,45 @@ impl<'a> DefaultFormat<'a> {
             Ok(())
         }
     }
+
+    #[cfg(feature = "kv_unstable")]
+    fn write_key_values(&mut self, record: &Record) -> io::Result<()> {
+        if !self.key_values {
+            return Ok(());
+        }
+
+        struct KVVisitor<'a, 'b> {
+            fmt: &'a mut DefaultFormat<'b>,
+            visited: bool,
+        }
+
+        impl<'kvs> kv::Visitor<'kvs> for KVVisitor {
+            fn visit_pair(
+                &mut self,
+                key: kv::Key<'kvs>,
+                value: kv::Value<'kvs>,
+            ) -> Result<(), kv::Error> {
+                if self.visited {
+                    write!(self.fmt.buf, ", ")?;
+                } else {
+                    self.visited = true;
+                }
+                write!(self.fmt.buf, "{}={}", key, value)?;
+                Ok(())
+            }
+        }
+
+        let mut visitor = KVVisitor {
+            fmt: self,
+            visited: false,
+        };
+        record.key_values().visit(&mut visitor)?;
+        if visitor.visited {
+            write!(self.buf, ": ")?;
+        }
+        Ok(())
+    }
+
 
     fn write_args(&mut self, record: &Record) -> io::Result<()> {
         match self.indent {
