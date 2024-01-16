@@ -13,8 +13,10 @@ use target::WritableTarget;
 
 /// Whether or not to print styles to the target.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Default)]
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
+    #[default]
     Auto,
     /// Try very hard to print styles.
     Always,
@@ -22,11 +24,7 @@ pub enum WriteStyle {
     Never,
 }
 
-impl Default for WriteStyle {
-    fn default() -> Self {
-        WriteStyle::Auto
-    }
-}
+
 
 #[cfg(feature = "color")]
 impl WriteStyle {
