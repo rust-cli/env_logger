@@ -65,6 +65,9 @@ mod inner;
 #[path = "string.rs"]
 mod inner;
 
+mod filtered_log;
+pub use filtered_log::FilteredLog;
+
 /// A builder for a log filter.
 ///
 /// It can be used to parse a set of directives from a string before building
@@ -275,6 +278,13 @@ impl Filter {
         let target = metadata.target();
 
         enabled(&self.directives, level, target)
+    }
+
+    /// Wraps an existing [`Log`] implementation with the filter.
+    ///
+    /// The returned log forwards all records that match the filter to the wrapped [`Log`] implementation.
+    pub fn wrap_log<T: log::Log>(self, log: T) -> FilteredLog<T> {
+        FilteredLog::new(self, log)
     }
 }
 
