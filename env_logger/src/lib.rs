@@ -277,7 +277,8 @@
 
 mod logger;
 
-pub mod filter;
+pub use env_filter as filter;
+
 pub mod fmt;
 
 pub use self::fmt::glob::*;

@@ -1,31 +1,27 @@
 //! Filtering for log records.
 //!
-//! This module contains the log filtering used by `env_logger` to match records.
+//! This crate contains the log filtering used by `env_logger` to match records.
 //! You can use the `Filter` type in your own logger implementation to use the same
 //! filter parsing and matching as `env_logger`. For more details about the format
 //! for directive strings see [Enabling Logging].
 //!
-//! ## Using `env_logger` in your own logger
+//! ## Using `env_filter` in your own logger
 //!
-//! You can use `env_logger`'s filtering functionality with your own logger.
+//! You can use `env_filter`'s filtering functionality with your own logger.
 //! Call [`Builder::parse`] to parse directives from a string when constructing
 //! your logger. Call [`Filter::matches`] to check whether a record should be
 //! logged based on the parsed filters when log records are received.
 //!
 //! ```
-//! extern crate log;
-//! extern crate env_logger;
-//! use env_logger::filter::Filter;
 //! use log::{Log, Metadata, Record};
 //!
 //! struct MyLogger {
-//!     filter: Filter
+//!     filter: env_filter::Filter
 //! }
 //!
 //! impl MyLogger {
 //!     fn new() -> MyLogger {
-//!         use env_logger::filter::Builder;
-//!         let mut builder = Builder::new();
+//!         let mut builder = env_filter::Builder::new();
 //!
 //!         // Parse a directives string from an environment variable
 //!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
@@ -55,8 +51,6 @@
 //! ```
 //!
 //! [Enabling Logging]: ../index.html#enabling-logging
-//! [`Builder::parse`]: struct.Builder.html#method.parse
-//! [`Filter::matches`]: struct.Filter.html#method.matches
 
 use log::{Level, LevelFilter, Metadata, Record};
 use std::env;
@@ -79,14 +73,10 @@ mod inner;
 /// ## Example
 ///
 /// ```
-/// # #[macro_use] extern crate log;
-/// # use std::env;
-/// use env_logger::filter::Builder;
-///
-/// let mut builder = Builder::new();
+/// let mut builder = env_filter::Builder::new();
 ///
 /// // Parse a logging filter from an environment variable.
-/// if let Ok(rust_log) = env::var("RUST_LOG") {
+/// if let Ok(rust_log) = std::env::var("RUST_LOG") {
 ///     builder.parse(&rust_log);
 /// }
 ///
@@ -248,9 +238,8 @@ impl Filter {
     ///
     /// ```rust
     /// use log::LevelFilter;
-    /// use env_logger::filter::Builder;
     ///
-    /// let mut builder = Builder::new();
+    /// let mut builder = env_filter::Builder::new();
     /// builder.filter(Some("module1"), LevelFilter::Info);
     /// builder.filter(Some("module2"), LevelFilter::Error);
     ///

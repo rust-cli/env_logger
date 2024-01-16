@@ -1,8 +1,5 @@
-extern crate regex;
-
+use regex::Regex;
 use std::fmt;
-
-use self::regex::Regex;
 
 #[derive(Debug)]
 pub struct Filter {
