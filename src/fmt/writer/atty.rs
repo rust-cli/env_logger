@@ -6,28 +6,12 @@ Otherwise, assume we're not attached to anything. This effectively prevents styl
 printed.
 */
 
-#[cfg(feature = "auto-color")]
-mod imp {
-    use is_terminal::IsTerminal;
+use std::io::IsTerminal;
 
-    pub(in crate::fmt) fn is_stdout() -> bool {
-        std::io::stdout().is_terminal()
-    }
-
-    pub(in crate::fmt) fn is_stderr() -> bool {
-        std::io::stderr().is_terminal()
-    }
+pub(in crate::fmt) fn is_stdout() -> bool {
+    cfg!(feature = "auto-color") && std::io::stdout().is_terminal()
 }
 
-#[cfg(not(feature = "auto-color"))]
-mod imp {
-    pub(in crate::fmt) fn is_stdout() -> bool {
-        false
-    }
-
-    pub(in crate::fmt) fn is_stderr() -> bool {
-        false
-    }
+pub(in crate::fmt) fn is_stderr() -> bool {
+    cfg!(feature = "auto-color") && std::io::stderr().is_terminal()
 }
-
-pub(in crate::fmt) use self::imp::*;
