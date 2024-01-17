@@ -2,8 +2,6 @@ use std::{io, sync::Mutex};
 
 use crate::fmt::{WritableTarget, WriteStyle};
 
-pub(in crate::fmt::writer) mod glob {}
-
 pub(in crate::fmt::writer) struct BufferWriter {
     target: WritableTarget,
 }

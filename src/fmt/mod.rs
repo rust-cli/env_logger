@@ -43,6 +43,11 @@ use log::Record;
 mod humantime;
 pub(crate) mod writer;
 
+#[cfg(feature = "color")]
+mod style;
+#[cfg(feature = "color")]
+pub use style::{Color, Style, StyledValue};
+
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
 pub use self::writer::glob::*;

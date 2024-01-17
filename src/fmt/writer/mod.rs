@@ -6,7 +6,6 @@ use self::termcolor::BufferWriter;
 use std::{fmt, io, mem, sync::Mutex};
 
 pub(super) mod glob {
-    pub use super::termcolor::glob::*;
     pub use super::*;
 }
 
