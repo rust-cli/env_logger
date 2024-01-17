@@ -4,24 +4,28 @@ use crate::fmt::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) struct BufferWriter {
     target: WritableTarget,
+    is_test: bool,
 }
 
 impl BufferWriter {
-    pub(in crate::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
+    pub(in crate::fmt::writer) fn stderr(is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
             target: WritableTarget::Stderr,
+            is_test,
         }
     }
 
-    pub(in crate::fmt::writer) fn stdout(_is_test: bool, _write_style: WriteStyle) -> Self {
+    pub(in crate::fmt::writer) fn stdout(is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
             target: WritableTarget::Stdout,
+            is_test,
         }
     }
 
     pub(in crate::fmt::writer) fn pipe(pipe: Box<Mutex<dyn io::Write + Send + 'static>>) -> Self {
         BufferWriter {
             target: WritableTarget::Pipe(pipe),
+            is_test: false,
         }
     }
 
@@ -34,14 +38,22 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
+        use std::io::Write as _;
+
         // This impl uses the `eprint` and `print` macros
         // instead of using the streams directly.
         // This is so their output can be captured by `cargo test`.
-        match &self.target {
+        match (&self.target, self.is_test) {
             // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
-            WritableTarget::Pipe(pipe) => pipe.lock().unwrap().write_all(&buf.0)?,
-            WritableTarget::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
-            WritableTarget::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
+            (WritableTarget::Pipe(pipe), _) => pipe.lock().unwrap().write_all(&buf.0)?,
+            (WritableTarget::Stdout, true) => print!("{}", String::from_utf8_lossy(&buf.0)),
+            (WritableTarget::Stdout, false) => {
+                write!(std::io::stdout(), "{}", String::from_utf8_lossy(&buf.0))?
+            }
+            (WritableTarget::Stderr, true) => eprint!("{}", String::from_utf8_lossy(&buf.0)),
+            (WritableTarget::Stderr, false) => {
+                write!(std::io::stderr(), "{}", String::from_utf8_lossy(&buf.0))?
+            }
         }
 
         Ok(())
