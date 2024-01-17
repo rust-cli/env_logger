@@ -5,78 +5,17 @@ use std::io::{self, Write};
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use log::Level;
-use termcolor::{self, ColorChoice, ColorSpec, WriteColor};
+use termcolor::{self, ColorSpec, WriteColor};
 
-use crate::fmt::{Formatter, WritableTarget, WriteStyle};
+use crate::fmt::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {
     pub use super::*;
 }
 
-impl Formatter {
-    /// Begin a new [`Style`].
-    ///
-    /// # Examples
-    ///
-    /// Create a bold, red colored style and use it to print the log level:
-    ///
-    /// ```
-    /// use std::io::Write;
-    /// use env_logger::fmt::Color;
-    ///
-    /// let mut builder = env_logger::Builder::new();
-    ///
-    /// builder.format(|buf, record| {
-    ///     let mut level_style = buf.style();
-    ///
-    ///     level_style.set_color(Color::Red).set_bold(true);
-    ///
-    ///     writeln!(buf, "{}: {}",
-    ///         level_style.value(record.level()),
-    ///         record.args())
-    /// });
-    /// ```
-    ///
-    /// [`Style`]: struct.Style.html
-    pub fn style(&self) -> Style {
-        Style {
-            buf: self.buf.clone(),
-            spec: ColorSpec::new(),
-        }
-    }
-
-    /// Get the default [`Style`] for the given level.
-    ///
-    /// The style can be used to print other values besides the level.
-    pub fn default_level_style(&self, level: Level) -> Style {
-        let mut level_style = self.style();
-        match level {
-            Level::Trace => level_style.set_color(Color::Cyan),
-            Level::Debug => level_style.set_color(Color::Blue),
-            Level::Info => level_style.set_color(Color::Green),
-            Level::Warn => level_style.set_color(Color::Yellow),
-            Level::Error => level_style.set_color(Color::Red).set_bold(true),
-        };
-        level_style
-    }
-
-    /// Get a printable [`Style`] for the given level.
-    ///
-    /// The style can only be used to print the level.
-    pub fn default_styled_level(&self, level: Level) -> StyledValue<'static, Level> {
-        self.default_level_style(level).into_value(level)
-    }
-}
-
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
     uncolored_target: Option<WritableTarget>,
-}
-
-pub(in crate::fmt) struct Buffer {
-    inner: termcolor::Buffer,
-    has_uncolored_target: bool,
 }
 
 impl BufferWriter {
@@ -140,6 +79,11 @@ impl BufferWriter {
     }
 }
 
+pub(in crate::fmt) struct Buffer {
+    inner: termcolor::Buffer,
+    has_uncolored_target: bool,
+}
+
 impl Buffer {
     pub(in crate::fmt) fn clear(&mut self) {
         self.inner.clear()
@@ -172,16 +116,6 @@ impl Buffer {
             self.inner.reset()
         } else {
             Ok(())
-        }
-    }
-}
-
-impl WriteStyle {
-    fn into_color_choice(self) -> ColorChoice {
-        match self {
-            WriteStyle::Always => ColorChoice::Always,
-            WriteStyle::Auto => ColorChoice::Auto,
-            WriteStyle::Never => ColorChoice::Never,
         }
     }
 }
@@ -240,18 +174,8 @@ impl WriteStyle {
 /// [`value`]: #method.value
 #[derive(Clone)]
 pub struct Style {
-    buf: Rc<RefCell<Buffer>>,
-    spec: ColorSpec,
-}
-
-/// A value that can be printed using the given styles.
-///
-/// It is the result of calling [`Style::value`].
-///
-/// [`Style::value`]: struct.Style.html#method.value
-pub struct StyledValue<'a, T> {
-    style: Cow<'a, Style>,
-    value: T,
+    pub(in crate::fmt) buf: Rc<RefCell<Buffer>>,
+    pub(in crate::fmt) spec: ColorSpec,
 }
 
 impl Style {
@@ -426,6 +350,22 @@ impl Style {
     }
 }
 
+impl fmt::Debug for Style {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Style").field("spec", &self.spec).finish()
+    }
+}
+
+/// A value that can be printed using the given styles.
+///
+/// It is the result of calling [`Style::value`].
+///
+/// [`Style::value`]: struct.Style.html#method.value
+pub struct StyledValue<'a, T> {
+    style: Cow<'a, Style>,
+    value: T,
+}
+
 impl<'a, T> StyledValue<'a, T> {
     fn write_fmt<F>(&self, f: F) -> fmt::Result
     where
@@ -442,12 +382,6 @@ impl<'a, T> StyledValue<'a, T> {
         let reset = self.style.buf.borrow_mut().reset().map_err(|_| fmt::Error);
 
         write.and(reset)
-    }
-}
-
-impl fmt::Debug for Style {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Style").field("spec", &self.spec).finish()
     }
 }
 

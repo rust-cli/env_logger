@@ -101,6 +101,17 @@ impl Default for WriteStyle {
     }
 }
 
+#[cfg(feature = "color")]
+impl WriteStyle {
+    fn into_color_choice(self) -> ::termcolor::ColorChoice {
+        match self {
+            WriteStyle::Always => ::termcolor::ColorChoice::Always,
+            WriteStyle::Auto => ::termcolor::ColorChoice::Auto,
+            WriteStyle::Never => ::termcolor::ColorChoice::Never,
+        }
+    }
+}
+
 /// A terminal target with color awareness.
 pub(crate) struct Writer {
     inner: BufferWriter,
@@ -118,6 +129,12 @@ impl Writer {
 
     pub(super) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.inner.print(buf)
+    }
+}
+
+impl fmt::Debug for Writer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Writer").finish()
     }
 }
 
@@ -207,12 +224,6 @@ impl Builder {
 impl Default for Builder {
     fn default() -> Self {
         Builder::new()
-    }
-}
-
-impl fmt::Debug for Writer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Writer").finish()
     }
 }
 

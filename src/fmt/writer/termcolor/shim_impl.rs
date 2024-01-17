@@ -8,8 +8,6 @@ pub(in crate::fmt::writer) struct BufferWriter {
     target: WritableTarget,
 }
 
-pub(in crate::fmt) struct Buffer(Vec<u8>);
-
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
@@ -50,6 +48,8 @@ impl BufferWriter {
         Ok(())
     }
 }
+
+pub(in crate::fmt) struct Buffer(Vec<u8>);
 
 impl Buffer {
     pub(in crate::fmt) fn clear(&mut self) {
