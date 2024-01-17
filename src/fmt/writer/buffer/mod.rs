@@ -5,8 +5,11 @@ Its public API is available when the `termcolor` crate is available.
 The terminal printing is shimmed when the `termcolor` crate is not available.
 */
 
-#[cfg_attr(feature = "color", path = "extern_impl.rs")]
-#[cfg_attr(not(feature = "color"), path = "shim_impl.rs")]
-mod imp;
-
-pub(in crate::fmt) use self::imp::*;
+#[cfg(feature = "color")]
+mod termcolor;
+#[cfg(feature = "color")]
+pub(in crate::fmt) use termcolor::*;
+#[cfg(not(feature = "color"))]
+mod plain;
+#[cfg(not(feature = "color"))]
+pub(in crate::fmt) use plain::*;
