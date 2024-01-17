@@ -8,6 +8,7 @@ use crate::fmt::{WritableTarget, WriteStyle};
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
     uncolored_target: Option<WritableTarget>,
+    write_style: WriteStyle,
 }
 
 impl BufferWriter {
@@ -19,6 +20,7 @@ impl BufferWriter {
             } else {
                 None
             },
+            write_style,
         }
     }
 
@@ -30,18 +32,22 @@ impl BufferWriter {
             } else {
                 None
             },
+            write_style,
         }
     }
 
-    pub(in crate::fmt::writer) fn pipe(
-        write_style: WriteStyle,
-        pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
-    ) -> Self {
+    pub(in crate::fmt::writer) fn pipe(pipe: Box<Mutex<dyn io::Write + Send + 'static>>) -> Self {
+        let write_style = WriteStyle::Never;
         BufferWriter {
             // The inner Buffer is never printed from, but it is still needed to handle coloring and other formatting
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
             uncolored_target: Some(WritableTarget::Pipe(pipe)),
+            write_style,
         }
+    }
+
+    pub(in crate::fmt::writer) fn write_style(&self) -> WriteStyle {
+        self.write_style
     }
 
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {

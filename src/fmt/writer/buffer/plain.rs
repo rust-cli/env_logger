@@ -19,13 +19,14 @@ impl BufferWriter {
         }
     }
 
-    pub(in crate::fmt::writer) fn pipe(
-        _write_style: WriteStyle,
-        pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
-    ) -> Self {
+    pub(in crate::fmt::writer) fn pipe(pipe: Box<Mutex<dyn io::Write + Send + 'static>>) -> Self {
         BufferWriter {
             target: WritableTarget::Pipe(pipe),
         }
+    }
+
+    pub(in crate::fmt::writer) fn write_style(&self) -> WriteStyle {
+        WriteStyle::Never
     }
 
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {

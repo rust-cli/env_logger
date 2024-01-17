@@ -98,12 +98,11 @@ impl WriteStyle {
 /// A terminal target with color awareness.
 pub(crate) struct Writer {
     inner: BufferWriter,
-    write_style: WriteStyle,
 }
 
 impl Writer {
     pub fn write_style(&self) -> WriteStyle {
-        self.write_style
+        self.inner.write_style()
     }
 
     pub(super) fn buffer(&self) -> Buffer {
@@ -190,17 +189,19 @@ impl Builder {
             }
             color_choice => color_choice,
         };
+        let color_choice = if self.is_test {
+            WriteStyle::Never
+        } else {
+            color_choice
+        };
 
         let writer = match mem::take(&mut self.target) {
             Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
             Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
-            Target::Pipe(pipe) => BufferWriter::pipe(color_choice, Box::new(Mutex::new(pipe))),
+            Target::Pipe(pipe) => BufferWriter::pipe(Box::new(Mutex::new(pipe))),
         };
 
-        Writer {
-            inner: writer,
-            write_style: self.write_style,
-        }
+        Writer { inner: writer }
     }
 }
 
