@@ -16,7 +16,7 @@ impl BufferWriter {
         BufferWriter {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
             uncolored_target: if is_test {
-                Some(WritableTarget::Stderr)
+                Some(WritableTarget::PrintStderr)
             } else {
                 None
             },
@@ -28,7 +28,7 @@ impl BufferWriter {
         BufferWriter {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
             uncolored_target: if is_test {
-                Some(WritableTarget::Stdout)
+                Some(WritableTarget::PrintStdout)
             } else {
                 None
             },
@@ -65,8 +65,10 @@ impl BufferWriter {
             let log = String::from_utf8_lossy(buf.bytes());
 
             match target {
-                WritableTarget::Stderr => eprint!("{}", log),
-                WritableTarget::Stdout => print!("{}", log),
+                WritableTarget::WriteStdout => print!("{}", log),
+                WritableTarget::PrintStdout => print!("{}", log),
+                WritableTarget::WriteStderr => eprint!("{}", log),
+                WritableTarget::PrintStderr => eprint!("{}", log),
                 WritableTarget::Pipe(pipe) => write!(pipe.lock().unwrap(), "{}", log)?,
             }
 

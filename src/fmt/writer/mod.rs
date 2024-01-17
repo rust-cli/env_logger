@@ -46,10 +46,16 @@ impl fmt::Debug for Target {
 ///
 /// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
 pub(super) enum WritableTarget {
-    /// Logs will be sent to standard output.
-    Stdout,
-    /// Logs will be sent to standard error.
-    Stderr,
+    /// Logs will be written to standard output.
+    #[allow(dead_code)]
+    WriteStdout,
+    /// Logs will be printed to standard output.
+    PrintStdout,
+    /// Logs will be written to standard error.
+    #[allow(dead_code)]
+    WriteStderr,
+    /// Logs will be printed to standard error.
+    PrintStderr,
     /// Logs will be sent to a custom pipe.
     Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
@@ -60,8 +66,10 @@ impl fmt::Debug for WritableTarget {
             f,
             "{}",
             match self {
-                Self::Stdout => "stdout",
-                Self::Stderr => "stderr",
+                Self::WriteStdout => "stdout",
+                Self::PrintStdout => "stdout",
+                Self::WriteStderr => "stderr",
+                Self::PrintStderr => "stderr",
                 Self::Pipe(_) => "pipe",
             }
         )
