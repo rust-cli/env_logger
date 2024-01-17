@@ -54,22 +54,6 @@ pub(super) enum WritableTarget {
     Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
 
-impl From<Target> for WritableTarget {
-    fn from(target: Target) -> Self {
-        match target {
-            Target::Stdout => Self::Stdout,
-            Target::Stderr => Self::Stderr,
-            Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe))),
-        }
-    }
-}
-
-impl Default for WritableTarget {
-    fn default() -> Self {
-        Self::from(Target::default())
-    }
-}
-
 impl fmt::Debug for WritableTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -142,7 +126,7 @@ impl fmt::Debug for Writer {
 /// The target and style choice can be configured before building.
 #[derive(Debug)]
 pub(crate) struct Builder {
-    target: WritableTarget,
+    target: Target,
     write_style: WriteStyle,
     is_test: bool,
     built: bool,
@@ -161,7 +145,7 @@ impl Builder {
 
     /// Set the target to write to.
     pub(crate) fn target(&mut self, target: Target) -> &mut Self {
-        self.target = target.into();
+        self.target = target;
         self
     }
 
@@ -195,9 +179,9 @@ impl Builder {
         let color_choice = match self.write_style {
             WriteStyle::Auto => {
                 if match &self.target {
-                    WritableTarget::Stderr => is_stderr(),
-                    WritableTarget::Stdout => is_stdout(),
-                    WritableTarget::Pipe(_) => false,
+                    Target::Stderr => is_stderr(),
+                    Target::Stdout => is_stdout(),
+                    Target::Pipe(_) => false,
                 } {
                     WriteStyle::Auto
                 } else {
@@ -208,9 +192,9 @@ impl Builder {
         };
 
         let writer = match mem::take(&mut self.target) {
-            WritableTarget::Stderr => BufferWriter::stderr(self.is_test, color_choice),
-            WritableTarget::Stdout => BufferWriter::stdout(self.is_test, color_choice),
-            WritableTarget::Pipe(pipe) => BufferWriter::pipe(color_choice, pipe),
+            Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
+            Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
+            Target::Pipe(pipe) => BufferWriter::pipe(color_choice, Box::new(Mutex::new(pipe))),
         };
 
         Writer {
