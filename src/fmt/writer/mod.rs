@@ -67,15 +67,20 @@ impl WritableTarget {
         let buf = buf.as_bytes();
         match self {
             WritableTarget::WriteStdout => {
-                write!(std::io::stdout(), "{}", String::from_utf8_lossy(buf))?
+                let mut stream = std::io::stdout().lock();
+                write!(stream, "{}", String::from_utf8_lossy(buf))?;
             }
             WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(buf)),
             WritableTarget::WriteStderr => {
-                write!(std::io::stderr(), "{}", String::from_utf8_lossy(buf))?
+                let mut stream = std::io::stderr().lock();
+                write!(stream, "{}", String::from_utf8_lossy(buf))?;
             }
             WritableTarget::PrintStderr => eprint!("{}", String::from_utf8_lossy(buf)),
             // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
-            WritableTarget::Pipe(pipe) => pipe.lock().unwrap().write_all(buf)?,
+            WritableTarget::Pipe(pipe) => {
+                let mut stream = pipe.lock().unwrap();
+                write!(stream, "{}", String::from_utf8_lossy(buf))?;
+            }
         }
 
         Ok(())
