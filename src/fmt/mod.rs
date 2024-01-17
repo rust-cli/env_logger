@@ -468,7 +468,7 @@ mod tests {
         fmt.write(&record).expect("failed to write record");
 
         let buf = buf.borrow();
-        String::from_utf8(buf.bytes().to_vec()).expect("failed to read record")
+        String::from_utf8(buf.as_bytes().to_vec()).expect("failed to read record")
     }
 
     fn write_target(target: &str, fmt: DefaultFormat) -> String {

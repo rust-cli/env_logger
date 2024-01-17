@@ -42,25 +42,7 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        use std::io::Write as _;
-
-        // This impl uses the `eprint` and `print` macros
-        // instead of using the streams directly.
-        // This is so their output can be captured by `cargo test`.
-        match &self.target {
-            WritableTarget::WriteStdout => {
-                write!(std::io::stdout(), "{}", String::from_utf8_lossy(&buf.0))?
-            }
-            WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(&buf.0)),
-            WritableTarget::WriteStderr => {
-                write!(std::io::stderr(), "{}", String::from_utf8_lossy(&buf.0))?
-            }
-            WritableTarget::PrintStderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
-            // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
-            WritableTarget::Pipe(pipe) => pipe.lock().unwrap().write_all(&buf.0)?,
-        }
-
-        Ok(())
+        self.target.print(buf)
     }
 }
 
@@ -80,8 +62,7 @@ impl Buffer {
         Ok(())
     }
 
-    #[cfg(test)]
-    pub(in crate::fmt) fn bytes(&self) -> &[u8] {
+    pub(in crate::fmt) fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 }

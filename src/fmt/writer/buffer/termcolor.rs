@@ -59,20 +59,7 @@ impl BufferWriter {
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
         if let Some(target) = &self.uncolored_target {
-            // This impl uses the `eprint` and `print` macros
-            // instead of `termcolor`'s buffer.
-            // This is so their output can be captured by `cargo test`
-            let log = String::from_utf8_lossy(buf.bytes());
-
-            match target {
-                WritableTarget::WriteStdout => print!("{}", log),
-                WritableTarget::PrintStdout => print!("{}", log),
-                WritableTarget::WriteStderr => eprint!("{}", log),
-                WritableTarget::PrintStderr => eprint!("{}", log),
-                WritableTarget::Pipe(pipe) => write!(pipe.lock().unwrap(), "{}", log)?,
-            }
-
-            Ok(())
+            target.print(buf)
         } else {
             self.inner.print(&buf.inner)
         }
@@ -97,7 +84,7 @@ impl Buffer {
         self.inner.flush()
     }
 
-    pub(in crate::fmt) fn bytes(&self) -> &[u8] {
+    pub(in crate::fmt) fn as_bytes(&self) -> &[u8] {
         self.inner.as_slice()
     }
 
