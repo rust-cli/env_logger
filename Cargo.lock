@@ -76,6 +76,7 @@ name = "env_logger"
 version = "0.10.2"
 dependencies = [
  "anstream",
+ "anstyle",
  "humantime",
  "log",
  "regex",

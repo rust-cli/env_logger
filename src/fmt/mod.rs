@@ -35,11 +35,16 @@ use std::io::prelude::*;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
+#[cfg(feature = "color")]
+use log::Level;
 use log::Record;
 
 #[cfg(feature = "humantime")]
 mod humantime;
 pub(crate) mod writer;
+
+#[cfg(feature = "color")]
+pub use anstyle as style;
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
@@ -116,6 +121,28 @@ impl Formatter {
 
     pub(crate) fn clear(&mut self) {
         self.buf.borrow_mut().clear()
+    }
+}
+
+#[cfg(feature = "color")]
+impl Formatter {
+    /// Get the default [`style::Style`] for the given level.
+    ///
+    /// The style can be used to print other values besides the level.
+    pub fn default_level_style(&self, level: Level) -> style::Style {
+        if self.write_style == WriteStyle::Never {
+            style::Style::new()
+        } else {
+            match level {
+                Level::Trace => style::AnsiColor::Cyan.on_default(),
+                Level::Debug => style::AnsiColor::Blue.on_default(),
+                Level::Info => style::AnsiColor::Green.on_default(),
+                Level::Warn => style::AnsiColor::Yellow.on_default(),
+                Level::Error => style::AnsiColor::Red
+                    .on_default()
+                    .effects(style::Effects::BOLD),
+            }
+        }
     }
 }
 
