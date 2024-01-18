@@ -42,7 +42,33 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        self.target.print(buf)
+        use std::io::Write as _;
+
+        let buf = buf.as_bytes();
+        match &self.target {
+            WritableTarget::WriteStdout => {
+                let stream = std::io::stdout();
+                let mut stream = stream.lock();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+            WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(buf)),
+            WritableTarget::WriteStderr => {
+                let stream = std::io::stderr();
+                let mut stream = stream.lock();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+            WritableTarget::PrintStderr => eprint!("{}", String::from_utf8_lossy(buf)),
+            // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
+            WritableTarget::Pipe(pipe) => {
+                let mut stream = pipe.lock().unwrap();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+        }
+
+        Ok(())
     }
 }
 
