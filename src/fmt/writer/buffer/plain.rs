@@ -1,6 +1,6 @@
 use std::{io, sync::Mutex};
 
-use crate::fmt::{WritableTarget, WriteStyle};
+use crate::fmt::writer::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) struct BufferWriter {
     target: WritableTarget,

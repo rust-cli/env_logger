@@ -280,5 +280,5 @@ mod logger;
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::glob::*;
+pub use self::fmt::{Target, TimestampPrecision, WriteStyle};
 pub use self::logger::*;

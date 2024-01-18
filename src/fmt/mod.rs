@@ -50,13 +50,10 @@ pub use style::{Color, Style, StyledValue};
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
-pub use self::writer::glob::*;
+pub use self::writer::Target;
+pub use self::writer::WriteStyle;
 
 use self::writer::{Buffer, Writer};
-
-pub(crate) mod glob {
-    pub use super::{Target, TimestampPrecision, WriteStyle};
-}
 
 /// Formatting precision of timestamps.
 ///
