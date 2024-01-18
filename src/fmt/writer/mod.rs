@@ -67,13 +67,15 @@ impl WritableTarget {
         let buf = buf.as_bytes();
         match self {
             WritableTarget::WriteStdout => {
-                let mut stream = std::io::stdout().lock();
+                let stream = std::io::stdout();
+                let mut stream = stream.lock();
                 stream.write_all(buf)?;
                 stream.flush()?;
             }
             WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(buf)),
             WritableTarget::WriteStderr => {
-                let mut stream = std::io::stderr().lock();
+                let stream = std::io::stderr();
+                let mut stream = stream.lock();
                 stream.write_all(buf)?;
                 stream.flush()?;
             }

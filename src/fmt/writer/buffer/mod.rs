@@ -8,7 +8,7 @@ The terminal printing is shimmed when the `termcolor` crate is not available.
 #[cfg(feature = "color")]
 mod termcolor;
 #[cfg(feature = "color")]
-pub(in crate::fmt) use termcolor::*;
+pub(in crate::fmt) use self::termcolor::*;
 #[cfg(not(feature = "color"))]
 mod plain;
 #[cfg(not(feature = "color"))]
