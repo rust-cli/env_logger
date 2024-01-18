@@ -38,8 +38,8 @@ pre-release-replacements = [
 
 [features]
 default = ["auto-color", "humantime", "regex"]
-color = []
-auto-color = ["color"]
+color = ["dep:anstream"]
+auto-color = ["color", "anstream/auto"]
 humantime = ["dep:humantime"]
 regex = ["dep:regex"]
 
@@ -47,6 +47,7 @@ regex = ["dep:regex"]
 log = { version = "0.4.8", features = ["std"] }
 regex = { version = "1.0.3", optional = true, default-features=false, features=["std", "perf"] }
 humantime = { version = "2.0.0", optional = true }
+anstream = { version = "0.6.11", default-features = false, features = ["wincon"], optional = true }
 
 [[test]]
 name = "regexp_filter"
