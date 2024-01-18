@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Performance
+
+- Avoid extra UTF-8 validation performed in some cases
+
+### Fixes
+
+- Ensure custom pipes/stdout get flushed
+- Don't panic on broken pipes when `color` is disabled
+
 ## [0.10.1] - 2023-11-10
 
 ### Performance
