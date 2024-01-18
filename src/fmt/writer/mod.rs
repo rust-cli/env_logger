@@ -129,15 +129,10 @@ impl Builder {
             match &self.target {
                 Target::Stdout => anstream::AutoStream::choice(&std::io::stdout()).into(),
                 Target::Stderr => anstream::AutoStream::choice(&std::io::stderr()).into(),
-                Target::Pipe(_) => WriteStyle::Never,
+                Target::Pipe(_) => color_choice,
             }
         } else {
             color_choice
-        };
-        let color_choice = match &self.target {
-            Target::Stdout => color_choice,
-            Target::Stderr => color_choice,
-            Target::Pipe(_) => WriteStyle::Never,
         };
         let color_choice = if color_choice == WriteStyle::Auto {
             WriteStyle::Never

@@ -83,6 +83,10 @@ impl BufferWriter {
                 eprint!("{}", buf);
             }
             WritableTarget::Pipe(pipe) => {
+                #[cfg(feature = "color")]
+                let buf = adapt(buf, self.write_style)?;
+                #[cfg(feature = "color")]
+                let buf = &buf;
                 let mut stream = pipe.lock().unwrap();
                 stream.write_all(buf)?;
                 stream.flush()?;
