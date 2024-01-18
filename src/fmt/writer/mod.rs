@@ -26,17 +26,6 @@ pub enum WriteStyle {
 
 
 
-#[cfg(feature = "color")]
-impl WriteStyle {
-    fn into_color_choice(self) -> ::termcolor::ColorChoice {
-        match self {
-            WriteStyle::Always => ::termcolor::ColorChoice::Always,
-            WriteStyle::Auto => ::termcolor::ColorChoice::Auto,
-            WriteStyle::Never => ::termcolor::ColorChoice::Never,
-        }
-    }
-}
-
 /// A terminal target with color awareness.
 pub(crate) struct Writer {
     inner: BufferWriter,

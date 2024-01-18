@@ -32,12 +32,10 @@ impl std::fmt::Debug for Target {
 /// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
 pub(super) enum WritableTarget {
     /// Logs will be written to standard output.
-    #[allow(dead_code)]
     WriteStdout,
     /// Logs will be printed to standard output.
     PrintStdout,
     /// Logs will be written to standard error.
-    #[allow(dead_code)]
     WriteStderr,
     /// Logs will be printed to standard error.
     PrintStderr,
