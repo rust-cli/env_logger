@@ -2,7 +2,7 @@ mod buffer;
 mod target;
 
 use self::buffer::BufferWriter;
-use std::{fmt, io, mem, sync::Mutex};
+use std::{io, mem, sync::Mutex};
 
 pub(super) use self::buffer::Buffer;
 
@@ -44,6 +44,7 @@ impl From<WriteStyle> for anstream::ColorChoice {
 }
 
 /// A terminal target with color awareness.
+#[derive(Debug)]
 pub(crate) struct Writer {
     inner: BufferWriter,
 }
@@ -59,12 +60,6 @@ impl Writer {
 
     pub(super) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.inner.print(buf)
-    }
-}
-
-impl fmt::Debug for Writer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Writer").finish()
     }
 }
 

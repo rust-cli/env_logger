@@ -2,6 +2,7 @@ use std::{io, sync::Mutex};
 
 use crate::fmt::writer::WriteStyle;
 
+#[derive(Debug)]
 pub(in crate::fmt::writer) struct BufferWriter {
     target: WritableTarget,
     write_style: WriteStyle,
@@ -126,6 +127,12 @@ impl Buffer {
 
     pub(in crate::fmt) fn as_bytes(&self) -> &[u8] {
         &self.0
+    }
+}
+
+impl std::fmt::Debug for Buffer {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        String::from_utf8_lossy(self.as_bytes()).fmt(f)
     }
 }
 
