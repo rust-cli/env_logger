@@ -139,11 +139,6 @@ impl Builder {
             Target::Stderr => color_choice,
             Target::Pipe(_) => WriteStyle::Never,
         };
-        let color_choice = if self.is_test {
-            WriteStyle::Never
-        } else {
-            color_choice
-        };
         let color_choice = if color_choice == WriteStyle::Auto {
             WriteStyle::Never
         } else {

@@ -94,11 +94,11 @@ impl BufferWriter {
 }
 
 #[cfg(feature = "color")]
-fn adapt(buf: &[u8], _write_style: WriteStyle) -> std::io::Result<Vec<u8>> {
+fn adapt(buf: &[u8], write_style: WriteStyle) -> std::io::Result<Vec<u8>> {
     use std::io::Write as _;
 
     let adapted = Vec::with_capacity(buf.len());
-    let mut stream = anstream::StripStream::new(adapted);
+    let mut stream = anstream::AutoStream::new(adapted, write_style.into());
     stream.write_all(buf)?;
     let adapted = stream.into_inner();
     Ok(adapted)
