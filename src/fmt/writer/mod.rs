@@ -9,7 +9,6 @@ use std::{fmt, io, mem, sync::Mutex};
 pub(super) use self::buffer::Buffer;
 
 pub use target::Target;
-use target::WritableTarget;
 
 /// Whether or not to print styles to the target.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
