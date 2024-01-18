@@ -228,7 +228,36 @@ impl Default for Builder {
     }
 }
 
+#[cfg(feature = "color")]
+type SubtleStyle = StyledValue<&'static str>;
+#[cfg(not(feature = "color"))]
 type SubtleStyle = &'static str;
+
+/// A value that can be printed using the given styles.
+///
+/// It is the result of calling [`Style::value`].
+///
+/// [`Style::value`]: struct.Style.html#method.value
+#[cfg(feature = "color")]
+struct StyledValue<T> {
+    style: style::Style,
+    value: T,
+}
+
+#[cfg(feature = "color")]
+impl<T: std::fmt::Display> std::fmt::Display for StyledValue<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let style = self.style.render();
+        let reset = self.style.render_reset();
+
+        // We need to make sure `f`s settings don't get passed onto the styling but do get passed
+        // to the value
+        write!(f, "{style}")?;
+        self.value.fmt(f)?;
+        write!(f, "{reset}")?;
+        Ok(())
+    }
+}
 
 /// The default format.
 ///
@@ -256,6 +285,18 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
+        #[cfg(feature = "color")]
+        {
+            StyledValue {
+                style: if self.buf.write_style == WriteStyle::Never {
+                    style::Style::new()
+                } else {
+                    style::AnsiColor::BrightBlack.on_default()
+                },
+                value: text,
+            }
+        }
+        #[cfg(not(feature = "color"))]
         {
             text
         }
@@ -281,8 +322,17 @@ impl<'a> DefaultFormat<'a> {
         }
 
         let level = {
+            let level = record.level();
+            #[cfg(feature = "color")]
             {
-                record.level()
+                StyledValue {
+                    style: self.buf.default_level_style(level),
+                    value: level,
+                }
+            }
+            #[cfg(not(feature = "color"))]
+            {
+                level
             }
         };
 
