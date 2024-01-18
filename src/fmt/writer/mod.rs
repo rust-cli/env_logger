@@ -5,10 +5,6 @@ use self::atty::{is_stderr, is_stdout};
 use self::buffer::BufferWriter;
 use std::{fmt, io, mem, sync::Mutex};
 
-pub(super) mod glob {
-    pub use super::*;
-}
-
 pub(super) use self::buffer::Buffer;
 
 /// Log target, either `stdout`, `stderr` or a custom pipe.

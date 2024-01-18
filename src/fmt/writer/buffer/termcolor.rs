@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use termcolor::{self, ColorSpec, WriteColor};
 
-use crate::fmt::{WritableTarget, WriteStyle};
+use crate::fmt::writer::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
