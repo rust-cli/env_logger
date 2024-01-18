@@ -1,5 +1,6 @@
 mod atty;
 mod buffer;
+mod target;
 
 use self::atty::{is_stderr, is_stdout};
 use self::buffer::BufferWriter;
@@ -7,102 +8,9 @@ use std::{fmt, io, mem, sync::Mutex};
 
 pub(super) use self::buffer::Buffer;
 
-/// Log target, either `stdout`, `stderr` or a custom pipe.
-#[non_exhaustive]
-pub enum Target {
-    /// Logs will be sent to standard output.
-    Stdout,
-    /// Logs will be sent to standard error.
-    Stderr,
-    /// Logs will be sent to a custom pipe.
-    Pipe(Box<dyn io::Write + Send + 'static>),
-}
+pub use target::Target;
+use target::WritableTarget;
 
-impl Default for Target {
-    fn default() -> Self {
-        Target::Stderr
-    }
-}
-
-impl fmt::Debug for Target {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Stdout => "stdout",
-                Self::Stderr => "stderr",
-                Self::Pipe(_) => "pipe",
-            }
-        )
-    }
-}
-
-/// Log target, either `stdout`, `stderr` or a custom pipe.
-///
-/// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
-pub(super) enum WritableTarget {
-    /// Logs will be written to standard output.
-    #[allow(dead_code)]
-    WriteStdout,
-    /// Logs will be printed to standard output.
-    PrintStdout,
-    /// Logs will be written to standard error.
-    #[allow(dead_code)]
-    WriteStderr,
-    /// Logs will be printed to standard error.
-    PrintStderr,
-    /// Logs will be sent to a custom pipe.
-    Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
-}
-
-impl WritableTarget {
-    fn print(&self, buf: &Buffer) -> io::Result<()> {
-        use std::io::Write as _;
-
-        let buf = buf.as_bytes();
-        match self {
-            WritableTarget::WriteStdout => {
-                let stream = std::io::stdout();
-                let mut stream = stream.lock();
-                stream.write_all(buf)?;
-                stream.flush()?;
-            }
-            WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(buf)),
-            WritableTarget::WriteStderr => {
-                let stream = std::io::stderr();
-                let mut stream = stream.lock();
-                stream.write_all(buf)?;
-                stream.flush()?;
-            }
-            WritableTarget::PrintStderr => eprint!("{}", String::from_utf8_lossy(buf)),
-            // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
-            WritableTarget::Pipe(pipe) => {
-                let mut stream = pipe.lock().unwrap();
-                stream.write_all(buf)?;
-                stream.flush()?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl fmt::Debug for WritableTarget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::WriteStdout => "stdout",
-                Self::PrintStdout => "stdout",
-                Self::WriteStderr => "stderr",
-                Self::PrintStderr => "stderr",
-                Self::Pipe(_) => "pipe",
-            }
-        )
-    }
-}
 /// Whether or not to print styles to the target.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WriteStyle {
