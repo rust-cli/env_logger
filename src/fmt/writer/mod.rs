@@ -1,16 +1,15 @@
 mod atty;
-mod termcolor;
+mod buffer;
 
 use self::atty::{is_stderr, is_stdout};
-use self::termcolor::BufferWriter;
+use self::buffer::BufferWriter;
 use std::{fmt, io, mem, sync::Mutex};
 
 pub(super) mod glob {
-    pub use super::termcolor::glob::*;
     pub use super::*;
 }
 
-pub(super) use self::termcolor::Buffer;
+pub(super) use self::buffer::Buffer;
 
 /// Log target, either `stdout`, `stderr` or a custom pipe.
 #[non_exhaustive]
@@ -47,27 +46,49 @@ impl fmt::Debug for Target {
 ///
 /// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
 pub(super) enum WritableTarget {
-    /// Logs will be sent to standard output.
-    Stdout,
-    /// Logs will be sent to standard error.
-    Stderr,
+    /// Logs will be written to standard output.
+    #[allow(dead_code)]
+    WriteStdout,
+    /// Logs will be printed to standard output.
+    PrintStdout,
+    /// Logs will be written to standard error.
+    #[allow(dead_code)]
+    WriteStderr,
+    /// Logs will be printed to standard error.
+    PrintStderr,
     /// Logs will be sent to a custom pipe.
     Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
 
-impl From<Target> for WritableTarget {
-    fn from(target: Target) -> Self {
-        match target {
-            Target::Stdout => Self::Stdout,
-            Target::Stderr => Self::Stderr,
-            Target::Pipe(pipe) => Self::Pipe(Box::new(Mutex::new(pipe))),
-        }
-    }
-}
+impl WritableTarget {
+    fn print(&self, buf: &Buffer) -> io::Result<()> {
+        use std::io::Write as _;
 
-impl Default for WritableTarget {
-    fn default() -> Self {
-        Self::from(Target::default())
+        let buf = buf.as_bytes();
+        match self {
+            WritableTarget::WriteStdout => {
+                let stream = std::io::stdout();
+                let mut stream = stream.lock();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+            WritableTarget::PrintStdout => print!("{}", String::from_utf8_lossy(buf)),
+            WritableTarget::WriteStderr => {
+                let stream = std::io::stderr();
+                let mut stream = stream.lock();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+            WritableTarget::PrintStderr => eprint!("{}", String::from_utf8_lossy(buf)),
+            // Safety: If the target type is `Pipe`, `target_pipe` will always be non-empty.
+            WritableTarget::Pipe(pipe) => {
+                let mut stream = pipe.lock().unwrap();
+                stream.write_all(buf)?;
+                stream.flush()?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -77,8 +98,10 @@ impl fmt::Debug for WritableTarget {
             f,
             "{}",
             match self {
-                Self::Stdout => "stdout",
-                Self::Stderr => "stderr",
+                Self::WriteStdout => "stdout",
+                Self::PrintStdout => "stdout",
+                Self::WriteStderr => "stderr",
+                Self::PrintStderr => "stderr",
                 Self::Pipe(_) => "pipe",
             }
         )
@@ -101,15 +124,25 @@ impl Default for WriteStyle {
     }
 }
 
+#[cfg(feature = "color")]
+impl WriteStyle {
+    fn into_color_choice(self) -> ::termcolor::ColorChoice {
+        match self {
+            WriteStyle::Always => ::termcolor::ColorChoice::Always,
+            WriteStyle::Auto => ::termcolor::ColorChoice::Auto,
+            WriteStyle::Never => ::termcolor::ColorChoice::Never,
+        }
+    }
+}
+
 /// A terminal target with color awareness.
 pub(crate) struct Writer {
     inner: BufferWriter,
-    write_style: WriteStyle,
 }
 
 impl Writer {
     pub fn write_style(&self) -> WriteStyle {
-        self.write_style
+        self.inner.write_style()
     }
 
     pub(super) fn buffer(&self) -> Buffer {
@@ -121,12 +154,18 @@ impl Writer {
     }
 }
 
+impl fmt::Debug for Writer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Writer").finish()
+    }
+}
+
 /// A builder for a terminal writer.
 ///
 /// The target and style choice can be configured before building.
 #[derive(Debug)]
 pub(crate) struct Builder {
-    target: WritableTarget,
+    target: Target,
     write_style: WriteStyle,
     is_test: bool,
     built: bool,
@@ -145,7 +184,7 @@ impl Builder {
 
     /// Set the target to write to.
     pub(crate) fn target(&mut self, target: Target) -> &mut Self {
-        self.target = target.into();
+        self.target = target;
         self
     }
 
@@ -179,9 +218,9 @@ impl Builder {
         let color_choice = match self.write_style {
             WriteStyle::Auto => {
                 if match &self.target {
-                    WritableTarget::Stderr => is_stderr(),
-                    WritableTarget::Stdout => is_stdout(),
-                    WritableTarget::Pipe(_) => false,
+                    Target::Stderr => is_stderr(),
+                    Target::Stdout => is_stdout(),
+                    Target::Pipe(_) => false,
                 } {
                     WriteStyle::Auto
                 } else {
@@ -190,29 +229,25 @@ impl Builder {
             }
             color_choice => color_choice,
         };
-
-        let writer = match mem::take(&mut self.target) {
-            WritableTarget::Stderr => BufferWriter::stderr(self.is_test, color_choice),
-            WritableTarget::Stdout => BufferWriter::stdout(self.is_test, color_choice),
-            WritableTarget::Pipe(pipe) => BufferWriter::pipe(color_choice, pipe),
+        let color_choice = if self.is_test {
+            WriteStyle::Never
+        } else {
+            color_choice
         };
 
-        Writer {
-            inner: writer,
-            write_style: self.write_style,
-        }
+        let writer = match mem::take(&mut self.target) {
+            Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
+            Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
+            Target::Pipe(pipe) => BufferWriter::pipe(Box::new(Mutex::new(pipe))),
+        };
+
+        Writer { inner: writer }
     }
 }
 
 impl Default for Builder {
     fn default() -> Self {
         Builder::new()
-    }
-}
-
-impl fmt::Debug for Writer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Writer").finish()
     }
 }
 

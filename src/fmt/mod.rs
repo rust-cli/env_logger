@@ -35,11 +35,18 @@ use std::io::prelude::*;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
+#[cfg(feature = "color")]
+use log::Level;
 use log::Record;
 
 #[cfg(feature = "humantime")]
 mod humantime;
 pub(crate) mod writer;
+
+#[cfg(feature = "color")]
+mod style;
+#[cfg(feature = "color")]
+pub use style::{Color, Style, StyledValue};
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
@@ -119,6 +126,62 @@ impl Formatter {
 
     pub(crate) fn clear(&mut self) {
         self.buf.borrow_mut().clear()
+    }
+}
+
+#[cfg(feature = "color")]
+impl Formatter {
+    /// Begin a new [`Style`].
+    ///
+    /// # Examples
+    ///
+    /// Create a bold, red colored style and use it to print the log level:
+    ///
+    /// ```
+    /// use std::io::Write;
+    /// use env_logger::fmt::Color;
+    ///
+    /// let mut builder = env_logger::Builder::new();
+    ///
+    /// builder.format(|buf, record| {
+    ///     let mut level_style = buf.style();
+    ///
+    ///     level_style.set_color(Color::Red).set_bold(true);
+    ///
+    ///     writeln!(buf, "{}: {}",
+    ///         level_style.value(record.level()),
+    ///         record.args())
+    /// });
+    /// ```
+    ///
+    /// [`Style`]: struct.Style.html
+    pub fn style(&self) -> Style {
+        Style {
+            buf: self.buf.clone(),
+            spec: termcolor::ColorSpec::new(),
+        }
+    }
+
+    /// Get the default [`Style`] for the given level.
+    ///
+    /// The style can be used to print other values besides the level.
+    pub fn default_level_style(&self, level: Level) -> Style {
+        let mut level_style = self.style();
+        match level {
+            Level::Trace => level_style.set_color(Color::Cyan),
+            Level::Debug => level_style.set_color(Color::Blue),
+            Level::Info => level_style.set_color(Color::Green),
+            Level::Warn => level_style.set_color(Color::Yellow),
+            Level::Error => level_style.set_color(Color::Red).set_bold(true),
+        };
+        level_style
+    }
+
+    /// Get a printable [`Style`] for the given level.
+    ///
+    /// The style can only be used to print the level.
+    pub fn default_styled_level(&self, level: Level) -> StyledValue<'static, Level> {
+        self.default_level_style(level).into_value(level)
     }
 }
 
@@ -405,7 +468,7 @@ mod tests {
         fmt.write(&record).expect("failed to write record");
 
         let buf = buf.borrow();
-        String::from_utf8(buf.bytes().to_vec()).expect("failed to read record")
+        String::from_utf8(buf.as_bytes().to_vec()).expect("failed to read record")
     }
 
     fn write_target(target: &str, fmt: DefaultFormat) -> String {
