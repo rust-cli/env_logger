@@ -1,13 +1,8 @@
-[package]
-name = "env_logger"
-version = "0.10.2"
-description = """
-A logging implementation for `log` which is configured via an environment
-variable.
-"""
-repository = "https://github.com/rust-cli/env_logger"
-categories = ["development-tools::debugging"]
-keywords = ["logging", "log", "logger"]
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
 license = "MIT OR Apache-2.0"
 edition = "2021"
 rust-version = "1.71"  # MSRV
@@ -22,6 +17,21 @@ include = [
   "examples/**/*",
   "tests/**/*",
 ]
+
+[package]
+name = "env_logger"
+version = "0.10.2"
+description = """
+A logging implementation for `log` which is configured via an environment
+variable.
+"""
+repository = "https://github.com/rust-cli/env_logger"
+categories = ["development-tools::debugging"]
+keywords = ["logging", "log", "logger"]
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+include.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
@@ -41,11 +51,11 @@ default = ["auto-color", "humantime", "regex"]
 color = ["dep:anstream", "dep:anstyle"]
 auto-color = ["color", "anstream/auto"]
 humantime = ["dep:humantime"]
-regex = ["dep:regex"]
+regex = ["env_filter/regex"]
 
 [dependencies]
 log = { version = "0.4.8", features = ["std"] }
-regex = { version = "1.0.3", optional = true, default-features=false, features=["std", "perf"] }
+env_filter = { version = "0.1.0", path = "crates/env_filter", default-features = false }
 humantime = { version = "2.0.0", optional = true }
 anstream = { version = "0.6.11", default-features = false, features = ["wincon"], optional = true }
 anstyle = { version = "1.0.4", optional = true }

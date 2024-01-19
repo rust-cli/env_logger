@@ -277,7 +277,8 @@
 
 mod logger;
 
-pub mod filter;
+#[doc(inline)]
+pub use ::env_filter as filter;
 pub mod fmt;
 
 pub use self::fmt::{Target, TimestampPrecision, WriteStyle};
