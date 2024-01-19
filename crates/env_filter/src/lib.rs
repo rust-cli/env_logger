@@ -50,6 +50,7 @@
 //! }
 //! ```
 
+mod directive;
 mod op;
 mod parser;
 
@@ -57,8 +58,10 @@ use std::env;
 use std::fmt;
 use std::mem;
 
-use log::{Level, LevelFilter, Metadata, Record};
+use log::{LevelFilter, Metadata, Record};
 
+use directive::enabled;
+use directive::Directive;
 use op::FilterOp;
 use parser::parse_spec;
 
@@ -210,12 +213,6 @@ impl fmt::Debug for Builder {
     }
 }
 
-#[derive(Debug)]
-struct Directive {
-    name: Option<String>,
-    level: LevelFilter,
-}
-
 /// A log filter.
 ///
 /// This struct can be used to determine whether or not a log record
@@ -284,18 +281,6 @@ impl fmt::Debug for Filter {
             .field("directives", &self.directives)
             .finish()
     }
-}
-
-// Check whether a level and target are enabled by the set of directives.
-fn enabled(directives: &[Directive], level: Level, target: &str) -> bool {
-    // Search for the longest match, the vector is assumed to be pre-sorted.
-    for directive in directives.iter().rev() {
-        match directive.name {
-            Some(ref name) if !target.starts_with(&**name) => {}
-            Some(..) | None => return level <= directive.level,
-        }
-    }
-    false
 }
 
 #[cfg(test)]
