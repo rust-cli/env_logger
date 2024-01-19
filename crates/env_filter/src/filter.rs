@@ -5,9 +5,9 @@ use std::mem;
 use log::{LevelFilter, Metadata, Record};
 
 use crate::enabled;
+use crate::parse_spec;
 use crate::Directive;
 use crate::FilterOp;
-use crate::parse_spec;
 
 /// A builder for a log filter.
 ///
