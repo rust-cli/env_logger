@@ -44,9 +44,7 @@ mod humantime;
 pub(crate) mod writer;
 
 #[cfg(feature = "color")]
-mod style;
-#[cfg(feature = "color")]
-pub use style::{Color, Style, StyledValue};
+pub use anstyle as style;
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
@@ -128,57 +126,23 @@ impl Formatter {
 
 #[cfg(feature = "color")]
 impl Formatter {
-    /// Begin a new [`Style`].
-    ///
-    /// # Examples
-    ///
-    /// Create a bold, red colored style and use it to print the log level:
-    ///
-    /// ```
-    /// use std::io::Write;
-    /// use env_logger::fmt::Color;
-    ///
-    /// let mut builder = env_logger::Builder::new();
-    ///
-    /// builder.format(|buf, record| {
-    ///     let mut level_style = buf.style();
-    ///
-    ///     level_style.set_color(Color::Red).set_bold(true);
-    ///
-    ///     writeln!(buf, "{}: {}",
-    ///         level_style.value(record.level()),
-    ///         record.args())
-    /// });
-    /// ```
-    ///
-    /// [`Style`]: struct.Style.html
-    pub fn style(&self) -> Style {
-        Style {
-            buf: self.buf.clone(),
-            spec: termcolor::ColorSpec::new(),
-        }
-    }
-
-    /// Get the default [`Style`] for the given level.
+    /// Get the default [`style::Style`] for the given level.
     ///
     /// The style can be used to print other values besides the level.
-    pub fn default_level_style(&self, level: Level) -> Style {
-        let mut level_style = self.style();
-        match level {
-            Level::Trace => level_style.set_color(Color::Cyan),
-            Level::Debug => level_style.set_color(Color::Blue),
-            Level::Info => level_style.set_color(Color::Green),
-            Level::Warn => level_style.set_color(Color::Yellow),
-            Level::Error => level_style.set_color(Color::Red).set_bold(true),
-        };
-        level_style
-    }
-
-    /// Get a printable [`Style`] for the given level.
-    ///
-    /// The style can only be used to print the level.
-    pub fn default_styled_level(&self, level: Level) -> StyledValue<'static, Level> {
-        self.default_level_style(level).into_value(level)
+    pub fn default_level_style(&self, level: Level) -> style::Style {
+        if self.write_style == WriteStyle::Never {
+            style::Style::new()
+        } else {
+            match level {
+                Level::Trace => style::AnsiColor::Cyan.on_default(),
+                Level::Debug => style::AnsiColor::Blue.on_default(),
+                Level::Info => style::AnsiColor::Green.on_default(),
+                Level::Warn => style::AnsiColor::Yellow.on_default(),
+                Level::Error => style::AnsiColor::Red
+                    .on_default()
+                    .effects(style::Effects::BOLD),
+            }
+        }
     }
 }
 
@@ -194,7 +158,11 @@ impl Write for Formatter {
 
 impl fmt::Debug for Formatter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Formatter").finish()
+        let buf = self.buf.borrow();
+        f.debug_struct("Formatter")
+            .field("buf", &buf)
+            .field("write_style", &self.write_style)
+            .finish()
     }
 }
 
@@ -265,9 +233,35 @@ impl Default for Builder {
 }
 
 #[cfg(feature = "color")]
-type SubtleStyle = StyledValue<'static, &'static str>;
+type SubtleStyle = StyledValue<&'static str>;
 #[cfg(not(feature = "color"))]
 type SubtleStyle = &'static str;
+
+/// A value that can be printed using the given styles.
+///
+/// It is the result of calling [`Style::value`].
+///
+/// [`Style::value`]: struct.Style.html#method.value
+#[cfg(feature = "color")]
+struct StyledValue<T> {
+    style: style::Style,
+    value: T,
+}
+
+#[cfg(feature = "color")]
+impl<T: std::fmt::Display> std::fmt::Display for StyledValue<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let style = self.style.render();
+        let reset = self.style.render_reset();
+
+        // We need to make sure `f`s settings don't get passed onto the styling but do get passed
+        // to the value
+        write!(f, "{style}")?;
+        self.value.fmt(f)?;
+        write!(f, "{reset}")?;
+        Ok(())
+    }
+}
 
 /// The default format.
 ///
@@ -297,12 +291,14 @@ impl<'a> DefaultFormat<'a> {
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
         #[cfg(feature = "color")]
         {
-            self.buf
-                .style()
-                .set_color(Color::Black)
-                .set_intense(true)
-                .clone()
-                .into_value(text)
+            StyledValue {
+                style: if self.buf.write_style == WriteStyle::Never {
+                    style::Style::new()
+                } else {
+                    style::AnsiColor::BrightBlack.on_default()
+                },
+                value: text,
+            }
         }
         #[cfg(not(feature = "color"))]
         {
@@ -330,13 +326,17 @@ impl<'a> DefaultFormat<'a> {
         }
 
         let level = {
+            let level = record.level();
             #[cfg(feature = "color")]
             {
-                self.buf.default_styled_level(record.level())
+                StyledValue {
+                    style: self.buf.default_level_style(level),
+                    value: level,
+                }
             }
             #[cfg(not(feature = "color"))]
             {
-                record.level()
+                level
             }
         };
 

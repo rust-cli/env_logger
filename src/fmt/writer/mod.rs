@@ -1,20 +1,18 @@
-mod atty;
 mod buffer;
 mod target;
 
-use self::atty::{is_stderr, is_stdout};
 use self::buffer::BufferWriter;
-use std::{fmt, io, mem, sync::Mutex};
+use std::{io, mem, sync::Mutex};
 
 pub(super) use self::buffer::Buffer;
 
 pub use target::Target;
-use target::WritableTarget;
 
 /// Whether or not to print styles to the target.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Default)]
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
+    #[default]
     Auto,
     /// Try very hard to print styles.
     Always,
@@ -22,24 +20,31 @@ pub enum WriteStyle {
     Never,
 }
 
-impl Default for WriteStyle {
-    fn default() -> Self {
-        WriteStyle::Auto
+#[cfg(feature = "color")]
+impl From<anstream::ColorChoice> for WriteStyle {
+    fn from(choice: anstream::ColorChoice) -> Self {
+        match choice {
+            anstream::ColorChoice::Auto => Self::Auto,
+            anstream::ColorChoice::Always => Self::Always,
+            anstream::ColorChoice::AlwaysAnsi => Self::Always,
+            anstream::ColorChoice::Never => Self::Never,
+        }
     }
 }
 
 #[cfg(feature = "color")]
-impl WriteStyle {
-    fn into_color_choice(self) -> ::termcolor::ColorChoice {
-        match self {
-            WriteStyle::Always => ::termcolor::ColorChoice::Always,
-            WriteStyle::Auto => ::termcolor::ColorChoice::Auto,
-            WriteStyle::Never => ::termcolor::ColorChoice::Never,
+impl From<WriteStyle> for anstream::ColorChoice {
+    fn from(choice: WriteStyle) -> Self {
+        match choice {
+            WriteStyle::Auto => anstream::ColorChoice::Auto,
+            WriteStyle::Always => anstream::ColorChoice::Always,
+            WriteStyle::Never => anstream::ColorChoice::Never,
         }
     }
 }
 
 /// A terminal target with color awareness.
+#[derive(Debug)]
 pub(crate) struct Writer {
     inner: BufferWriter,
 }
@@ -55,12 +60,6 @@ impl Writer {
 
     pub(super) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.inner.print(buf)
-    }
-}
-
-impl fmt::Debug for Writer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Writer").finish()
     }
 }
 
@@ -119,29 +118,26 @@ impl Builder {
         assert!(!self.built, "attempt to re-use consumed builder");
         self.built = true;
 
-        let color_choice = match self.write_style {
-            WriteStyle::Auto => {
-                if match &self.target {
-                    Target::Stderr => is_stderr(),
-                    Target::Stdout => is_stdout(),
-                    Target::Pipe(_) => false,
-                } {
-                    WriteStyle::Auto
-                } else {
-                    WriteStyle::Never
-                }
+        let color_choice = self.write_style;
+        #[cfg(feature = "auto-color")]
+        let color_choice = if color_choice == WriteStyle::Auto {
+            match &self.target {
+                Target::Stdout => anstream::AutoStream::choice(&std::io::stdout()).into(),
+                Target::Stderr => anstream::AutoStream::choice(&std::io::stderr()).into(),
+                Target::Pipe(_) => color_choice,
             }
-            color_choice => color_choice,
+        } else {
+            color_choice
         };
-        let color_choice = if self.is_test {
+        let color_choice = if color_choice == WriteStyle::Auto {
             WriteStyle::Never
         } else {
             color_choice
         };
 
         let writer = match mem::take(&mut self.target) {
-            Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
             Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
+            Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
             Target::Pipe(pipe) => BufferWriter::pipe(Box::new(Mutex::new(pipe))),
         };
 

@@ -223,6 +223,9 @@ impl Builder {
     /// to format and output without intermediate heap allocations. The default
     /// `env_logger` formatter takes advantage of this.
     ///
+    /// When the `color` feature is enabled, styling via ANSI escape codes is supported and the
+    /// output will automatically respect [`Builder::write_style`].
+    ///
     /// # Examples
     ///
     /// Use a custom format to write only the log message:

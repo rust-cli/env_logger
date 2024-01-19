@@ -19,7 +19,7 @@ If you want to control the logging output completely, see the `custom_logger` ex
 
 #[cfg(all(feature = "color", feature = "humantime"))]
 fn main() {
-    use env_logger::{fmt::Color, Builder, Env};
+    use env_logger::{Builder, Env};
 
     use std::io::Write;
 
@@ -30,16 +30,17 @@ fn main() {
 
         Builder::from_env(env)
             .format(|buf, record| {
-                let mut style = buf.style();
-                style.set_bg(Color::Yellow).set_bold(true);
-
+                // We are reusing `anstyle` but there are `anstyle-*` crates to adapt it to your
+                // preferred styling crate.
+                let warn_style = buf.default_level_style(log::Level::Warn);
+                let reset = warn_style.render_reset();
+                let warn_style = warn_style.render();
                 let timestamp = buf.timestamp();
 
                 writeln!(
                     buf,
-                    "My formatted log ({}): {}",
-                    timestamp,
-                    style.value(record.args())
+                    "My formatted log ({timestamp}): {warn_style}{}{reset}",
+                    record.args()
                 )
             })
             .init();
