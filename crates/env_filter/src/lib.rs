@@ -55,13 +55,7 @@ use std::env;
 use std::fmt;
 use std::mem;
 
-#[cfg(feature = "regex")]
-#[path = "regex.rs"]
-mod inner;
-
-#[cfg(not(feature = "regex"))]
-#[path = "string.rs"]
-mod inner;
+mod op;
 
 /// A builder for a log filter.
 ///
@@ -85,7 +79,7 @@ mod inner;
 /// ```
 pub struct Builder {
     directives: Vec<Directive>,
-    filter: Option<inner::Filter>,
+    filter: Option<op::FilterOp>,
     built: bool,
 }
 
@@ -226,7 +220,7 @@ struct Directive {
 /// [`Builder`]: struct.Builder.html
 pub struct Filter {
     directives: Vec<Directive>,
-    filter: Option<inner::Filter>,
+    filter: Option<op::FilterOp>,
 }
 
 impl Filter {
@@ -289,7 +283,7 @@ impl fmt::Debug for Filter {
 
 /// Parse a logging specification string (e.g: "crate1,crate2::mod3,crate3::x=error/foo")
 /// and return a vector with log directives.
-fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
+fn parse_spec(spec: &str) -> (Vec<Directive>, Option<op::FilterOp>) {
     let mut dirs = Vec::new();
 
     let mut parts = spec.split('/');
@@ -347,7 +341,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         }
     }
 
-    let filter = filter.and_then(|filter| match inner::Filter::new(filter) {
+    let filter = filter.and_then(|filter| match op::FilterOp::new(filter) {
         Ok(re) => Some(re),
         Err(e) => {
             eprintln!("warning: invalid regex filter - {}", e);
