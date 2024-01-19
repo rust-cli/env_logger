@@ -1,13 +1,7 @@
-[package]
-name = "env_logger"
-version = "0.10.2"
-description = """
-A logging implementation for `log` which is configured via an environment
-variable.
-"""
-repository = "https://github.com/rust-cli/env_logger"
-categories = ["development-tools::debugging"]
-keywords = ["logging", "log", "logger"]
+[workspace]
+resolver = "2"
+
+[workspace.package]
 license = "MIT OR Apache-2.0"
 edition = "2021"
 rust-version = "1.71"  # MSRV
@@ -22,6 +16,21 @@ include = [
   "examples/**/*",
   "tests/**/*",
 ]
+
+[package]
+name = "env_logger"
+version = "0.10.2"
+description = """
+A logging implementation for `log` which is configured via an environment
+variable.
+"""
+repository = "https://github.com/rust-cli/env_logger"
+categories = ["development-tools::debugging"]
+keywords = ["logging", "log", "logger"]
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+include.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
