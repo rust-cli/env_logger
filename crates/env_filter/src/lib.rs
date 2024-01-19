@@ -50,13 +50,17 @@
 //! }
 //! ```
 
-use log::{Level, LevelFilter, Metadata, Record};
+mod op;
+mod parser;
+
 use std::env;
 use std::fmt;
 use std::mem;
 
-mod op;
-mod parser;
+use log::{Level, LevelFilter, Metadata, Record};
+
+use op::FilterOp;
+use parser::parse_spec;
 
 /// A builder for a log filter.
 ///
@@ -80,7 +84,7 @@ mod parser;
 /// ```
 pub struct Builder {
     directives: Vec<Directive>,
-    filter: Option<op::FilterOp>,
+    filter: Option<FilterOp>,
     built: bool,
 }
 
@@ -146,7 +150,7 @@ impl Builder {
     ///
     /// [Enabling Logging]: ../index.html#enabling-logging
     pub fn parse(&mut self, filters: &str) -> &mut Self {
-        let (directives, filter) = parser::parse_spec(filters);
+        let (directives, filter) = parse_spec(filters);
 
         self.filter = filter;
 
@@ -221,7 +225,7 @@ struct Directive {
 /// [`Builder`]: struct.Builder.html
 pub struct Filter {
     directives: Vec<Directive>,
-    filter: Option<op::FilterOp>,
+    filter: Option<FilterOp>,
 }
 
 impl Filter {

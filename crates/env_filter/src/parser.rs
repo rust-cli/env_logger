@@ -1,11 +1,11 @@
 use log::LevelFilter;
 
-use crate::op;
 use crate::Directive;
+use crate::FilterOp;
 
 /// Parse a logging specification string (e.g: "crate1,crate2::mod3,crate3::x=error/foo")
 /// and return a vector with log directives.
-pub(crate) fn parse_spec(spec: &str) -> (Vec<Directive>, Option<op::FilterOp>) {
+pub(crate) fn parse_spec(spec: &str) -> (Vec<Directive>, Option<FilterOp>) {
     let mut dirs = Vec::new();
 
     let mut parts = spec.split('/');
@@ -63,7 +63,7 @@ pub(crate) fn parse_spec(spec: &str) -> (Vec<Directive>, Option<op::FilterOp>) {
         }
     }
 
-    let filter = filter.and_then(|filter| match op::FilterOp::new(filter) {
+    let filter = filter.and_then(|filter| match FilterOp::new(filter) {
         Ok(re) => Some(re),
         Err(e) => {
             eprintln!("warning: invalid regex filter - {}", e);
