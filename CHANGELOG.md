@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Breaking Change
+
+- Removed bespoke styling API
+  - `env_logger::fmt::Formatter::style`
+  - `env_logger::fmt::Formatter::default_styled_level`
+  - `env_logger::fmt::Style`
+  - `env_logger::fmt::Color`
+  - `env_logger::fmt::StyledValue`
+- Removed `env_logger::filter` in favor of `env_filter`
+
+### Compatibility
+
+MSRV changed to 1.71
+
+### Features
+
+- Automatically adapt ANSI escape codes in logged messages to the current terminal's capabilities
+- Add support for `NO_COLOR` and `CLICOLOR_FORCE`, see https://bixense.com/clicolors/
+
+### Fixes
+
+- Print colors when `is_test(true)`
+- Allow styling with `Target::Pipe`
+
 ## [0.10.2] - 2024-01-18
 
 ### Performance
