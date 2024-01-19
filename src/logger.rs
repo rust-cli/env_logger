@@ -2,8 +2,6 @@ use std::{borrow::Cow, cell::RefCell, env, io};
 
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 
-use crate::filter;
-use crate::filter::Filter;
 use crate::fmt;
 use crate::fmt::writer::{self, Writer};
 use crate::fmt::{FormatFn, Formatter};
@@ -38,7 +36,7 @@ pub const DEFAULT_WRITE_STYLE_ENV: &str = "RUST_LOG_STYLE";
 /// ```
 #[derive(Default)]
 pub struct Builder {
-    filter: filter::Builder,
+    filter: env_filter::Builder,
     writer: writer::Builder,
     format: fmt::Builder,
     built: bool,
@@ -532,7 +530,7 @@ impl std::fmt::Debug for Builder {
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
     writer: Writer,
-    filter: Filter,
+    filter: env_filter::Filter,
     format: FormatFn,
 }
 
