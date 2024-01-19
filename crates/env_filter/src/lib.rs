@@ -14,44 +14,32 @@
 //! use env_filter::Filter;
 //! use log::{Log, Metadata, Record};
 //!
-//! struct MyLogger {
-//!     filter: Filter
-//! }
+//! struct PrintLogger;
 //!
-//! impl MyLogger {
-//!     fn new() -> MyLogger {
-//!         use env_filter::Builder;
-//!         let mut builder = Builder::new();
-//!
-//!         // Parse a directives string from an environment variable
-//!         if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
-//!            builder.parse(filter);
-//!         }
-//!
-//!         MyLogger {
-//!             filter: builder.build()
-//!         }
-//!     }
-//! }
-//!
-//! impl Log for MyLogger {
+//! impl Log for PrintLogger {
 //!     fn enabled(&self, metadata: &Metadata) -> bool {
-//!         self.filter.enabled(metadata)
+//!         true
 //!     }
 //!
 //!     fn log(&self, record: &Record) {
-//!         // Check if the record is matched by the filter
-//!         if self.filter.matches(record) {
-//!             println!("{:?}", record);
-//!         }
+//!         println!("{:?}", record);
 //!     }
 //!
 //!     fn flush(&self) {}
 //! }
+//!
+//! let mut builder = env_filter::Builder::new();
+//! // Parse a directives string from an environment variable
+//! if let Ok(ref filter) = std::env::var("MY_LOG_LEVEL") {
+//!     builder.parse(filter);
+//! }
+//!
+//! let logger = env_filter::FilteredLog::new(PrintLogger, builder.build());
 //! ```
 
 mod directive;
 mod filter;
+mod filtered_log;
 mod op;
 mod parser;
 
@@ -62,3 +50,4 @@ use parser::parse_spec;
 
 pub use filter::Builder;
 pub use filter::Filter;
+pub use filtered_log::FilteredLog;
