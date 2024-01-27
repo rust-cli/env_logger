@@ -138,7 +138,7 @@ impl Builder {
         let writer = match mem::take(&mut self.target) {
             Target::Stdout => BufferWriter::stdout(self.is_test, color_choice),
             Target::Stderr => BufferWriter::stderr(self.is_test, color_choice),
-            Target::Pipe(pipe) => BufferWriter::pipe(Box::new(Mutex::new(pipe))),
+            Target::Pipe(pipe) => BufferWriter::pipe(Box::new(Mutex::new(pipe)), color_choice),
         };
 
         Writer { inner: writer }
