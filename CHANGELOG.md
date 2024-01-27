@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Fixes
+
+- Allow styling with `Target::Pipe`
+
 ## [0.11.0] - 2024-01-19
 
 ### Breaking Change
@@ -31,7 +35,6 @@ MSRV changed to 1.71
 ### Fixes
 
 - Print colors when `is_test(true)`
-- Allow styling with `Target::Pipe`
 
 ## [0.10.2] - 2024-01-18
 
