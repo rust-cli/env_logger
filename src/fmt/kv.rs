@@ -1,6 +1,10 @@
 use std::io::{self, Write};
 
-use super::Formatter;
+#[cfg(feature = "color")]
+use super::WriteStyle;
+use super::{Formatter, StyledValue};
+#[cfg(feature = "color")]
+use anstyle::Style;
 use log::kv::{source::Source, Error, Key, Value, Visitor};
 
 /// Format function for serializing key/value pairs
@@ -41,7 +45,27 @@ impl<'a, 'kvs> Visitor<'kvs> for DefaultVisitor<'a> {
     fn visit_pair(&mut self, key: Key, value: Value<'kvs>) -> Result<(), Error> {
         // TODO: add styling
         // tracing-subscriber uses italic for the key and dimmed for the =
-        write!(self.0, " {}={}", key, value)?;
+        write!(self.0, " {}={}", self.style_key(key), value)?;
         Ok(())
+    }
+}
+
+impl DefaultVisitor<'_> {
+    fn style_key<'k>(&self, text: Key<'k>) -> StyledValue<Key<'k>> {
+        #[cfg(feature = "color")]
+        {
+            StyledValue {
+                style: if self.0.write_style == WriteStyle::Never {
+                    Style::new()
+                } else {
+                    Style::new().italic()
+                },
+                value: text,
+            }
+        }
+        #[cfg(not(feature = "color"))]
+        {
+            text
+        }
     }
 }

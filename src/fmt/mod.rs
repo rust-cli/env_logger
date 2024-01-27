@@ -292,6 +292,9 @@ impl<T: std::fmt::Display> std::fmt::Display for StyledValue<T> {
     }
 }
 
+#[cfg(not(feature = "color"))]
+type StyledValue<T> = T;
+
 /// The default format.
 ///
 /// This format needs to work with any combination of crate features.

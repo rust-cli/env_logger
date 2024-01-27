@@ -321,7 +321,7 @@ impl Builder {
     /// The format function is expected to output the string directly to the `Formatter` so that
     /// implementations can use the [`std::fmt`] macros, similar to the main format function.
     ///
-    /// The default format uses a space to separte each key-value pair, with an "=" between
+    /// The default format uses a space to separate each key-value pair, with an "=" between
     /// the key and value.
     #[cfg(feature = "unstable-kv")]
     pub fn format_key_values<F: 'static>(&mut self, format: F) -> &mut Self
