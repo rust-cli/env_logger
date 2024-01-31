@@ -48,7 +48,7 @@ pre-release-replacements = [
 
 [features]
 default = ["auto-color", "humantime", "regex"]
-color = ["dep:anstream", "dep:anstyle"]
+color = ["anstream", "anstyle"]
 auto-color = ["color", "anstream/auto"]
 humantime = ["dep:humantime"]
 regex = ["env_filter/regex"]
