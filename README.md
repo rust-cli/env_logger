@@ -77,12 +77,9 @@ logging levels, the letter case is not significant.
 
 Tests can use the `env_logger` crate to see log messages generated during that test:
 
-```toml
-[dependencies]
-log = "0.4.0"
-
-[dev-dependencies]
-env_logger = "0.10.0"
+```console
+$ cargo add log
+$ cargo add --dev env_logger
 ```
 
 ```rust
