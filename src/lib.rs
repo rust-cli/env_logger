@@ -269,10 +269,6 @@
     html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico"
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-// When compiled for the rustc compiler itself we want to make sure that this is
-// an unstable crate
-#![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
-#![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 #![deny(missing_debug_implementations, missing_docs)]
 
 mod logger;
