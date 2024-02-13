@@ -24,10 +24,8 @@
 //! });
 //! ```
 //!
-//! [`Formatter`]: struct.Formatter.html
-//! [`Style`]: struct.Style.html
-//! [`Builder::format`]: ../struct.Builder.html#method.format
-//! [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
+//! [`Builder::format`]: crate::Builder::format
+//! [`Write`]: std::io::Write
 
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -95,8 +93,8 @@ impl Default for TimestampPrecision {
 /// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
 /// ```
 ///
-/// [`Write`]: https://doc.rust-lang.org/stable/std/io/trait.Write.html
-/// [`writeln`]: https://doc.rust-lang.org/stable/std/macro.writeln.html
+/// [`Write`]: std::io::Write
+/// [`writeln`]: std::writeln
 /// [`style`]: #method.style
 pub struct Formatter {
     buf: Rc<RefCell<Buffer>>,
@@ -240,10 +238,6 @@ type SubtleStyle = StyledValue<&'static str>;
 type SubtleStyle = &'static str;
 
 /// A value that can be printed using the given styles.
-///
-/// It is the result of calling [`Style::value`].
-///
-/// [`Style::value`]: struct.Style.html#method.value
 #[cfg(feature = "color")]
 struct StyledValue<T> {
     style: style::Style,
