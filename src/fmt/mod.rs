@@ -251,14 +251,13 @@ struct StyledValue<T> {
 #[cfg(feature = "color")]
 impl<T: std::fmt::Display> std::fmt::Display for StyledValue<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let style = self.style.render();
-        let reset = self.style.render_reset();
+        let style = self.style;
 
         // We need to make sure `f`s settings don't get passed onto the styling but do get passed
         // to the value
         write!(f, "{style}")?;
         self.value.fmt(f)?;
-        write!(f, "{reset}")?;
+        write!(f, "{style:#}")?;
         Ok(())
     }
 }
