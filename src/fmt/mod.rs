@@ -9,8 +9,14 @@
 //!
 //! The format used to print log records can be customised using the [`Builder::format`]
 //! method.
-//! Custom formats can apply different color and weight to printed values using
-//! [`Style`] builders.
+//!
+//! Terminal styling is done through ANSI escape codes and will be adapted to the capabilities of
+//! the target stream.
+//! For example, you could use one of:
+//! - [anstyle](https://docs.rs/anstyle) is a minimal, runtime string styling API and is re-exported as [`style`]
+//! - [owo-colors](https://docs.rs/owo-colors) is a feature rich runtime string styling API
+//! - [color-print](https://docs.rs/color-print) for feature-rich compile-time styling API
+//! See also [`Formatter::default_level_style`]
 //!
 //! ```
 //! use std::io::Write;
@@ -78,7 +84,7 @@ impl Default for TimestampPrecision {
 /// A formatter to write logs into.
 ///
 /// `Formatter` implements the standard [`Write`] trait for writing log records.
-/// It also supports terminal colors, through the [`style`] method.
+/// It also supports terminal styling using ANSI escape codes.
 ///
 /// # Examples
 ///
@@ -95,7 +101,6 @@ impl Default for TimestampPrecision {
 ///
 /// [`Write`]: std::io::Write
 /// [`writeln`]: std::writeln
-/// [`style`]: #method.style
 pub struct Formatter {
     buf: Rc<RefCell<Buffer>>,
     write_style: WriteStyle,
