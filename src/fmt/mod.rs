@@ -129,6 +129,8 @@ impl Formatter {
     /// Get the default [`style::Style`] for the given level.
     ///
     /// The style can be used to print other values besides the level.
+    ///
+    /// See [`style`] for how to adapt it to the styling crate of your choice
     pub fn default_level_style(&self, level: Level) -> style::Style {
         if self.write_style == WriteStyle::Never {
             style::Style::new()
