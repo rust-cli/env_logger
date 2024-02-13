@@ -259,10 +259,6 @@
 //! [gh-repo-examples]: https://github.com/rust-cli/env_logger/tree/main/examples
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log
-//! [`Builder`]: struct.Builder.html
-//! [`Builder::is_test`]: struct.Builder.html#method.is_test
-//! [`Env`]: struct.Env.html
-//! [`fmt`]: fmt/index.html
 
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",

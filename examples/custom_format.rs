@@ -33,13 +33,11 @@ fn main() {
                 // We are reusing `anstyle` but there are `anstyle-*` crates to adapt it to your
                 // preferred styling crate.
                 let warn_style = buf.default_level_style(log::Level::Warn);
-                let reset = warn_style.render_reset();
-                let warn_style = warn_style.render();
                 let timestamp = buf.timestamp();
 
                 writeln!(
                     buf,
-                    "My formatted log ({timestamp}): {warn_style}{}{reset}",
+                    "My formatted log ({timestamp}): {warn_style}{}{warn_style:#}",
                     record.args()
                 )
             })
