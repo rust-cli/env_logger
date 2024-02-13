@@ -15,6 +15,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [0.11.0] - 2024-01-19
 
+### Migration Guide
+
+**env_logger::fmt::Style:**
+The bespoke styling API, behind `color`, was removed, in favor of accepting any
+ANSI styled string and adapting it to the target stream's capabilities.
+
+Possible styling libraries include:
+- [anstyle](https://docs.rs/anstyle) is a minimal, runtime string styling API and is re-exported as `env_logger::fmt::style`
+- [owo-colors](https://docs.rs/owo-colors) is a feature rich runtime string styling API
+- [color-print](https://docs.rs/color-print) for feature-rich compile-time styling API
+
+[custom_format.rs](https://docs.rs/env_logger/latest/src/custom_format/custom_format.rs.html)
+uses `anstyle` via
+[`Formatter::default_level_style`](https://docs.rs/env_logger/latest/env_logger/fmt/struct.Formatter.html#method.default_level_style)
+
 ### Breaking Change
 
 - Removed bespoke styling API
