@@ -40,10 +40,13 @@
 //! function that is called by the default format with [`Builder::format_key_values`].
 //!
 //! ```
+//! # #[cfg(feature= "unstable-kv")]
+//! # {
 //! use log::info;
 //! env_logger::init();
 //! info!(x="45"; "Some message");
 //! info!(x="12"; "Another message {x}", x="12");
+//! # }
 //! ```
 //!
 //! See <https://docs.rs/log/latest/log/#structured-logging>.

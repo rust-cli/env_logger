@@ -326,7 +326,7 @@ impl Builder {
     #[cfg(feature = "unstable-kv")]
     pub fn format_key_values<F: 'static>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &dyn log::kv::source::Source) -> io::Result<()> + Sync + Send,
+        F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send,
     {
         self.format.kv_format = Some(Box::new(format));
         self

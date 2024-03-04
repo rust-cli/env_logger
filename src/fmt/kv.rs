@@ -5,7 +5,7 @@ use super::WriteStyle;
 use super::{Formatter, StyledValue};
 #[cfg(feature = "color")]
 use anstyle::Style;
-use log::kv::{source::Source, Error, Key, Value, Visitor};
+use log::kv::{Error, Key, Source, Value, VisitSource};
 
 /// Format function for serializing key/value pairs
 ///
@@ -35,22 +35,20 @@ pub fn hidden_kv_format(_formatter: &mut Formatter, _fields: &dyn Source) -> io:
 /// For example: `ip=127.0.0.1 port=123456 path=/example`
 pub fn default_kv_format(formatter: &mut Formatter, fields: &dyn Source) -> io::Result<()> {
     fields
-        .visit(&mut DefaultVisitor(formatter))
+        .visit(&mut DefaultVisitSource(formatter))
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-struct DefaultVisitor<'a>(&'a mut Formatter);
+struct DefaultVisitSource<'a>(&'a mut Formatter);
 
-impl<'a, 'kvs> Visitor<'kvs> for DefaultVisitor<'a> {
+impl<'a, 'kvs> VisitSource<'kvs> for DefaultVisitSource<'a> {
     fn visit_pair(&mut self, key: Key, value: Value<'kvs>) -> Result<(), Error> {
-        // TODO: add styling
-        // tracing-subscriber uses italic for the key and dimmed for the =
         write!(self.0, " {}={}", self.style_key(key), value)?;
         Ok(())
     }
 }
 
-impl DefaultVisitor<'_> {
+impl DefaultVisitSource<'_> {
     fn style_key<'k>(&self, text: Key<'k>) -> StyledValue<Key<'k>> {
         #[cfg(feature = "color")]
         {
