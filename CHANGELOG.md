@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Experimental support for key-value logging behind `unstable-kv`
+
 ## [0.11.2] - 2024-02-13
 
 ## [0.11.1] - 2024-01-27
