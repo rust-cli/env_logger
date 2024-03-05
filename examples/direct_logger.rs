@@ -8,19 +8,27 @@ use env_logger::{Builder, WriteStyle};
 
 use log::{Level, LevelFilter, Log, MetadataBuilder, Record};
 
+#[cfg(feature = "unstable-kv")]
+static KVS: (&str, &str) = ("test", "something");
+
 fn record() -> Record<'static> {
     let error_metadata = MetadataBuilder::new()
         .target("myApp")
         .level(Level::Error)
         .build();
 
-    Record::builder()
+    let mut builder = Record::builder();
+    builder
         .metadata(error_metadata)
         .args(format_args!("Error!"))
         .line(Some(433))
         .file(Some("app.rs"))
-        .module_path(Some("server"))
-        .build()
+        .module_path(Some("server"));
+    #[cfg(feature = "unstable-kv")]
+    {
+        builder.key_values(&KVS);
+    }
+    builder.build()
 }
 
 fn main() {

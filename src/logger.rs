@@ -313,6 +313,25 @@ impl Builder {
         self
     }
 
+    /// Set the format for structured key/value pairs in the log record
+    ///
+    /// With the default format, this function is called for each record and should format
+    /// the structured key-value pairs as returned by [`log::Record::key_values`].
+    ///
+    /// The format function is expected to output the string directly to the `Formatter` so that
+    /// implementations can use the [`std::fmt`] macros, similar to the main format function.
+    ///
+    /// The default format uses a space to separate each key-value pair, with an "=" between
+    /// the key and value.
+    #[cfg(feature = "unstable-kv")]
+    pub fn format_key_values<F: 'static>(&mut self, format: F) -> &mut Self
+    where
+        F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send,
+    {
+        self.format.kv_format = Some(Box::new(format));
+        self
+    }
+
     /// Adds a directive to the filter for a specific module.
     ///
     /// # Examples
