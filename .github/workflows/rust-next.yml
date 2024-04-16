@@ -12,12 +12,16 @@ env:
   CARGO_TERM_COLOR: always
   CLICOLOR: 1
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest", "macos-14"]
         rust: ["stable", "beta"]
         include:
         - os: ubuntu-latest
@@ -34,9 +38,9 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Build
-      run: cargo test --no-run --workspace --all-features
+      run: cargo test --workspace --no-run
     - name: Test
-      run: cargo hack test --workspace --feature-powerset
+      run: cargo hack test --feature-powerset --workspace
     - name: Run crate example
       run: cargo run --example default
   latest:
@@ -54,8 +58,8 @@ jobs:
     - name: Update dependencues
       run: cargo update
     - name: Build
-      run: cargo test --no-run --workspace --all-features
+      run: cargo test --workspace --no-run
     - name: Test
-      run: cargo hack test --workspace --feature-powerset
+      run: cargo hack test --feature-powerset --workspace
     - name: Run crate example
       run: cargo run --example default

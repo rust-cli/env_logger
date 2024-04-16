@@ -9,6 +9,7 @@ pub(super) use self::buffer::Buffer;
 pub use target::Target;
 
 /// Whether or not to print styles to the target.
+#[allow(clippy::exhaustive_enums)] // By definition don't need more
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Default)]
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
@@ -50,7 +51,7 @@ pub(crate) struct Writer {
 }
 
 impl Writer {
-    pub fn write_style(&self) -> WriteStyle {
+    pub(crate) fn write_style(&self) -> WriteStyle {
         self.inner.write_style()
     }
 

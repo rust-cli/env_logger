@@ -85,7 +85,7 @@ impl Builder {
     /// If no module is provided then the filter will apply to all log messages.
     pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
         self.insert_directive(Directive {
-            name: module.map(|s| s.to_string()),
+            name: module.map(|s| s.to_owned()),
             level,
         });
         self
@@ -145,7 +145,7 @@ impl Default for Builder {
 }
 
 impl fmt::Debug for Builder {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.built {
             f.debug_struct("Filter").field("built", &true).finish()
         } else {
@@ -195,7 +195,7 @@ impl Filter {
     }
 
     /// Checks if this record matches the configured filter.
-    pub fn matches(&self, record: &Record) -> bool {
+    pub fn matches(&self, record: &Record<'_>) -> bool {
         if !self.enabled(record.metadata()) {
             return false;
         }
@@ -210,7 +210,7 @@ impl Filter {
     }
 
     /// Determines if a log message with the specified metadata would be logged.
-    pub fn enabled(&self, metadata: &Metadata) -> bool {
+    pub fn enabled(&self, metadata: &Metadata<'_>) -> bool {
         let level = metadata.level();
         let target = metadata.target();
 
@@ -219,7 +219,7 @@ impl Filter {
 }
 
 impl fmt::Debug for Filter {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Filter")
             .field("filter", &self.filter)
             .field("directives", &self.directives)
@@ -448,11 +448,11 @@ mod tests {
     fn match_full_path() {
         let logger = make_logger_filter(vec![
             Directive {
-                name: Some("crate2".to_string()),
+                name: Some("crate2".to_owned()),
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Warn,
             },
         ]);
@@ -466,11 +466,11 @@ mod tests {
     fn no_match() {
         let logger = make_logger_filter(vec![
             Directive {
-                name: Some("crate2".to_string()),
+                name: Some("crate2".to_owned()),
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Warn,
             },
         ]);
@@ -481,11 +481,11 @@ mod tests {
     fn match_beginning() {
         let logger = make_logger_filter(vec![
             Directive {
-                name: Some("crate2".to_string()),
+                name: Some("crate2".to_owned()),
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Warn,
             },
         ]);
@@ -496,15 +496,15 @@ mod tests {
     fn match_beginning_longest_match() {
         let logger = make_logger_filter(vec![
             Directive {
-                name: Some("crate2".to_string()),
+                name: Some("crate2".to_owned()),
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate2::mod".to_string()),
+                name: Some("crate2::mod".to_owned()),
                 level: LevelFilter::Debug,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Warn,
             },
         ]);
@@ -520,7 +520,7 @@ mod tests {
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Warn,
             },
         ]);
@@ -536,7 +536,7 @@ mod tests {
                 level: LevelFilter::Info,
             },
             Directive {
-                name: Some("crate1::mod1".to_string()),
+                name: Some("crate1::mod1".to_owned()),
                 level: LevelFilter::Off,
             },
         ]);

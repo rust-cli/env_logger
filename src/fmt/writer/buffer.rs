@@ -50,6 +50,9 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
+        #![allow(clippy::print_stdout)] // enabled for tests only
+        #![allow(clippy::print_stderr)] // enabled for tests only
+
         use std::io::Write as _;
 
         let buf = buf.as_bytes();
@@ -91,7 +94,7 @@ impl BufferWriter {
                 let buf = adapt(buf, self.write_style)?;
                 #[cfg(feature = "color")]
                 let buf = &buf;
-                let mut stream = pipe.lock().unwrap();
+                let mut stream = pipe.lock().expect("no panics while held");
                 stream.write_all(buf)?;
                 stream.flush()?;
             }
@@ -134,7 +137,7 @@ impl Buffer {
 }
 
 impl std::fmt::Debug for Buffer {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         String::from_utf8_lossy(self.as_bytes()).fmt(f)
     }
 }
@@ -152,7 +155,7 @@ pub(super) enum WritableTarget {
     /// Logs will be printed to standard error.
     PrintStderr,
     /// Logs will be sent to a custom pipe.
-    Pipe(Box<std::sync::Mutex<dyn std::io::Write + Send + 'static>>),
+    Pipe(Box<Mutex<dyn std::io::Write + Send + 'static>>),
 }
 
 impl std::fmt::Debug for WritableTarget {
