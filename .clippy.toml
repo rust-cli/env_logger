@@ -1,5 +1,8 @@
-msrv = "1.71"  # MSRV
 warn-on-all-wildcard-imports = true
+allow-print-in-tests = true
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
+allow-dbg-in-tests = true
 disallowed-methods = [
     { path = "std::option::Option::map_or", reason = "prefer `map(..).unwrap_or(..)` for legibility" },
     { path = "std::option::Option::map_or_else", reason = "prefer `map(..).unwrap_or_else(..)` for legibility" },

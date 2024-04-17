@@ -81,12 +81,12 @@ pub struct Timestamp {
 }
 
 impl fmt::Debug for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         /// A `Debug` wrapper for `Timestamp` that uses the `Display` implementation.
         struct TimestampValue<'a>(&'a Timestamp);
 
         impl<'a> fmt::Debug for TimestampValue<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt::Display::fmt(&self.0, f)
             }
         }
@@ -98,7 +98,7 @@ impl fmt::Debug for Timestamp {
 }
 
 impl fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let formatter = match self.precision {
             TimestampPrecision::Seconds => format_rfc3339_seconds,
             TimestampPrecision::Millis => format_rfc3339_millis,
