@@ -240,9 +240,9 @@ impl Builder {
     /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
+    pub fn format<F>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send,
+        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
     {
         self.format.custom_format = Some(Box::new(format));
         self

@@ -123,8 +123,8 @@ impl Builder {
         #[cfg(feature = "auto-color")]
         let color_choice = if color_choice == WriteStyle::Auto {
             match &self.target {
-                Target::Stdout => anstream::AutoStream::choice(&std::io::stdout()).into(),
-                Target::Stderr => anstream::AutoStream::choice(&std::io::stderr()).into(),
+                Target::Stdout => anstream::AutoStream::choice(&io::stdout()).into(),
+                Target::Stderr => anstream::AutoStream::choice(&io::stderr()).into(),
                 Target::Pipe(_) => color_choice,
             }
         } else {
