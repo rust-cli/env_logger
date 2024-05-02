@@ -58,7 +58,7 @@ impl BufferWriter {
         let buf = buf.as_bytes();
         match &self.target {
             WritableTarget::WriteStdout => {
-                let stream = std::io::stdout();
+                let stream = io::stdout();
                 #[cfg(feature = "color")]
                 let stream = anstream::AutoStream::new(stream, self.write_style.into());
                 let mut stream = stream.lock();
@@ -74,7 +74,7 @@ impl BufferWriter {
                 print!("{}", buf);
             }
             WritableTarget::WriteStderr => {
-                let stream = std::io::stderr();
+                let stream = io::stderr();
                 #[cfg(feature = "color")]
                 let stream = anstream::AutoStream::new(stream, self.write_style.into());
                 let mut stream = stream.lock();
@@ -105,7 +105,7 @@ impl BufferWriter {
 }
 
 #[cfg(feature = "color")]
-fn adapt(buf: &[u8], write_style: WriteStyle) -> std::io::Result<Vec<u8>> {
+fn adapt(buf: &[u8], write_style: WriteStyle) -> io::Result<Vec<u8>> {
     use std::io::Write as _;
 
     let adapted = Vec::with_capacity(buf.len());
@@ -155,7 +155,7 @@ pub(super) enum WritableTarget {
     /// Logs will be printed to standard error.
     PrintStderr,
     /// Logs will be sent to a custom pipe.
-    Pipe(Box<Mutex<dyn std::io::Write + Send + 'static>>),
+    Pipe(Box<Mutex<dyn io::Write + Send + 'static>>),
 }
 
 impl std::fmt::Debug for WritableTarget {
