@@ -324,9 +324,9 @@ impl Builder {
     /// The default format uses a space to separate each key-value pair, with an "=" between
     /// the key and value.
     #[cfg(feature = "unstable-kv")]
-    pub fn format_key_values<F: 'static>(&mut self, format: F) -> &mut Self
+    pub fn format_key_values<F>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send,
+        F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send + 'static,
     {
         self.format.kv_format = Some(Box::new(format));
         self
