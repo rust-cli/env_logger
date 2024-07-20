@@ -6,6 +6,7 @@ use log::{LevelFilter, Metadata, Record};
 
 use crate::enabled;
 use crate::parse_spec;
+use crate::parser::ParseResult;
 use crate::Directive;
 use crate::FilterOp;
 
@@ -97,7 +98,17 @@ impl Builder {
     ///
     /// [Enabling Logging]: ../index.html#enabling-logging
     pub fn parse(&mut self, filters: &str) -> &mut Self {
-        let (directives, filter) = parse_spec(filters);
+        #![allow(clippy::print_stderr)] // compatibility
+
+        let ParseResult {
+            directives,
+            filter,
+            errors,
+        } = parse_spec(filters);
+
+        for error in errors {
+            eprintln!("warning: {error}, ignoring it");
+        }
 
         self.filter = filter;
 
