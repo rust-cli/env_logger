@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Added `env_filter::Builder::try_parse(&self, &str)` method (failable version of `env_filter::Builder::parse()`)
+
 ## [0.1.0] - 2024-01-19
 
 <!-- next-url -->

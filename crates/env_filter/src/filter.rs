@@ -9,6 +9,7 @@ use crate::parse_spec;
 use crate::parser::ParseResult;
 use crate::Directive;
 use crate::FilterOp;
+use crate::ParseError;
 
 /// A builder for a log filter.
 ///
@@ -116,6 +117,22 @@ impl Builder {
             self.insert_directive(directive);
         }
         self
+    }
+
+    /// Parses the directive string, returning an error if the given directive string is invalid.
+    ///
+    /// See the [Enabling Logging] section for more details.
+    ///
+    /// [Enabling Logging]: ../index.html#enabling-logging
+    pub fn try_parse(&mut self, filters: &str) -> Result<&mut Self, ParseError> {
+        let (directives, filter) = parse_spec(filters).ok()?;
+
+        self.filter = filter;
+
+        for directive in directives {
+            self.insert_directive(directive);
+        }
+        Ok(self)
     }
 
     /// Build a log filter.
@@ -241,6 +258,7 @@ impl fmt::Debug for Filter {
 #[cfg(test)]
 mod tests {
     use log::{Level, LevelFilter};
+    use snapbox::{assert_data_eq, str};
 
     use super::{enabled, Builder, Directive, Filter};
 
@@ -453,6 +471,25 @@ mod tests {
             assert!(enabled(&logger.directives, Level::Debug, ""));
             assert!(!enabled(&logger.directives, Level::Trace, ""));
         }
+    }
+
+    #[test]
+    fn try_parse_valid_filter() {
+        let logger = Builder::new()
+            .try_parse("info,crate1::mod1=warn")
+            .expect("valid filter returned error")
+            .build();
+        assert!(enabled(&logger.directives, Level::Warn, "crate1::mod1"));
+        assert!(enabled(&logger.directives, Level::Info, "crate2::mod2"));
+    }
+
+    #[test]
+    fn try_parse_invalid_filter() {
+        let error = Builder::new().try_parse("info,crate1=invalid").unwrap_err();
+        assert_data_eq!(
+            error,
+            str!["error parsing logger filter: invalid logging spec 'invalid'"]
+        );
     }
 
     #[test]

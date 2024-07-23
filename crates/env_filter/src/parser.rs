@@ -1,4 +1,6 @@
 use log::LevelFilter;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 use crate::Directive;
 use crate::FilterOp;
@@ -22,7 +24,34 @@ impl ParseResult {
     fn add_error(&mut self, message: String) {
         self.errors.push(message);
     }
+
+    pub(crate) fn ok(self) -> Result<(Vec<Directive>, Option<FilterOp>), ParseError> {
+        let Self {
+            directives,
+            filter,
+            errors,
+        } = self;
+        if let Some(error) = errors.into_iter().next() {
+            Err(ParseError { details: error })
+        } else {
+            Ok((directives, filter))
+        }
+    }
 }
+
+/// Error during logger directive parsing process.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParseError {
+    details: String,
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "error parsing logger filter: {}", self.details)
+    }
+}
+
+impl Error for ParseError {}
 
 /// Parse a logging specification string (e.g: `crate1,crate2::mod3,crate3::x=error/foo`)
 /// and return a vector with log directives.
@@ -86,10 +115,17 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
 
 #[cfg(test)]
 mod tests {
+    use crate::ParseError;
     use log::LevelFilter;
-    use snapbox::{assert_data_eq, str};
+    use snapbox::{assert_data_eq, str, Data, IntoData};
 
     use super::{parse_spec, ParseResult};
+
+    impl IntoData for ParseError {
+        fn into_data(self) -> Data {
+            self.to_string().into_data()
+        }
+    }
 
     #[test]
     fn parse_spec_valid() {
@@ -459,5 +495,27 @@ mod tests {
             str!["invalid logging spec 'crate1::mod1=debug=info'"]
         );
         assert_data_eq!(&errors[1], str!["invalid logging spec 'invalid'"]);
+    }
+
+    #[test]
+    fn parse_error_message_single_error() {
+        let error = parse_spec("crate1::mod1=debug=info,crate2=debug")
+            .ok()
+            .unwrap_err();
+        assert_data_eq!(
+            error,
+            str!["error parsing logger filter: invalid logging spec 'crate1::mod1=debug=info'"]
+        );
+    }
+
+    #[test]
+    fn parse_error_message_multiple_errors() {
+        let error = parse_spec("crate1::mod1=debug=info,crate2=debug,crate3=invalid")
+            .ok()
+            .unwrap_err();
+        assert_data_eq!(
+            error,
+            str!["error parsing logger filter: invalid logging spec 'crate1::mod1=debug=info'"]
+        );
     }
 }

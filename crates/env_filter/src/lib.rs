@@ -56,3 +56,4 @@ use parser::parse_spec;
 pub use filter::Builder;
 pub use filter::Filter;
 pub use filtered_log::FilteredLog;
+pub use parser::ParseError;
