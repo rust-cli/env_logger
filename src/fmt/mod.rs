@@ -11,11 +11,13 @@
 //! method.
 //!
 //! Terminal styling is done through ANSI escape codes and will be adapted to the capabilities of
-//! the target stream.
+//! the target stream.s
+//!
 //! For example, you could use one of:
 //! - [anstyle](https://docs.rs/anstyle) is a minimal, runtime string styling API and is re-exported as [`style`]
 //! - [owo-colors](https://docs.rs/owo-colors) is a feature rich runtime string styling API
 //! - [color-print](https://docs.rs/color-print) for feature-rich compile-time styling API
+//!
 //! See also [`Formatter::default_level_style`]
 //!
 //! ```

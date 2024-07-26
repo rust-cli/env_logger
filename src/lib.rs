@@ -201,9 +201,9 @@
 //! environment variable. It accepts the following values:
 //!
 //! * `auto` (default) will attempt to print style characters, but don't force the issue.
-//! If the console isn't available on Windows, or if TERM=dumb, for example, then don't print colors.
+//!   If the console isn't available on Windows, or if TERM=dumb, for example, then don't print colors.
 //! * `always` will always print style characters even if they aren't supported by the terminal.
-//! This includes emitting ANSI colors on Windows if the console API is unavailable.
+//!   This includes emitting ANSI colors on Windows if the console API is unavailable.
 //! * `never` will never print style characters.
 //!
 //! ## Tweaking the default format
