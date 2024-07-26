@@ -4,9 +4,9 @@ version = "0.1.2"
 description = """
 Filter log events using environment variables
 """
-repository = "https://github.com/rust-cli/env_logger"
 categories = ["development-tools::debugging"]
 keywords = ["logging", "log", "logger"]
+repository.workspace = true
 license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
