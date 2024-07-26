@@ -32,18 +32,18 @@
 //!
 //! Assumes the binary is `main`:
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=error ./main
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
 //! ```
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=info ./main
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
 //! [2017-11-09T02:12:24Z INFO main] the answer was: 12
 //! ```
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=debug ./main
 //! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
@@ -52,7 +52,7 @@
 //!
 //! You can also set the log level on a per module basis:
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=main=info ./main
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
 //! [2017-11-09T02:12:24Z INFO main] the answer was: 12
@@ -60,7 +60,7 @@
 //!
 //! And enable all logging:
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=main ./main
 //! [2017-11-09T02:12:24Z DEBUG main] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR main] this is printed by default
@@ -70,7 +70,7 @@
 //! If the binary name contains hyphens, you will need to replace
 //! them with underscores:
 //!
-//! ```{.bash}
+//! ```console
 //! $ RUST_LOG=my_app ./my-app
 //! [2017-11-09T02:12:24Z DEBUG my_app] this is a debug message
 //! [2017-11-09T02:12:24Z ERROR my_app] this is printed by default
@@ -88,14 +88,14 @@
 //! **By default all logging is disabled except for the `error` level**
 //!
 //! The **`RUST_LOG`** environment variable controls logging with the syntax:
-//! ```text
+//! ```console
 //! RUST_LOG=[target][=][level][,...]
 //! ```
 //! Or in other words, its a comma-separated list of directives.
 //! Directives can filter by **target**, by **level**, or both (using `=`).
 //!
 //! For example,
-//! ```text
+//! ```console
 //! RUST_LOG=data=debug,hardware=debug
 //! ```
 //!
