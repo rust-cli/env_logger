@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/env_logger.svg)](https://crates.io/crates/env_logger)
 [![Documentation](https://docs.rs/env_logger/badge.svg)](https://docs.rs/env_logger)
 
-Implements a logger that can be configured via environment variables.
+The `env_logger` crate allows you to easily configure and control the logging output of your Rust applications that can be configured using environment variables. This is useful for debugging and monitoring your application without changing the code
 
 ## Usage
 
@@ -14,6 +14,7 @@ Implements a logger that can be configured via environment variables.
 ### In executables
 
 It must be added along with `log` to the project dependencies:
+`log` provides the macros (info!, warn!, error!, debug!, trace!) for logging, while env_logger handles the configuration and filtering of these logs based on environment variables.
 
 ```console
 $ cargo add log env_logger
@@ -40,7 +41,7 @@ environment variable that corresponds with the log messages you want to show.
 $ RUST_LOG=info ./main
 [2018-11-03T06:09:06Z INFO  default] starting up
 ```
-
+This command sets the logging level to info, meaning that only logs of level info and above (i.e., warn and error) will be displayed.
 The letter case is not significant for the logging level names; e.g., `debug`,
 `DEBUG`, and `dEbuG` all represent the same logging level. Therefore, the
 previous example could also have been written this way, specifying the log
@@ -56,14 +57,32 @@ case names. Where our docs do use other forms, they do so in the context of
 specific examples, so you won't be surprised if you see similar usage in the
 wild.
 
+#### Module Specific Logging
+To set different log levels for different parts of the application.
+```bash
+$ RUST_LOG=app_module=debug,other_module=warn ./my_app
+```
+`app_module` will include debug information, while `other_module` will only show warnings and errors. This is useful for focusing on specific areas of your application during development.
+
+### Logging Levels
 The log levels that may be specified correspond to the [`log::Level`][level-enum]
 enum from the `log` crate. They are:
 
-   * `error`
-   * `warn`
-   * `info`
-   * `debug`
-   * `trace`
+   * `error` - Logs critical issues that need immediate attention. Use this level for unrecoverable errors or situations where the application must shut down.
+   * `warn` - Indicates potential problems that are not immediately harmful but could lead to issues later. Use this level for deprecated features, configuration issues, or performance concerns.
+   * `info` - For general operational messages that confirm the application is working as expected. This level is useful for high-level application flow information.
+   * `debug` - Provides detailed information that is useful during development and debugging. This level is more verbose than info and can include internal state, variable values, and flow through functions.
+   * `trace` - The most granular logging level, used for tracing the program's execution in fine detail. Ideal for troubleshooting complex issues but usually too verbose for general use.
+
+| Level   | Description                                                            |
+|---------|------------------------------------------------------------------------|
+| `error` | Critical issues needing immediate attention                            |
+| `warn`  | Potential problems, not immediately harmful                            |
+| `info`  | General information about the application's flow                       |
+| `debug` | Detailed information for debugging purposes                            |
+| `trace` | Most detailed level, useful for tracing program execution in depth     |
+
+
 
 [level-enum]:  https://docs.rs/log/latest/log/enum.Level.html  "log::Level (docs.rs)"
 
