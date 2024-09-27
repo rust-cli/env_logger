@@ -71,7 +71,7 @@ impl BufferWriter {
                 #[cfg(feature = "color")]
                 let buf = &buf;
                 let buf = String::from_utf8_lossy(buf);
-                print!("{}", buf);
+                print!("{buf}");
             }
             WritableTarget::WriteStderr => {
                 let stream = io::stderr();
@@ -87,7 +87,7 @@ impl BufferWriter {
                 #[cfg(feature = "color")]
                 let buf = &buf;
                 let buf = String::from_utf8_lossy(buf);
-                eprint!("{}", buf);
+                eprint!("{buf}");
             }
             WritableTarget::Pipe(pipe) => {
                 #[cfg(feature = "color")]

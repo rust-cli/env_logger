@@ -27,7 +27,7 @@ fn main() {
         .env("YOU_ARE_TESTING_NOW", "1")
         .env("RUST_LOG", "debug")
         .output()
-        .unwrap_or_else(|e| panic!("Unable to start child process: {}", e));
+        .unwrap_or_else(|e| panic!("Unable to start child process: {e}"));
     if out.status.success() {
         return;
     }

@@ -62,7 +62,7 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
     let mods = parts.next();
     let filter = parts.next();
     if parts.next().is_some() {
-        result.add_error(format!("invalid logging spec '{}' (too many '/'s)", spec));
+        result.add_error(format!("invalid logging spec '{spec}' (too many '/'s)"));
         return result;
     }
     if let Some(m) = mods {
@@ -86,12 +86,12 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
                         if let Ok(num) = part1.parse() {
                             (num, Some(part0))
                         } else {
-                            result.add_error(format!("invalid logging spec '{}'", part1));
+                            result.add_error(format!("invalid logging spec '{part1}'"));
                             continue;
                         }
                     }
                     _ => {
-                        result.add_error(format!("invalid logging spec '{}'", s));
+                        result.add_error(format!("invalid logging spec '{s}'"));
                         continue;
                     }
                 };
@@ -106,7 +106,7 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
     if let Some(filter) = filter {
         match FilterOp::new(filter) {
             Ok(filter_op) => result.set_filter(filter_op),
-            Err(err) => result.add_error(format!("invalid regex filter - {}", err)),
+            Err(err) => result.add_error(format!("invalid regex filter - {err}")),
         }
     }
 
