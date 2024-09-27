@@ -26,7 +26,7 @@ fn run_child(rust_log: String) -> bool {
         .env("LOG_REGEXP_TEST", "1")
         .env("RUST_LOG", rust_log)
         .output()
-        .unwrap_or_else(|e| panic!("Unable to start child process: {}", e));
+        .unwrap_or_else(|e| panic!("Unable to start child process: {e}"));
     str::from_utf8(out.stderr.as_ref())
         .unwrap()
         .contains("XYZ Message")
@@ -34,16 +34,13 @@ fn run_child(rust_log: String) -> bool {
 
 fn assert_message_printed(rust_log: &str) {
     if !run_child(rust_log.to_owned()) {
-        panic!("RUST_LOG={} should allow the test log message", rust_log)
+        panic!("RUST_LOG={rust_log} should allow the test log message")
     }
 }
 
 fn assert_message_not_printed(rust_log: &str) {
     if run_child(rust_log.to_owned()) {
-        panic!(
-            "RUST_LOG={} should not allow the test log message",
-            rust_log
-        )
+        panic!("RUST_LOG={rust_log} should not allow the test log message")
     }
 }
 
