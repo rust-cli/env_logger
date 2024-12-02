@@ -317,7 +317,7 @@ struct DefaultFormat<'a> {
     kv_format: &'a KvFormatFn,
 }
 
-impl<'a> DefaultFormat<'a> {
+impl DefaultFormat<'_> {
     fn write(mut self, record: &Record<'_>) -> io::Result<()> {
         self.write_timestamp()?;
         self.write_level(record)?;
@@ -454,7 +454,7 @@ impl<'a> DefaultFormat<'a> {
                     indent_count: usize,
                 }
 
-                impl<'a, 'b> Write for IndentWrapper<'a, 'b> {
+                impl Write for IndentWrapper<'_, '_> {
                     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
                         let mut first = true;
                         for chunk in buf.split(|&x| x == b'\n') {

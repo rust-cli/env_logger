@@ -806,7 +806,7 @@ where
     }
 }
 
-impl<'a> Default for Env<'a> {
+impl Default for Env<'_> {
     fn default() -> Self {
         Env {
             filter: Var::new(DEFAULT_FILTER_ENV),

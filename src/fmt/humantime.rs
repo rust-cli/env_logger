@@ -85,7 +85,7 @@ impl fmt::Debug for Timestamp {
         /// A `Debug` wrapper for `Timestamp` that uses the `Display` implementation.
         struct TimestampValue<'a>(&'a Timestamp);
 
-        impl<'a> fmt::Debug for TimestampValue<'a> {
+        impl fmt::Debug for TimestampValue<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt::Display::fmt(&self.0, f)
             }
