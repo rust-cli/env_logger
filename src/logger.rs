@@ -276,7 +276,7 @@ impl Builder {
         self
     }
 
-    /// Wheter or not to write the source path and line number
+    /// Whether or not to write the source path and line number
     ///
     /// Equivalent to calling both `format_file` and `format_line_number`
     /// with `true`
