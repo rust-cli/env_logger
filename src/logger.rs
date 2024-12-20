@@ -262,6 +262,29 @@ impl Builder {
         self
     }
 
+    /// Whether or not to write the source file path in the default format.
+    pub fn format_file(&mut self, write: bool) -> &mut Self {
+        self.format.format_file = write;
+        self
+    }
+
+    /// Whether or not to write the source line number path in the default format.
+    ///
+    /// Only has effect if `format_file` is also enabled
+    pub fn format_line_number(&mut self, write: bool) -> &mut Self {
+        self.format.format_line_number = write;
+        self
+    }
+
+    /// Whether or not to write the source path and line number
+    ///
+    /// Equivalent to calling both `format_file` and `format_line_number`
+    /// with `true`
+    pub fn format_source_path(&mut self, write: bool) -> &mut Self {
+        self.format_file(write).format_line_number(write);
+        self
+    }
+
     /// Whether or not to write the module path in the default format.
     pub fn format_module_path(&mut self, write: bool) -> &mut Self {
         self.format.format_module_path = write;
