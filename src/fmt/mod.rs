@@ -833,8 +833,8 @@ mod tests {
                 module_path: false,
                 target: false,
                 level: true,
-                source_file: true,
-                source_line_number: true,
+                source_file: false,
+                source_line_number: false,
                 kv_format: &default_kv_format,
                 written_header_value: false,
                 indent: None,
@@ -878,6 +878,9 @@ mod tests {
             },
         );
 
-        assert_eq!("[INFO  test::path target] log\nmessage a=1 b=2\n", written);
+        assert_eq!(
+            "[INFO  test::path test.rs:42 target] log\nmessage a=1 b=2\n",
+            written
+        );
     }
 }
