@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.11.6] - 2024-12-20
+
 ### Features
 
 - Opt-in file and line rendering
@@ -123,7 +125,8 @@ To open room for changing dependencies:
 - Added a method to print the module instead of the target
 
 <!-- next-url -->
-[Unreleased]: https://github.com/rust-cli/env_logger/compare/v0.11.5...HEAD
+[Unreleased]: https://github.com/rust-cli/env_logger/compare/v0.11.6...HEAD
+[0.11.6]: https://github.com/rust-cli/env_logger/compare/v0.11.5...v0.11.6
 [0.11.5]: https://github.com/rust-cli/env_logger/compare/v0.11.4...v0.11.5
 [0.11.4]: https://github.com/rust-cli/env_logger/compare/v0.11.3...v0.11.4
 [0.11.3]: https://github.com/rust-cli/env_logger/compare/v0.11.2...v0.11.3
