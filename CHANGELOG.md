@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Opt-in file and line rendering
+
 ## [0.11.5] - 2024-07-25
 
 ## [0.11.4] - 2024-07-23
