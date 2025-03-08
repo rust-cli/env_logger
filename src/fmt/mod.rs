@@ -67,7 +67,7 @@ use std::{fmt, io, mem};
 use log::Level;
 use log::Record;
 
-#[cfg(feature = "humantime")]
+#[cfg(any(feature = "cyborgtime", feature = "humantime"))]
 mod humantime;
 #[cfg(feature = "unstable-kv")]
 mod kv;
@@ -76,7 +76,7 @@ pub(crate) mod writer;
 #[cfg(feature = "color")]
 pub use anstyle as style;
 
-#[cfg(feature = "humantime")]
+#[cfg(any(feature = "cyborgtime", feature = "humantime"))]
 pub use self::humantime::Timestamp;
 #[cfg(feature = "unstable-kv")]
 pub use self::kv::*;
@@ -396,7 +396,7 @@ impl DefaultFormat<'_> {
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
-        #[cfg(feature = "humantime")]
+        #[cfg(any(feature = "cyborgtime", feature = "humantime"))]
         {
             use self::TimestampPrecision::{Micros, Millis, Nanos, Seconds};
             let ts = match self.timestamp {
@@ -409,7 +409,7 @@ impl DefaultFormat<'_> {
 
             self.write_header_value(ts)
         }
-        #[cfg(not(feature = "humantime"))]
+        #[cfg(not(any(feature = "cyborgtime", feature = "humantime")))]
         {
             // Trick the compiler to think we have used self.timestamp
             // Workaround for "field is never used: `timestamp`" compiler nag.

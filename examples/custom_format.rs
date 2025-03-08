@@ -17,7 +17,7 @@ $ export MY_LOG_STYLE=never
 If you want to control the logging output completely, see the `custom_logger` example.
 */
 
-#[cfg(all(feature = "color", feature = "humantime"))]
+#[cfg(all(feature = "color", any(feature = "cyborgtime", feature = "humantime")))]
 fn main() {
     use env_logger::{Builder, Env};
 
@@ -49,5 +49,5 @@ fn main() {
     log::info!("a log from `MyLogger`");
 }
 
-#[cfg(not(all(feature = "color", feature = "humantime")))]
+#[cfg(not(all(feature = "color", any(feature = "cyborgtime", feature = "humantime"))))]
 fn main() {}

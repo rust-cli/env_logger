@@ -117,17 +117,18 @@ pre-release-replacements = [
 ]
 
 [features]
-default = ["auto-color", "humantime", "regex"]
+default = ["auto-color", "cyborgtime", "regex"]
 color = ["dep:anstream", "dep:anstyle"]
 auto-color = ["color", "anstream/auto"]
-humantime = ["dep:humantime"]
+cyborgtime = ["dep:cyborgtime"]
+humantime = ["dep:cyborgtime"]
 regex = ["env_filter/regex"]
 unstable-kv = ["log/kv"]
 
 [dependencies]
 log = { version = "0.4.21", features = ["std"] }
 env_filter = { version = "0.1.0", path = "crates/env_filter", default-features = false }
-humantime = { version = "2.0.0", optional = true }
+cyborgtime = { version = "2.0.0", optional = true }
 anstream = { version = "0.6.11", default-features = false, features = ["wincon"], optional = true }
 anstyle = { version = "1.0.6", optional = true }
 
