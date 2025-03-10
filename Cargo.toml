@@ -90,7 +90,7 @@ zero_sized_map_values = "warn"
 
 [package]
 name = "env_logger"
-version = "0.11.6"
+version = "0.11.7"
 description = """
 A logging implementation for `log` which is configured via an environment
 variable.

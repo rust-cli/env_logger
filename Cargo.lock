@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.11.6"
+version = "0.11.7"
 dependencies = [
  "anstream",
  "anstyle",
