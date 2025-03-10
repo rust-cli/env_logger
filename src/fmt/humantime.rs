@@ -1,10 +1,6 @@
 use std::fmt;
 use std::time::SystemTime;
 
-use humantime::{
-    format_rfc3339_micros, format_rfc3339_millis, format_rfc3339_nanos, format_rfc3339_seconds,
-};
-
 use crate::fmt::{Formatter, TimestampPrecision};
 
 impl Formatter {
@@ -99,14 +95,16 @@ impl fmt::Debug for Timestamp {
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let formatter = match self.precision {
-            TimestampPrecision::Seconds => format_rfc3339_seconds,
-            TimestampPrecision::Millis => format_rfc3339_millis,
-            TimestampPrecision::Micros => format_rfc3339_micros,
-            TimestampPrecision::Nanos => format_rfc3339_nanos,
+        let Ok(ts) = jiff::Timestamp::try_from(self.time) else {
+            return Err(fmt::Error);
         };
 
-        formatter(self.time).fmt(f)
+        match self.precision {
+            TimestampPrecision::Seconds => write!(f, "{ts:.0}"),
+            TimestampPrecision::Millis => write!(f, "{ts:.3}"),
+            TimestampPrecision::Micros => write!(f, "{ts:.6}"),
+            TimestampPrecision::Nanos => write!(f, "{ts:.9}"),
+        }
     }
 }
 
