@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Internal
+
+- Replaced `humantime` with `jiff`
+
 ## [0.11.6] - 2024-12-20
 
 ### Features
