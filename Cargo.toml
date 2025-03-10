@@ -120,14 +120,14 @@ pre-release-replacements = [
 default = ["auto-color", "humantime", "regex"]
 color = ["dep:anstream", "dep:anstyle"]
 auto-color = ["color", "anstream/auto"]
-humantime = ["dep:humantime"]
+humantime = ["dep:jiff"]
 regex = ["env_filter/regex"]
 unstable-kv = ["log/kv"]
 
 [dependencies]
 log = { version = "0.4.21", features = ["std"] }
 env_filter = { version = "0.1.0", path = "crates/env_filter", default-features = false }
-humantime = { version = "2.0.0", optional = true }
+jiff = { version = "0.2.3", default-features = false, features = ["std"], optional = true }
 anstream = { version = "0.6.11", default-features = false, features = ["wincon"], optional = true }
 anstyle = { version = "1.0.6", optional = true }
 
