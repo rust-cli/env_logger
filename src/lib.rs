@@ -256,6 +256,22 @@
 //! env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 //! ```
 //!
+//! ## Using the Logger as a Timer
+//!
+//! `env_logger` can also be used as a timer by moving an initial
+//! timestamp into the closure defining a custom format:
+//!
+//! ```
+//! use std::io::Write;
+//!
+//! let start = std::time::Instant::now();
+//! env_logger::builder()
+//!     .format(move |buf, record| {
+//!         writeln!(buf, "{} ({}): {}", record.level(), start.elapsed().as_millis(), record.args())
+//!     })
+//!     .init();
+//! ```
+//!
 //! [gh-repo-examples]: https://github.com/rust-cli/env_logger/tree/main/examples
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log
