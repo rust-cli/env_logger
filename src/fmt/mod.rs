@@ -63,7 +63,6 @@ use std::io::prelude::Write;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
-#[cfg(feature = "color")]
 use log::Level;
 use log::Record;
 
@@ -218,6 +217,7 @@ pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
 #[derive(Default)]
 pub(crate) struct Builder {
     pub(crate) format: ConfigurableFormat,
+    pub(crate) format_syslog: bool,
     built: bool,
 }
 
@@ -238,7 +238,25 @@ impl Builder {
             },
         );
 
-        Box::new(built.format)
+        if !built.format_syslog {
+            Box::new(built.format)
+        } else {
+            Box::new(|buf: &mut Formatter, record: &Record<'_>| {
+                writeln!(
+                    buf,
+                    "<{}>{}: {}",
+                    match record.level() {
+                        Level::Error => 3,
+                        Level::Warn => 4,
+                        Level::Info => 6,
+                        Level::Debug => 7,
+                        Level::Trace => 7,
+                    },
+                    record.target(),
+                    record.args()
+                )
+            })
+        }
     }
 }
 
