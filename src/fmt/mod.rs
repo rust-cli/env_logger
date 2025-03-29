@@ -63,7 +63,6 @@ use std::io::prelude::Write;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
-#[cfg(feature = "color")]
 use log::Level;
 use log::Record;
 
@@ -274,6 +273,28 @@ impl<T: Display> Display for StyledValue<T> {
 
 #[cfg(not(feature = "color"))]
 type StyledValue<T> = T;
+
+struct SyslogFormatter;
+
+impl SyslogFormatter {
+    pub(crate) fn build(&mut self) -> FormatFn {
+        Box::new(|buf: &mut Formatter, record: &Record<'_>| {
+            writeln!(
+                buf,
+                "<{}>{}: {}",
+                match record.level() {
+                    Level::Error => 3,
+                    Level::Warn => 4,
+                    Level::Info => 6,
+                    Level::Debug => 7,
+                    Level::Trace => 7,
+                },
+                record.target(),
+                record.args()
+            )
+        })
+    }
+}
 
 /// A [custom format][crate::Builder::format] with settings for which fields to show
 pub struct ConfigurableFormat {
