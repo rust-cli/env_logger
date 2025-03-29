@@ -40,6 +40,7 @@ pub struct Builder {
     writer: writer::Builder,
     format: fmt::ConfigurableFormat,
     built: bool,
+    is_syslog: bool,
 }
 
 impl Builder {
@@ -158,6 +159,10 @@ impl Builder {
 
         if let Some(s) = env.get_write_style() {
             self.parse_write_style(&s);
+        }
+
+        if env.is_daemon() {
+            self.is_syslog = true;
         }
 
         self
@@ -288,6 +293,13 @@ impl Builder {
     /// Configures the end of line suffix.
     pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
         self.format.suffix(suffix);
+        self
+    }
+
+    /// If set to true, format log messages in a Syslog-adapted format.
+    /// Overrides the auto-detected value.
+    pub fn format_syslog(&mut self, syslog: bool) -> &mut Self {
+        self.is_syslog = syslog;
         self
     }
 
@@ -480,7 +492,11 @@ impl Builder {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: Box::new(std::mem::take(&mut self.format)),
+            format: if self.is_syslog {
+                fmt::SyslogFormatter.build()
+            } else {
+                self.format.build()
+            },
         }
     }
 
@@ -821,6 +837,11 @@ impl<'a> Env<'a> {
 
     fn get_write_style(&self) -> Option<String> {
         self.write_style.get()
+    }
+
+    fn is_daemon(&self) -> bool {
+        //TODO: support more logging systems
+        Var::new("JOURNAL_STREAM").get().is_some()
     }
 }
 
