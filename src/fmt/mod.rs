@@ -212,6 +212,7 @@ pub(crate) struct Builder {
     pub(crate) format_suffix: &'static str,
     pub(crate) format_file: bool,
     pub(crate) format_line_number: bool,
+    pub(crate) format_syslog: bool,
     #[cfg(feature = "unstable-kv")]
     pub(crate) kv_format: Option<Box<KvFormatFn>>,
     built: bool,
@@ -237,24 +238,42 @@ impl Builder {
         if let Some(fmt) = built.custom_format {
             fmt
         } else {
-            Box::new(move |buf, record| {
-                let fmt = DefaultFormat {
-                    timestamp: built.format_timestamp,
-                    module_path: built.format_module_path,
-                    target: built.format_target,
-                    level: built.format_level,
-                    written_header_value: false,
-                    indent: built.format_indent,
-                    suffix: built.format_suffix,
-                    source_file: built.format_file,
-                    source_line_number: built.format_line_number,
-                    #[cfg(feature = "unstable-kv")]
-                    kv_format: built.kv_format.as_deref().unwrap_or(&default_kv_format),
-                    buf,
-                };
+            if !built.format_syslog {
+                Box::new(move |buf, record| {
+                    let fmt = DefaultFormat {
+                        timestamp: built.format_timestamp,
+                        module_path: built.format_module_path,
+                        target: built.format_target,
+                        level: built.format_level,
+                        written_header_value: false,
+                        indent: built.format_indent,
+                        suffix: built.format_suffix,
+                        source_file: built.format_file,
+                        source_line_number: built.format_line_number,
+                        #[cfg(feature = "unstable-kv")]
+                        kv_format: built.kv_format.as_deref().unwrap_or(&default_kv_format),
+                        buf,
+                    };
 
-                fmt.write(record)
-            })
+                    fmt.write(record)
+                })
+            } else {
+                Box::new(|buf, record| {
+                    writeln!(
+                        buf,
+                        "<{}>{}: {}",
+                        match record.level() {
+                            Level::Error => 3,
+                            Level::Warn => 4,
+                            Level::Info => 6,
+                            Level::Debug => 7,
+                            Level::Trace => 7,
+                        },
+                        record.target(),
+                        record.args()
+                    )
+                })
+            }
         }
     }
 }
@@ -271,6 +290,7 @@ impl Default for Builder {
             format_indent: Some(4),
             custom_format: None,
             format_suffix: "\n",
+            format_syslog: false,
             #[cfg(feature = "unstable-kv")]
             kv_format: None,
             built: false,
