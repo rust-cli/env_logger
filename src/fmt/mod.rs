@@ -202,18 +202,10 @@ impl fmt::Debug for Formatter {
 
 pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send>;
 
+#[derive(Default)]
 pub(crate) struct Builder {
-    pub(crate) format_timestamp: Option<TimestampPrecision>,
-    pub(crate) format_module_path: bool,
-    pub(crate) format_target: bool,
-    pub(crate) format_level: bool,
-    pub(crate) format_indent: Option<usize>,
+    pub(crate) default_format: DefaultFormat,
     pub(crate) custom_format: Option<FormatFn>,
-    pub(crate) format_suffix: &'static str,
-    pub(crate) format_file: bool,
-    pub(crate) format_line_number: bool,
-    #[cfg(feature = "kv")]
-    pub(crate) kv_format: Option<Box<KvFormatFn>>,
     built: bool,
 }
 
@@ -239,41 +231,26 @@ impl Builder {
         } else {
             Box::new(move |buf, record| {
                 let fmt = DefaultFormatWriter {
-                    timestamp: built.format_timestamp,
-                    module_path: built.format_module_path,
-                    target: built.format_target,
-                    level: built.format_level,
+                    timestamp: built.default_format.timestamp,
+                    module_path: built.default_format.module_path,
+                    target: built.default_format.target,
+                    level: built.default_format.level,
                     written_header_value: false,
-                    indent: built.format_indent,
-                    suffix: built.format_suffix,
-                    source_file: built.format_file,
-                    source_line_number: built.format_line_number,
+                    indent: built.default_format.indent,
+                    suffix: built.default_format.suffix,
+                    source_file: built.default_format.source_file,
+                    source_line_number: built.default_format.source_line_number,
                     #[cfg(feature = "kv")]
-                    kv_format: built.kv_format.as_deref().unwrap_or(&default_kv_format),
+                    kv_format: built
+                        .default_format
+                        .kv_format
+                        .as_deref()
+                        .unwrap_or(&default_kv_format),
                     buf,
                 };
 
                 fmt.write(record)
             })
-        }
-    }
-}
-
-impl Default for Builder {
-    fn default() -> Self {
-        Builder {
-            format_timestamp: Some(Default::default()),
-            format_module_path: false,
-            format_target: true,
-            format_level: true,
-            format_file: false,
-            format_line_number: false,
-            format_indent: Some(4),
-            custom_format: None,
-            format_suffix: "\n",
-            #[cfg(feature = "kv")]
-            kv_format: None,
-            built: false,
         }
     }
 }
@@ -306,6 +283,39 @@ impl<T: Display> Display for StyledValue<T> {
 
 #[cfg(not(feature = "color"))]
 type StyledValue<T> = T;
+
+/// The default format.
+///
+/// This format needs to work with any combination of crate features.
+pub(crate) struct DefaultFormat {
+    pub(crate) timestamp: Option<TimestampPrecision>,
+    pub(crate) module_path: bool,
+    pub(crate) target: bool,
+    pub(crate) level: bool,
+    pub(crate) source_file: bool,
+    pub(crate) source_line_number: bool,
+    pub(crate) indent: Option<usize>,
+    pub(crate) suffix: &'static str,
+    #[cfg(feature = "kv")]
+    pub(crate) kv_format: Option<Box<KvFormatFn>>,
+}
+
+impl Default for DefaultFormat {
+    fn default() -> Self {
+        Self {
+            timestamp: Some(Default::default()),
+            module_path: false,
+            target: true,
+            level: true,
+            source_file: false,
+            source_line_number: false,
+            indent: Some(4),
+            suffix: "\n",
+            #[cfg(feature = "kv")]
+            kv_format: None,
+        }
+    }
+}
 
 /// The default format.
 ///
