@@ -293,6 +293,19 @@ pub(crate) struct ConfigurableFormat {
 }
 
 impl ConfigurableFormat {
+    /// Format the [`Record`] as configured for outputting
+    pub(crate) fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()> {
+        let fmt = ConfigurableFormatWriter {
+            format: self,
+            buf: formatter,
+            written_header_value: false,
+        };
+
+        fmt.write(record)
+    }
+}
+
+impl ConfigurableFormat {
     /// Whether or not to write the level in the default format.
     pub(crate) fn level(&mut self, write: bool) -> &mut Self {
         self.level = write;
@@ -383,13 +396,7 @@ impl Default for ConfigurableFormat {
 
 impl RecordFormat for ConfigurableFormat {
     fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()> {
-        let fmt = ConfigurableFormatWriter {
-            format: self,
-            buf: formatter,
-            written_header_value: false,
-        };
-
-        fmt.write(record)
+        self.format(formatter, record)
     }
 }
 
