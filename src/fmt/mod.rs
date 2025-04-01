@@ -217,7 +217,7 @@ pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
 
 #[derive(Default)]
 pub(crate) struct Builder {
-    pub(crate) default_format: DefaultFormat,
+    pub(crate) default_format: ConfigurableFormat,
     pub(crate) custom_format: Option<FormatFn>,
     built: bool,
 }
@@ -279,7 +279,7 @@ type StyledValue<T> = T;
 /// The default format.
 ///
 /// This format needs to work with any combination of crate features.
-pub(crate) struct DefaultFormat {
+pub(crate) struct ConfigurableFormat {
     pub(crate) timestamp: Option<TimestampPrecision>,
     pub(crate) module_path: bool,
     pub(crate) target: bool,
@@ -292,7 +292,7 @@ pub(crate) struct DefaultFormat {
     pub(crate) kv_format: Option<Box<KvFormatFn>>,
 }
 
-impl DefaultFormat {
+impl ConfigurableFormat {
     /// Whether or not to write the level in the default format.
     pub(crate) fn level(&mut self, write: bool) -> &mut Self {
         self.level = write;
@@ -364,7 +364,7 @@ impl DefaultFormat {
     }
 }
 
-impl Default for DefaultFormat {
+impl Default for ConfigurableFormat {
     fn default() -> Self {
         Self {
             timestamp: Some(Default::default()),
@@ -381,9 +381,9 @@ impl Default for DefaultFormat {
     }
 }
 
-impl RecordFormat for DefaultFormat {
+impl RecordFormat for ConfigurableFormat {
     fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()> {
-        let fmt = DefaultFormatWriter {
+        let fmt = ConfigurableFormatWriter {
             format: self,
             buf: formatter,
             written_header_value: false,
@@ -396,13 +396,13 @@ impl RecordFormat for DefaultFormat {
 /// The default format.
 ///
 /// This format needs to work with any combination of crate features.
-struct DefaultFormatWriter<'a> {
-    format: &'a DefaultFormat,
+struct ConfigurableFormatWriter<'a> {
+    format: &'a ConfigurableFormat,
     buf: &'a mut Formatter,
     written_header_value: bool,
 }
 
-impl DefaultFormatWriter<'_> {
+impl ConfigurableFormatWriter<'_> {
     fn write(mut self, record: &Record<'_>) -> io::Result<()> {
         self.write_timestamp()?;
         self.write_level(record)?;
@@ -556,7 +556,7 @@ impl DefaultFormatWriter<'_> {
                 // Create a wrapper around the buffer only if we have to actually indent the message
 
                 struct IndentWrapper<'a, 'b> {
-                    fmt: &'a mut DefaultFormatWriter<'b>,
+                    fmt: &'a mut ConfigurableFormatWriter<'b>,
                     indent_count: usize,
                 }
 
@@ -616,7 +616,7 @@ mod tests {
 
     use log::{Level, Record};
 
-    fn write_record(record: Record<'_>, fmt: DefaultFormatWriter<'_>) -> String {
+    fn write_record(record: Record<'_>, fmt: ConfigurableFormatWriter<'_>) -> String {
         let buf = fmt.buf.buf.clone();
 
         fmt.write(&record).expect("failed to write record");
@@ -625,7 +625,7 @@ mod tests {
         String::from_utf8(buf.as_bytes().to_vec()).expect("failed to read record")
     }
 
-    fn write_target(target: &str, fmt: DefaultFormatWriter<'_>) -> String {
+    fn write_target(target: &str, fmt: ConfigurableFormatWriter<'_>) -> String {
         write_record(
             Record::builder()
                 .args(format_args!("log\nmessage"))
@@ -639,7 +639,7 @@ mod tests {
         )
     }
 
-    fn write(fmt: DefaultFormatWriter<'_>) -> String {
+    fn write(fmt: ConfigurableFormatWriter<'_>) -> String {
         write_target("", fmt)
     }
 
@@ -655,8 +655,8 @@ mod tests {
     fn format_with_header() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: true,
                 target: false,
@@ -679,8 +679,8 @@ mod tests {
     fn format_no_header() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: false,
                 target: false,
@@ -703,8 +703,8 @@ mod tests {
     fn format_indent_spaces() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: true,
                 target: false,
@@ -727,8 +727,8 @@ mod tests {
     fn format_indent_zero_spaces() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: true,
                 target: false,
@@ -751,8 +751,8 @@ mod tests {
     fn format_indent_spaces_no_header() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: false,
                 target: false,
@@ -775,8 +775,8 @@ mod tests {
     fn format_suffix() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: false,
                 target: false,
@@ -799,8 +799,8 @@ mod tests {
     fn format_suffix_with_indent() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: false,
                 target: false,
@@ -825,8 +825,8 @@ mod tests {
 
         let written = write_target(
             "target",
-            DefaultFormatWriter {
-                format: &DefaultFormat {
+            ConfigurableFormatWriter {
+                format: &ConfigurableFormat {
                     timestamp: None,
                     module_path: true,
                     target: true,
@@ -850,8 +850,8 @@ mod tests {
     fn format_empty_target() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: true,
                 target: true,
@@ -876,8 +876,8 @@ mod tests {
 
         let written = write_target(
             "target",
-            DefaultFormatWriter {
-                format: &DefaultFormat {
+            ConfigurableFormatWriter {
+                format: &ConfigurableFormat {
                     timestamp: None,
                     module_path: true,
                     target: false,
@@ -901,8 +901,8 @@ mod tests {
     fn format_with_source_file_and_line_number() {
         let mut f = formatter();
 
-        let written = write(DefaultFormatWriter {
-            format: &DefaultFormat {
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
                 timestamp: None,
                 module_path: false,
                 target: false,
@@ -935,8 +935,8 @@ mod tests {
 
         let written = write_record(
             record,
-            DefaultFormatWriter {
-                format: &DefaultFormat {
+            ConfigurableFormatWriter {
+                format: &ConfigurableFormat {
                     timestamp: None,
                     module_path: false,
                     target: false,
@@ -972,8 +972,8 @@ mod tests {
 
         let written = write_record(
             record,
-            DefaultFormatWriter {
-                format: &DefaultFormat {
+            ConfigurableFormatWriter {
+                format: &ConfigurableFormat {
                     timestamp: None,
                     module_path: true,
                     target: true,
