@@ -1,4 +1,6 @@
-use std::{borrow::Cow, cell::RefCell, env, io};
+#[cfg(feature = "kv")]
+use std::io;
+use std::{borrow::Cow, cell::RefCell, env};
 
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 
@@ -242,7 +244,7 @@ impl Builder {
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
     pub fn format<F>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
+        F: fmt::RecordFormat + Sync + Send + 'static,
     {
         self.format.custom_format = Some(Box::new(format));
         self
@@ -258,13 +260,13 @@ impl Builder {
 
     /// Whether or not to write the level in the default format.
     pub fn format_level(&mut self, write: bool) -> &mut Self {
-        self.format.format_level = write;
+        self.format.default_format.level(write);
         self
     }
 
     /// Whether or not to write the source file path in the default format.
     pub fn format_file(&mut self, write: bool) -> &mut Self {
-        self.format.format_file = write;
+        self.format.default_format.file(write);
         self
     }
 
@@ -272,7 +274,7 @@ impl Builder {
     ///
     /// Only has effect if `format_file` is also enabled
     pub fn format_line_number(&mut self, write: bool) -> &mut Self {
-        self.format.format_line_number = write;
+        self.format.default_format.line_number(write);
         self
     }
 
@@ -287,26 +289,26 @@ impl Builder {
 
     /// Whether or not to write the module path in the default format.
     pub fn format_module_path(&mut self, write: bool) -> &mut Self {
-        self.format.format_module_path = write;
+        self.format.default_format.module_path(write);
         self
     }
 
     /// Whether or not to write the target in the default format.
     pub fn format_target(&mut self, write: bool) -> &mut Self {
-        self.format.format_target = write;
+        self.format.default_format.target(write);
         self
     }
 
     /// Configures the amount of spaces to use to indent multiline log records.
     /// A value of `None` disables any kind of indentation.
     pub fn format_indent(&mut self, indent: Option<usize>) -> &mut Self {
-        self.format.format_indent = indent;
+        self.format.default_format.indent(indent);
         self
     }
 
     /// Configures if timestamp should be included and in what precision.
     pub fn format_timestamp(&mut self, timestamp: Option<fmt::TimestampPrecision>) -> &mut Self {
-        self.format.format_timestamp = timestamp;
+        self.format.default_format.timestamp(timestamp);
         self
     }
 
@@ -332,7 +334,7 @@ impl Builder {
 
     /// Configures the end of line suffix.
     pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
-        self.format.format_suffix = suffix;
+        self.format.default_format.suffix(suffix);
         self
     }
 
@@ -351,7 +353,7 @@ impl Builder {
     where
         F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send + 'static,
     {
-        self.format.kv_format = Some(Box::new(format));
+        self.format.default_format.key_values(format);
         self
     }
 
@@ -664,8 +666,10 @@ impl Log for Logger {
             }
 
             let print = |formatter: &mut Formatter, record: &Record<'_>| {
-                let _ =
-                    (self.format)(formatter, record).and_then(|_| formatter.print(&self.writer));
+                let _ = self
+                    .format
+                    .format(formatter, record)
+                    .and_then(|_| formatter.print(&self.writer));
 
                 // Always clear the buffer afterwards
                 formatter.clear();
