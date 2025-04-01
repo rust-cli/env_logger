@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.11.8] - 2025-04-01
+
 ### Compatibility
 
 - *(kv)* Deprecate the `unstable-kv` feature which may be removed in a future patch release
@@ -140,7 +142,8 @@ To open room for changing dependencies:
 - Added a method to print the module instead of the target
 
 <!-- next-url -->
-[Unreleased]: https://github.com/rust-cli/env_logger/compare/v0.11.7...HEAD
+[Unreleased]: https://github.com/rust-cli/env_logger/compare/v0.11.8...HEAD
+[0.11.8]: https://github.com/rust-cli/env_logger/compare/v0.11.7...v0.11.8
 [0.11.7]: https://github.com/rust-cli/env_logger/compare/v0.11.6...v0.11.7
 [0.11.6]: https://github.com/rust-cli/env_logger/compare/v0.11.5...v0.11.6
 [0.11.5]: https://github.com/rust-cli/env_logger/compare/v0.11.4...v0.11.5
