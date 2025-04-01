@@ -200,7 +200,20 @@ impl fmt::Debug for Formatter {
     }
 }
 
-pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send>;
+pub(crate) trait RecordFormat {
+    fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()>;
+}
+
+impl<F> RecordFormat for F
+where
+    F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()>,
+{
+    fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()> {
+        (self)(formatter, record)
+    }
+}
+
+pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
 
 #[derive(Default)]
 pub(crate) struct Builder {
@@ -229,15 +242,7 @@ impl Builder {
         if let Some(fmt) = built.custom_format {
             fmt
         } else {
-            Box::new(move |buf, record| {
-                let fmt = DefaultFormatWriter {
-                    format: &built.default_format,
-                    buf,
-                    written_header_value: false,
-                };
-
-                fmt.write(record)
-            })
+            Box::new(built.default_format)
         }
     }
 }
@@ -301,6 +306,18 @@ impl Default for DefaultFormat {
             #[cfg(feature = "kv")]
             kv_format: None,
         }
+    }
+}
+
+impl RecordFormat for DefaultFormat {
+    fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()> {
+        let fmt = DefaultFormatWriter {
+            format: self,
+            buf: formatter,
+            written_header_value: false,
+        };
+
+        fmt.write(record)
     }
 }
 

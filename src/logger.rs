@@ -664,8 +664,10 @@ impl Log for Logger {
             }
 
             let print = |formatter: &mut Formatter, record: &Record<'_>| {
-                let _ =
-                    (self.format)(formatter, record).and_then(|_| formatter.print(&self.writer));
+                let _ = self
+                    .format
+                    .format(formatter, record)
+                    .and_then(|_| formatter.print(&self.writer));
 
                 // Always clear the buffer afterwards
                 formatter.clear();
