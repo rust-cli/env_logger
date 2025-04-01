@@ -292,6 +292,78 @@ pub(crate) struct DefaultFormat {
     pub(crate) kv_format: Option<Box<KvFormatFn>>,
 }
 
+impl DefaultFormat {
+    /// Whether or not to write the level in the default format.
+    pub(crate) fn level(&mut self, write: bool) -> &mut Self {
+        self.level = write;
+        self
+    }
+
+    /// Whether or not to write the source file path in the default format.
+    pub(crate) fn file(&mut self, write: bool) -> &mut Self {
+        self.source_file = write;
+        self
+    }
+
+    /// Whether or not to write the source line number path in the default format.
+    ///
+    /// Only has effect if `format_file` is also enabled
+    pub(crate) fn line_number(&mut self, write: bool) -> &mut Self {
+        self.source_line_number = write;
+        self
+    }
+
+    /// Whether or not to write the module path in the default format.
+    pub(crate) fn module_path(&mut self, write: bool) -> &mut Self {
+        self.module_path = write;
+        self
+    }
+
+    /// Whether or not to write the target in the default format.
+    pub(crate) fn target(&mut self, write: bool) -> &mut Self {
+        self.target = write;
+        self
+    }
+
+    /// Configures the amount of spaces to use to indent multiline log records.
+    /// A value of `None` disables any kind of indentation.
+    pub(crate) fn indent(&mut self, indent: Option<usize>) -> &mut Self {
+        self.indent = indent;
+        self
+    }
+
+    /// Configures if timestamp should be included and in what precision.
+    pub(crate) fn timestamp(&mut self, timestamp: Option<TimestampPrecision>) -> &mut Self {
+        self.timestamp = timestamp;
+        self
+    }
+
+    /// Configures the end of line suffix.
+    pub(crate) fn suffix(&mut self, suffix: &'static str) -> &mut Self {
+        self.suffix = suffix;
+        self
+    }
+
+    /// Set the format for structured key/value pairs in the log record
+    ///
+    /// With the default format, this function is called for each record and should format
+    /// the structured key-value pairs as returned by [`log::Record::key_values`].
+    ///
+    /// The format function is expected to output the string directly to the `Formatter` so that
+    /// implementations can use the [`std::fmt`] macros, similar to the main format function.
+    ///
+    /// The default format uses a space to separate each key-value pair, with an "=" between
+    /// the key and value.
+    #[cfg(feature = "kv")]
+    pub(crate) fn key_values<F>(&mut self, format: F) -> &mut Self
+    where
+        F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send + 'static,
+    {
+        self.kv_format = Some(Box::new(format));
+        self
+    }
+}
+
 impl Default for DefaultFormat {
     fn default() -> Self {
         Self {
