@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Compatibility
+
+- *(kv)* Deprecate the `unstable-kv` feature which may be removed in a future patch release
+
+### Features
+
+- *(kv)* Stabilize key-value support behind the `kv` feature
+- Expose `ConfigurableFormat` to build custom [`Builder::format`]s that leverage this
+
 ## [0.11.7] - 2025-03-10
 
 ### Internal
