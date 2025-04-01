@@ -122,7 +122,9 @@ color = ["dep:anstream", "dep:anstyle"]
 auto-color = ["color", "anstream/auto"]
 humantime = ["dep:jiff"]
 regex = ["env_filter/regex"]
-unstable-kv = ["log/kv"]
+kv = ["log/kv"]
+# Deprecated
+unstable-kv = ["kv"]
 
 [dependencies]
 log = { version = "0.4.21", features = ["std"] }

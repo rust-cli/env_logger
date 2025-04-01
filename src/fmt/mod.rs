@@ -34,7 +34,7 @@
 //!
 //! # Key Value arguments
 //!
-//! If the `unstable-kv` feature is enabled, then the default format will include key values from
+//! If the `kv` feature is enabled, then the default format will include key values from
 //! the log by default, but this can be disabled by calling [`Builder::format_key_values`]
 //! with [`hidden_kv_format`] as the format function.
 //!
@@ -42,7 +42,7 @@
 //! function that is called by the default format with [`Builder::format_key_values`].
 //!
 //! ```
-//! # #[cfg(feature= "unstable-kv")]
+//! # #[cfg(feature= "kv")]
 //! # {
 //! use log::info;
 //! env_logger::init();
@@ -69,7 +69,7 @@ use log::Record;
 
 #[cfg(feature = "humantime")]
 mod humantime;
-#[cfg(feature = "unstable-kv")]
+#[cfg(feature = "kv")]
 mod kv;
 pub(crate) mod writer;
 
@@ -78,7 +78,7 @@ pub use anstyle as style;
 
 #[cfg(feature = "humantime")]
 pub use self::humantime::Timestamp;
-#[cfg(feature = "unstable-kv")]
+#[cfg(feature = "kv")]
 pub use self::kv::*;
 pub use self::writer::Target;
 pub use self::writer::WriteStyle;
@@ -212,7 +212,7 @@ pub(crate) struct Builder {
     pub(crate) format_suffix: &'static str,
     pub(crate) format_file: bool,
     pub(crate) format_line_number: bool,
-    #[cfg(feature = "unstable-kv")]
+    #[cfg(feature = "kv")]
     pub(crate) kv_format: Option<Box<KvFormatFn>>,
     built: bool,
 }
@@ -248,7 +248,7 @@ impl Builder {
                     suffix: built.format_suffix,
                     source_file: built.format_file,
                     source_line_number: built.format_line_number,
-                    #[cfg(feature = "unstable-kv")]
+                    #[cfg(feature = "kv")]
                     kv_format: built.kv_format.as_deref().unwrap_or(&default_kv_format),
                     buf,
                 };
@@ -271,7 +271,7 @@ impl Default for Builder {
             format_indent: Some(4),
             custom_format: None,
             format_suffix: "\n",
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: None,
             built: false,
         }
@@ -321,7 +321,7 @@ struct DefaultFormat<'a> {
     indent: Option<usize>,
     buf: &'a mut Formatter,
     suffix: &'a str,
-    #[cfg(feature = "unstable-kv")]
+    #[cfg(feature = "kv")]
     kv_format: &'a KvFormatFn,
 }
 
@@ -335,7 +335,7 @@ impl DefaultFormat<'_> {
         self.finish_header()?;
 
         self.write_args(record)?;
-        #[cfg(feature = "unstable-kv")]
+        #[cfg(feature = "kv")]
         self.write_kv(record)?;
         write!(self.buf, "{}", self.suffix)
     }
@@ -518,7 +518,7 @@ impl DefaultFormat<'_> {
         }
     }
 
-    #[cfg(feature = "unstable-kv")]
+    #[cfg(feature = "kv")]
     fn write_kv(&mut self, record: &Record<'_>) -> io::Result<()> {
         let format = self.kv_format;
         format(self.buf, record.key_values())
@@ -577,7 +577,7 @@ mod tests {
             level: true,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
@@ -599,7 +599,7 @@ mod tests {
             level: false,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
@@ -621,7 +621,7 @@ mod tests {
             level: true,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
@@ -643,7 +643,7 @@ mod tests {
             level: true,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(0),
@@ -665,7 +665,7 @@ mod tests {
             level: false,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
@@ -687,7 +687,7 @@ mod tests {
             level: false,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
@@ -709,7 +709,7 @@ mod tests {
             level: false,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: Some(4),
@@ -733,7 +733,7 @@ mod tests {
                 level: true,
                 source_file: false,
                 source_line_number: false,
-                #[cfg(feature = "unstable-kv")]
+                #[cfg(feature = "kv")]
                 kv_format: &hidden_kv_format,
                 written_header_value: false,
                 indent: None,
@@ -756,7 +756,7 @@ mod tests {
             level: true,
             source_file: false,
             source_line_number: false,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
@@ -780,7 +780,7 @@ mod tests {
                 level: true,
                 source_file: false,
                 source_line_number: false,
-                #[cfg(feature = "unstable-kv")]
+                #[cfg(feature = "kv")]
                 kv_format: &hidden_kv_format,
                 written_header_value: false,
                 indent: None,
@@ -803,7 +803,7 @@ mod tests {
             level: true,
             source_file: true,
             source_line_number: true,
-            #[cfg(feature = "unstable-kv")]
+            #[cfg(feature = "kv")]
             kv_format: &hidden_kv_format,
             written_header_value: false,
             indent: None,
@@ -814,7 +814,7 @@ mod tests {
         assert_eq!("[INFO  test.rs:144] log\nmessage\n", written);
     }
 
-    #[cfg(feature = "unstable-kv")]
+    #[cfg(feature = "kv")]
     #[test]
     fn format_kv_default() {
         let kvs = &[("a", 1u32), ("b", 2u32)][..];
@@ -846,7 +846,7 @@ mod tests {
         assert_eq!("[INFO ] log message a=1 b=2\n", written);
     }
 
-    #[cfg(feature = "unstable-kv")]
+    #[cfg(feature = "kv")]
     #[test]
     fn format_kv_default_full() {
         let kvs = &[("a", 1u32), ("b", 2u32)][..];
