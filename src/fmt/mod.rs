@@ -274,7 +274,7 @@ impl<T: Display> Display for StyledValue<T> {
 #[cfg(not(feature = "color"))]
 type StyledValue<T> = T;
 
-struct SyslogFormatter;
+pub(crate) struct SyslogFormatter;
 
 impl SyslogFormatter {
     pub(crate) fn build(&mut self) -> FormatFn {
