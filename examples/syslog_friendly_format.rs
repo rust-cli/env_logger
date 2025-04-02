@@ -1,28 +1,12 @@
-use std::io::Write;
-
-use env_logger::fmt::Formatter;
-use log::Record;
-
 fn main() {
-    match std::env::var("RUST_LOG_STYLE") {
-        Ok(s) if s == "SYSTEMD" => env_logger::Logger::from_default_env()
-            .with_format(Box::new(|buf: &mut Formatter, record: &Record<'_>| {
-                writeln!(
-                    buf,
-                    "<{}>{}: {}",
-                    match record.level() {
-                        log::Level::Error => 3,
-                        log::Level::Warn => 4,
-                        log::Level::Info => 6,
-                        log::Level::Debug => 7,
-                        log::Level::Trace => 7,
-                    },
-                    record.target(),
-                    record.args()
-                )
-            }))
-            .try_init()
-            .unwrap(),
-        _ => env_logger::init(),
-    };
+    env_logger::builder()
+        .parse_default_env()
+        // While journald-logging is auto-detected, but you can manually override it.
+        // Especially useful if you are using a different logging system.
+        .format_syslog(true)
+        .init();
+
+    // Prints in a human readable way if run interactively,
+    // and in a syslog-compatible way if run as a systemd service.
+    log::info!("we are logging");
 }
