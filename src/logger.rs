@@ -27,9 +27,9 @@ pub const DEFAULT_WRITE_STYLE_ENV: &str = "RUST_LOG_STYLE";
 /// let mut builder = Builder::from_default_env();
 ///
 /// builder
-///     .format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
 ///     .filter(None, LevelFilter::Info)
-///     .init();
+///     .build_with_format_fn(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
+///     .try_init().unwrap();
 ///
 /// error!("error message");
 /// info!("info message");
