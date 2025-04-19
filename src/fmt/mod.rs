@@ -7,7 +7,7 @@
 //!
 //! # Formatting log records
 //!
-//! The format used to print log records can be customised using the [`Builder::format`]
+//! The format used to print log records can be customised using the [`Builder::build_with_format_fn`]
 //! method.
 //!
 //! Terminal styling is done through ANSI escape codes and will be adapted to the capabilities of
@@ -25,7 +25,7 @@
 //!
 //! let mut builder = env_logger::Builder::new();
 //!
-//! builder.format(|buf, record| {
+//! builder.build_with_format_fn(|buf, record| {
 //!     writeln!(buf, "{}: {}",
 //!         record.level(),
 //!         record.args())
@@ -124,7 +124,7 @@ impl Default for TimestampPrecision {
 ///
 /// let mut builder = env_logger::Builder::new();
 ///
-/// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
+/// builder.build_with_format_fn(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
 /// ```
 ///
 /// [`Write`]: std::io::Write
