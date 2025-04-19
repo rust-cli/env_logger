@@ -61,7 +61,7 @@ use std::cell::RefCell;
 use std::fmt::Display;
 use std::io::prelude::Write;
 use std::rc::Rc;
-use std::{fmt, io, mem};
+use std::{fmt, io};
 
 #[cfg(feature = "color")]
 use log::Level;
@@ -213,38 +213,6 @@ where
 }
 
 pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
-
-#[derive(Default)]
-pub(crate) struct Builder {
-    pub(crate) default_format: ConfigurableFormat,
-    pub(crate) custom_format: Option<FormatFn>,
-    built: bool,
-}
-
-impl Builder {
-    /// Convert the format into a callable function.
-    ///
-    /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
-    /// If the `custom_format` is `None`, then a default format is returned.
-    /// Any `default_format` switches set to `false` won't be written by the format.
-    pub(crate) fn build(&mut self) -> FormatFn {
-        assert!(!self.built, "attempt to re-use consumed builder");
-
-        let built = mem::replace(
-            self,
-            Builder {
-                built: true,
-                ..Default::default()
-            },
-        );
-
-        if let Some(fmt) = built.custom_format {
-            fmt
-        } else {
-            Box::new(built.default_format)
-        }
-    }
-}
 
 #[cfg(feature = "color")]
 type SubtleStyle = StyledValue<&'static str>;

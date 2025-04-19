@@ -38,7 +38,7 @@ pub const DEFAULT_WRITE_STYLE_ENV: &str = "RUST_LOG_STYLE";
 pub struct Builder {
     filter: env_filter::Builder,
     writer: writer::Builder,
-    format: fmt::Builder,
+    format: fmt::ConfigurableFormat,
     built: bool,
 }
 
@@ -211,7 +211,8 @@ impl Builder {
         self.parse_env(Env::default())
     }
 
-    /// Sets the format function for formatting the log output.
+    /// Sets the format function for formatting the log output,
+    /// and builds the Logger.
     ///
     /// This function is called on each record logged and should format the
     /// log record and output it to the given [`Formatter`].
@@ -234,37 +235,35 @@ impl Builder {
     ///
     /// let mut builder = Builder::new();
     ///
-    /// builder.format(|buf, record| writeln!(buf, "{}", record.args()));
+    /// builder.build_with_format_fn(|buf, record| writeln!(buf, "{}", record.args()));
     /// ```
     ///
     /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn format<F>(&mut self, format: F) -> &mut Self
+    pub fn build_with_format_fn<F>(&mut self, format: F) -> Logger
     where
         F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
     {
-        self.format.custom_format = Some(Box::new(format));
-        self
-    }
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
 
-    /// Use the default format.
-    ///
-    /// This method will clear any custom format set on the builder.
-    pub fn default_format(&mut self) -> &mut Self {
-        self.format = Default::default();
-        self
+        Logger {
+            writer: self.writer.build(),
+            filter: self.filter.build(),
+            format: Box::new(format),
+        }
     }
 
     /// Whether or not to write the level in the default format.
     pub fn format_level(&mut self, write: bool) -> &mut Self {
-        self.format.default_format.level(write);
+        self.format.level(write);
         self
     }
 
     /// Whether or not to write the source file path in the default format.
     pub fn format_file(&mut self, write: bool) -> &mut Self {
-        self.format.default_format.file(write);
+        self.format.file(write);
         self
     }
 
@@ -272,7 +271,7 @@ impl Builder {
     ///
     /// Only has effect if `format_file` is also enabled
     pub fn format_line_number(&mut self, write: bool) -> &mut Self {
-        self.format.default_format.line_number(write);
+        self.format.line_number(write);
         self
     }
 
@@ -287,26 +286,26 @@ impl Builder {
 
     /// Whether or not to write the module path in the default format.
     pub fn format_module_path(&mut self, write: bool) -> &mut Self {
-        self.format.default_format.module_path(write);
+        self.format.module_path(write);
         self
     }
 
     /// Whether or not to write the target in the default format.
     pub fn format_target(&mut self, write: bool) -> &mut Self {
-        self.format.default_format.target(write);
+        self.format.target(write);
         self
     }
 
     /// Configures the amount of spaces to use to indent multiline log records.
     /// A value of `None` disables any kind of indentation.
     pub fn format_indent(&mut self, indent: Option<usize>) -> &mut Self {
-        self.format.default_format.indent(indent);
+        self.format.indent(indent);
         self
     }
 
     /// Configures if timestamp should be included and in what precision.
     pub fn format_timestamp(&mut self, timestamp: Option<fmt::TimestampPrecision>) -> &mut Self {
-        self.format.default_format.timestamp(timestamp);
+        self.format.timestamp(timestamp);
         self
     }
 
@@ -332,7 +331,7 @@ impl Builder {
 
     /// Configures the end of line suffix.
     pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
-        self.format.default_format.suffix(suffix);
+        self.format.suffix(suffix);
         self
     }
 
@@ -351,7 +350,7 @@ impl Builder {
     where
         F: Fn(&mut Formatter, &dyn log::kv::Source) -> io::Result<()> + Sync + Send + 'static,
     {
-        self.format.default_format.key_values(format);
+        self.format.key_values(format);
         self
     }
 
@@ -497,15 +496,7 @@ impl Builder {
     /// library has already initialized a global logger.
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
         let logger = self.build();
-
-        let max_level = logger.filter();
-        let r = log::set_boxed_logger(Box::new(logger));
-
-        if r.is_ok() {
-            log::set_max_level(max_level);
-        }
-
-        r
+        logger.try_init()
     }
 
     /// Initializes the global logger with the built env logger.
@@ -533,7 +524,7 @@ impl Builder {
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: self.format.build(),
+            format: Box::new(std::mem::take(&mut self.format)),
         }
     }
 }
@@ -640,6 +631,17 @@ impl Logger {
     /// Checks if this record matches the configured filter.
     pub fn matches(&self, record: &Record<'_>) -> bool {
         self.filter.matches(record)
+    }
+
+    pub fn try_init(self) -> Result<(), SetLoggerError> {
+        let max_level = self.filter();
+        let r = log::set_boxed_logger(Box::new(self));
+
+        if r.is_ok() {
+            log::set_max_level(max_level);
+        }
+
+        r
     }
 }
 
