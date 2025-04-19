@@ -1,9 +1,12 @@
 use std::io::Write;
 
+use env_logger::fmt::Formatter;
+use log::Record;
+
 fn main() {
     match std::env::var("RUST_LOG_STYLE") {
-        Ok(s) if s == "SYSTEMD" => env_logger::builder()
-            .format(|buf, record| {
+        Ok(s) if s == "SYSTEMD" => env_logger::Logger::from_default_env()
+            .with_format(Box::new(|buf: &mut Formatter, record: &Record<'_>| {
                 writeln!(
                     buf,
                     "<{}>{}: {}",
@@ -17,8 +20,9 @@ fn main() {
                     record.target(),
                     record.args()
                 )
-            })
-            .init(),
+            }))
+            .try_init()
+            .unwrap(),
         _ => env_logger::init(),
     };
 }

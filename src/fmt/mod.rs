@@ -7,7 +7,7 @@
 //!
 //! # Formatting log records
 //!
-//! The format used to print log records can be customised using the [`Builder::format`]
+//! The format used to print log records can be customised using the [`crate::Logger::with_format`]
 //! method.
 //!
 //! Terminal styling is done through ANSI escape codes and will be adapted to the capabilities of
@@ -53,7 +53,7 @@
 //!
 //! See <https://docs.rs/log/latest/log/#structured-logging>.
 //!
-//! [`Builder::format`]: crate::Builder::format
+//! [`Logger::with_fmt`]: crate::Logger::with_fmt
 //! [`Write`]: std::io::Write
 //! [`Builder::format_key_values`]: crate::Builder::format_key_values
 
@@ -200,7 +200,7 @@ impl fmt::Debug for Formatter {
     }
 }
 
-pub(crate) trait RecordFormat {
+pub trait RecordFormat {
     fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()>;
 }
 
@@ -217,8 +217,7 @@ pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
 
 #[derive(Default)]
 pub(crate) struct Builder {
-    pub(crate) default_format: ConfigurableFormat,
-    pub(crate) custom_format: Option<FormatFn>,
+    pub(crate) format: ConfigurableFormat,
     built: bool,
 }
 
@@ -239,11 +238,7 @@ impl Builder {
             },
         );
 
-        if let Some(fmt) = built.custom_format {
-            fmt
-        } else {
-            Box::new(built.default_format)
-        }
+        Box::new(built.format)
     }
 }
 
@@ -276,7 +271,7 @@ impl<T: Display> Display for StyledValue<T> {
 #[cfg(not(feature = "color"))]
 type StyledValue<T> = T;
 
-/// A [custom format][crate::Builder::format] with settings for which fields to show
+/// A custom format with settings for which fields to show
 pub struct ConfigurableFormat {
     // This format needs to work with any combination of crate features.
     pub(crate) timestamp: Option<TimestampPrecision>,
