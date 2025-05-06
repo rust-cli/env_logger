@@ -265,6 +265,7 @@
 #![warn(clippy::print_stdout)]
 
 mod logger;
+mod writer;
 
 pub mod fmt;
 

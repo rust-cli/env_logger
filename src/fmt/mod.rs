@@ -71,7 +71,6 @@ use log::Record;
 mod humantime;
 #[cfg(feature = "kv")]
 mod kv;
-pub(crate) mod writer;
 
 #[cfg(feature = "color")]
 pub use anstyle as style;
@@ -80,10 +79,10 @@ pub use anstyle as style;
 pub use self::humantime::Timestamp;
 #[cfg(feature = "kv")]
 pub use self::kv::*;
-pub use self::writer::Target;
-pub use self::writer::WriteStyle;
+pub use crate::writer::Target;
+pub use crate::writer::WriteStyle;
 
-use self::writer::{Buffer, Writer};
+use crate::writer::{Buffer, Writer};
 
 /// Formatting precision of timestamps.
 ///
@@ -650,7 +649,7 @@ mod tests {
     }
 
     fn formatter() -> Formatter {
-        let writer = writer::Builder::new()
+        let writer = crate::writer::Builder::new()
             .write_style(WriteStyle::Never)
             .build();
 

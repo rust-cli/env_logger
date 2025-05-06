@@ -1,10 +1,11 @@
 mod buffer;
 mod target;
 
-use self::buffer::BufferWriter;
 use std::{io, mem, sync::Mutex};
 
-pub(crate) use self::buffer::Buffer;
+use buffer::BufferWriter;
+
+pub(crate) use buffer::Buffer;
 
 pub use target::Target;
 

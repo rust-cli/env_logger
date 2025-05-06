@@ -3,8 +3,8 @@ use std::{borrow::Cow, cell::RefCell, env, io};
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 
 use crate::fmt;
-use crate::fmt::writer::{self, Writer};
 use crate::fmt::{FormatFn, Formatter};
+use crate::writer::{self, Writer};
 
 /// The default name for the environment variable to read filters from.
 pub const DEFAULT_FILTER_ENV: &str = "RUST_LOG";
