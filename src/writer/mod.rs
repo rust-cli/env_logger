@@ -1,10 +1,11 @@
 mod buffer;
 mod target;
 
-use self::buffer::BufferWriter;
 use std::{io, mem, sync::Mutex};
 
-pub(super) use self::buffer::Buffer;
+use buffer::BufferWriter;
+
+pub(crate) use buffer::Buffer;
 
 pub use target::Target;
 
@@ -55,11 +56,11 @@ impl Writer {
         self.inner.write_style()
     }
 
-    pub(super) fn buffer(&self) -> Buffer {
+    pub(crate) fn buffer(&self) -> Buffer {
         self.inner.buffer()
     }
 
-    pub(super) fn print(&self, buf: &Buffer) -> io::Result<()> {
+    pub(crate) fn print(&self, buf: &Buffer) -> io::Result<()> {
         self.inner.print(buf)
     }
 }

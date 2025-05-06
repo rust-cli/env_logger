@@ -1,15 +1,15 @@
 use std::{io, sync::Mutex};
 
-use crate::fmt::writer::WriteStyle;
+use crate::writer::WriteStyle;
 
 #[derive(Debug)]
-pub(in crate::fmt::writer) struct BufferWriter {
+pub(crate) struct BufferWriter {
     target: WritableTarget,
     write_style: WriteStyle,
 }
 
 impl BufferWriter {
-    pub(in crate::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
+    pub(crate) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             target: if is_test {
                 WritableTarget::PrintStderr
@@ -20,7 +20,7 @@ impl BufferWriter {
         }
     }
 
-    pub(in crate::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
+    pub(crate) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             target: if is_test {
                 WritableTarget::PrintStdout
@@ -31,7 +31,7 @@ impl BufferWriter {
         }
     }
 
-    pub(in crate::fmt::writer) fn pipe(
+    pub(crate) fn pipe(
         pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
         write_style: WriteStyle,
     ) -> Self {
@@ -41,15 +41,15 @@ impl BufferWriter {
         }
     }
 
-    pub(in crate::fmt::writer) fn write_style(&self) -> WriteStyle {
+    pub(crate) fn write_style(&self) -> WriteStyle {
         self.write_style
     }
 
-    pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
+    pub(crate) fn buffer(&self) -> Buffer {
         Buffer(Vec::new())
     }
 
-    pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
+    pub(crate) fn print(&self, buf: &Buffer) -> io::Result<()> {
         #![allow(clippy::print_stdout)] // enabled for tests only
         #![allow(clippy::print_stderr)] // enabled for tests only
 
@@ -115,23 +115,23 @@ fn adapt(buf: &[u8], write_style: WriteStyle) -> io::Result<Vec<u8>> {
     Ok(adapted)
 }
 
-pub(in crate::fmt) struct Buffer(Vec<u8>);
+pub(crate) struct Buffer(Vec<u8>);
 
 impl Buffer {
-    pub(in crate::fmt) fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         self.0.clear();
     }
 
-    pub(in crate::fmt) fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+    pub(crate) fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.extend(buf);
         Ok(buf.len())
     }
 
-    pub(in crate::fmt) fn flush(&mut self) -> io::Result<()> {
+    pub(crate) fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
 
-    pub(in crate::fmt) fn as_bytes(&self) -> &[u8] {
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 }
@@ -145,7 +145,7 @@ impl std::fmt::Debug for Buffer {
 /// Log target, either `stdout`, `stderr` or a custom pipe.
 ///
 /// Same as `Target`, except the pipe is wrapped in a mutex for interior mutability.
-pub(super) enum WritableTarget {
+pub(crate) enum WritableTarget {
     /// Logs will be written to standard output.
     WriteStdout,
     /// Logs will be printed to standard output.
