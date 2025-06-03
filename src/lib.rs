@@ -271,3 +271,7 @@ pub mod fmt;
 
 pub use self::fmt::{Target, TimestampPrecision, WriteStyle};
 pub use self::logger::*;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;

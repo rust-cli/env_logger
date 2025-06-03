@@ -14,13 +14,12 @@ include = [
   "Cargo.lock",
   "LICENSE*",
   "README.md",
-  "benches/**/*",
-  "examples/**/*",
-  "tests/**/*",
+  "examples/**/*"
 ]
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }
+unnameable_types = "warn"
 unreachable_pub = "warn"
 unsafe_op_in_unsafe_fn = "warn"
 unused_lifetimes = "warn"
@@ -63,7 +62,7 @@ lossy_float_literal = "warn"
 macro_use_imports = "warn"
 mem_forget = "warn"
 mutex_integer = "warn"
-needless_continue = "warn"
+needless_continue = "allow"
 needless_for_each = "warn"
 negative_feature_names = "warn"
 path_buf_push_overwrite = "warn"
@@ -87,6 +86,15 @@ uninlined_format_args = "warn"
 verbose_file_reads = "warn"
 wildcard_imports = "warn"
 zero_sized_map_values = "warn"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+# debug = "line-tables-only"  # requires Cargo 1.71
 
 [package]
 name = "env_logger"
