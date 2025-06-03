@@ -57,3 +57,7 @@ pub use filter::Builder;
 pub use filter::Filter;
 pub use filtered_log::FilteredLog;
 pub use parser::ParseError;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
