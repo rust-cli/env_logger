@@ -26,8 +26,9 @@ pre-release-replacements = [
 ]
 
 [features]
-default = ["regex"]
-regex = ["dep:regex"]
+default = ["std", "regex"]
+regex = ["std", "dep:regex"]
+std = []
 
 [dependencies]
 log = { version = "0.4.8", features = ["std"] }
