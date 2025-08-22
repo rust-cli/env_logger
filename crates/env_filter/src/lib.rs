@@ -37,10 +37,13 @@
 //! let logger = env_filter::FilteredLog::new(PrintLogger, builder.build());
 //! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(missing_docs)]
 #![warn(clippy::print_stderr)]
 #![warn(clippy::print_stdout)]
+
+extern crate alloc;
 
 mod directive;
 mod filter;
