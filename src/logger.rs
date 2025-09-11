@@ -211,50 +211,6 @@ impl Builder {
         self.parse_env(Env::default())
     }
 
-    /// Sets the format function for formatting the log output,
-    /// and builds the Logger.
-    ///
-    /// This function is called on each record logged and should format the
-    /// log record and output it to the given [`Formatter`].
-    ///
-    /// The format function is expected to output the string directly to the
-    /// `Formatter` so that implementations can use the [`std::fmt`] macros
-    /// to format and output without intermediate heap allocations. The default
-    /// `env_logger` formatter takes advantage of this.
-    ///
-    /// When the `color` feature is enabled, styling via ANSI escape codes is supported and the
-    /// output will automatically respect [`Builder::write_style`].
-    ///
-    /// # Examples
-    ///
-    /// Use a custom format to write only the log message:
-    ///
-    /// ```
-    /// use std::io::Write;
-    /// use env_logger::Builder;
-    ///
-    /// let mut builder = Builder::new();
-    ///
-    /// builder.build_with_format_fn(|buf, record| writeln!(buf, "{}", record.args()));
-    /// ```
-    ///
-    /// [`Formatter`]: fmt/struct.Formatter.html
-    /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
-    /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn build_with_format_fn<F>(&mut self, format: F) -> Logger
-    where
-        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
-    {
-        assert!(!self.built, "attempt to re-use consumed builder");
-        self.built = true;
-
-        Logger {
-            writer: self.writer.build(),
-            filter: self.filter.build(),
-            format: Box::new(format),
-        }
-    }
-
     /// Whether or not to write the level in the default format.
     pub fn format_level(&mut self, write: bool) -> &mut Self {
         self.format.level(write);
@@ -525,6 +481,50 @@ impl Builder {
             writer: self.writer.build(),
             filter: self.filter.build(),
             format: Box::new(std::mem::take(&mut self.format)),
+        }
+    }
+
+    /// Sets the format function for formatting the log output,
+    /// and builds the Logger.
+    ///
+    /// This function is called on each record logged and should format the
+    /// log record and output it to the given [`Formatter`].
+    ///
+    /// The format function is expected to output the string directly to the
+    /// `Formatter` so that implementations can use the [`std::fmt`] macros
+    /// to format and output without intermediate heap allocations. The default
+    /// `env_logger` formatter takes advantage of this.
+    ///
+    /// When the `color` feature is enabled, styling via ANSI escape codes is supported and the
+    /// output will automatically respect [`Builder::write_style`].
+    ///
+    /// # Examples
+    ///
+    /// Use a custom format to write only the log message:
+    ///
+    /// ```
+    /// use std::io::Write;
+    /// use env_logger::Builder;
+    ///
+    /// let mut builder = Builder::new();
+    ///
+    /// builder.build_with_format_fn(|buf, record| writeln!(buf, "{}", record.args()));
+    /// ```
+    ///
+    /// [`Formatter`]: fmt/struct.Formatter.html
+    /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
+    /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
+    pub fn build_with_format_fn<F>(&mut self, format: F) -> Logger
+    where
+        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
+    {
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
+
+        Logger {
+            writer: self.writer.build(),
+            filter: self.filter.build(),
+            format: Box::new(format),
         }
     }
 }
