@@ -1,12 +1,14 @@
-use std::env;
-use std::fmt;
-use std::mem;
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+
+use core::fmt;
+use core::mem;
 
 use log::{LevelFilter, Metadata, Record};
 
 use crate::enabled;
 use crate::parse_spec;
-use crate::parser::ParseResult;
 use crate::Directive;
 use crate::FilterOp;
 use crate::ParseError;
@@ -48,10 +50,11 @@ impl Builder {
     }
 
     /// Initializes the filter builder from an environment.
+    #[cfg(feature = "std")]
     pub fn from_env(env: &str) -> Builder {
         let mut builder = Builder::new();
 
-        if let Ok(s) = env::var(env) {
+        if let Ok(s) = std::env::var(env) {
             builder.parse(&s);
         }
 
@@ -98,10 +101,11 @@ impl Builder {
     /// See the [Enabling Logging] section for more details.
     ///
     /// [Enabling Logging]: ../index.html#enabling-logging
+    #[cfg(feature = "std")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
         #![allow(clippy::print_stderr)] // compatibility
 
-        let ParseResult {
+        let crate::parser::ParseResult {
             directives,
             filter,
             errors,

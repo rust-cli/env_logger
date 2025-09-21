@@ -1,6 +1,10 @@
+use alloc::borrow::ToOwned;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+
+use core::fmt::{Display, Formatter};
 use log::LevelFilter;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 
 use crate::Directive;
 use crate::FilterOp;
@@ -46,12 +50,16 @@ pub struct ParseError {
 }
 
 impl Display for ParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "error parsing logger filter: {}", self.details)
     }
 }
 
-impl Error for ParseError {}
+#[cfg(feature = "std")]
+impl std::error::Error for ParseError {}
+
+#[cfg(not(feature = "std"))]
+impl core::error::Error for ParseError {}
 
 /// Parse a logging specification string (e.g: `crate1,crate2::mod3,crate3::x=error/foo`)
 /// and return a vector with log directives.
