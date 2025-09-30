@@ -278,7 +278,7 @@
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(clippy::print_stderr)]
 #![warn(clippy::print_stdout)]
 
