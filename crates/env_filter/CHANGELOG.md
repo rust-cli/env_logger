@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+- Add `impl Clone for Filter`
+
 ## [0.1.3] - 2024-12-20
 
 ## [0.1.2] - 2024-07-25
