@@ -215,7 +215,7 @@
 //!
 //! Mitigations include:
 //! - Setting `RUST_LOG_STYLE=never` to have all ANSI escape codes stripped
-//! - In the application, calling [`Builder::write_style(Never)`] to have all ANSI escape codes stripped
+//! - In the application, calling [`Builder::write_style(Never)`][Builder::write_style] to have all ANSI escape codes stripped
 //! - In the application, [stripping ANSI escape codes](https://docs.rs/anstream/latest/anstream/adapter/fn.strip_str.html)
 //!   from user inputs
 //!
