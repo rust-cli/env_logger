@@ -172,7 +172,7 @@
 //! Records logged during `cargo test` will not be captured by the test harness by default.
 //! The [`Builder::is_test`] method can be used in unit tests to ensure logs will be captured:
 //!
-//! ```
+//! ```test_harness
 //! #[cfg(test)]
 //! mod tests {
 //!     use log::info;
@@ -281,6 +281,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(clippy::print_stderr)]
 #![warn(clippy::print_stdout)]
+#![allow(clippy::test_attr_in_doctest)]
 
 mod logger;
 mod writer;
