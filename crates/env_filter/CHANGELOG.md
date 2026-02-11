@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [1.0.0] - 2026-02-11
+
 ## [0.1.4] - 2025-10-13
 
 - Add `impl Clone for Filter`
@@ -24,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.1.0] - 2024-01-19
 
 <!-- next-url -->
-[Unreleased]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.4...HEAD
+[Unreleased]: https://github.com/rust-cli/env_logger/compare/env_filter-v1.0.0...HEAD
+[1.0.0]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.4...env_filter-v1.0.0
 [0.1.4]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.3...env_filter-v0.1.4
 [0.1.3]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.2...env_filter-v0.1.3
 [0.1.2]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.1...env_filter-v0.1.2
