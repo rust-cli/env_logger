@@ -97,7 +97,7 @@ lto = true
 
 [package]
 name = "env_logger"
-version = "0.11.8"
+version = "0.11.9"
 description = """
 A logging implementation for `log` which is configured via an environment
 variable.
