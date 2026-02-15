@@ -29,7 +29,7 @@ fn main() {
             .write_style("MY_LOG_STYLE");
 
         Builder::from_env(env)
-            .format(|buf, record| {
+            .build_with_format_fn(|buf, record| {
                 // We are reusing `anstyle` but there are `anstyle-*` crates to adapt it to your
                 // preferred styling crate.
                 let warn_style = buf.default_level_style(log::Level::Warn);
@@ -41,7 +41,8 @@ fn main() {
                     record.args()
                 )
             })
-            .init();
+            .try_init()
+            .unwrap();
     }
 
     init_logger();
