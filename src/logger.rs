@@ -1,4 +1,6 @@
-use std::{borrow::Cow, cell::RefCell, env, io};
+#[cfg(feature = "kv")]
+use std::io;
+use std::{borrow::Cow, cell::RefCell, env};
 
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 
@@ -242,7 +244,7 @@ impl Builder {
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
     pub fn format<F>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send + 'static,
+        F: fmt::RecordFormat + Sync + Send + 'static,
     {
         self.format.custom_format = Some(Box::new(format));
         self
