@@ -20,7 +20,7 @@ impl fmt::Display for Foo {
 fn main() {
     env_logger::init();
     if env::var("YOU_ARE_TESTING_NOW").is_ok() {
-        return info!("{}", Foo);
+        return info!("{Foo}");
     }
 
     let exe = env::current_exe().unwrap();

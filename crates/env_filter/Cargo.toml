@@ -30,11 +30,11 @@ default = ["regex"]
 regex = ["dep:regex"]
 
 [dependencies]
-log = { version = "0.4.8", features = ["std"] }
-regex = { version = "1.0.3", optional = true, default-features=false, features=["std", "perf"] }
+log = { version = "0.4.29", features = ["std"] }
+regex = { version = "1.12.3", optional = true, default-features=false, features=["std", "perf"] }
 
 [dev-dependencies]
-snapbox = "0.6"
+snapbox = "1.0"
 
 [lints]
 workspace = true

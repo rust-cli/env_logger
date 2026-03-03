@@ -134,11 +134,11 @@ kv = ["log/kv"]
 unstable-kv = ["kv"]
 
 [dependencies]
-log = { version = "0.4.21", features = ["std"] }
+log = { version = "0.4.29", features = ["std"] }
 env_filter = { version = "1.0.0", path = "crates/env_filter", default-features = false }
-jiff = { version = "0.2.3", default-features = false, features = ["std"], optional = true }
-anstream = { version = "0.6.11", default-features = false, features = ["wincon"], optional = true }
-anstyle = { version = "1.0.6", optional = true }
+jiff = { version = "0.2.22", default-features = false, features = ["std"], optional = true }
+anstream = { version = "1.0.0", default-features = false, features = ["wincon"], optional = true }
+anstyle = { version = "1.0.13", optional = true }
 
 [[test]]
 name = "regexp_filter"
