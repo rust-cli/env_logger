@@ -69,7 +69,7 @@ checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 
 [[package]]
 name = "env_filter"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "log",
  "regex",
@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "anstream",
  "anstyle",
