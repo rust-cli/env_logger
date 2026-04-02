@@ -38,9 +38,14 @@
 //! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 #![warn(clippy::print_stderr)]
 #![warn(clippy::print_stdout)]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
+
+extern crate alloc;
 
 mod directive;
 mod filter;
