@@ -24,13 +24,13 @@ impl FilterOp {
 
 #[cfg(not(feature = "regex"))]
 impl FilterOp {
-    pub fn new(spec: &str) -> Result<Self, String> {
+    pub(crate) fn new(spec: &str) -> Result<Self, String> {
         Ok(Self {
             inner: spec.to_string(),
         })
     }
 
-    pub fn is_match(&self, s: &str) -> bool {
+    pub(crate) fn is_match(&self, s: &str) -> bool {
         s.contains(&self.inner)
     }
 }
