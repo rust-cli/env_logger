@@ -1,6 +1,5 @@
-use std::env;
-use std::fmt;
-use std::mem;
+use alloc::{borrow::ToOwned, string::ToString, vec::Vec};
+use core::{fmt, mem};
 
 use log::{LevelFilter, Metadata, Record};
 
@@ -48,10 +47,11 @@ impl Builder {
     }
 
     /// Initializes the filter builder from an environment.
+    #[cfg(feature = "std")]
     pub fn from_env(env: &str) -> Builder {
         let mut builder = Builder::new();
 
-        if let Ok(s) = env::var(env) {
+        if let Ok(s) = std::env::var(env) {
             builder.parse(&s);
         }
 
@@ -108,7 +108,10 @@ impl Builder {
         } = parse_spec(filters);
 
         for error in errors {
+            #[cfg(feature = "std")]
             eprintln!("warning: {error}, ignoring it");
+            #[cfg(not(feature = "std"))]
+            log::warn!("{error}, ignoring it");
         }
 
         self.filter = filter;
