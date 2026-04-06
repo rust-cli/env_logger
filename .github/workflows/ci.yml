@@ -72,7 +72,9 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - uses: taiki-e/install-action@cargo-hack
     - name: Default features
-      run: cargo hack check --each-feature --locked --rust-version --ignore-private --workspace --all-targets --keep-going
+      run: |
+        cargo hack check --each-feature --locked --rust-version --ignore-private --package env_logger --all-targets --keep-going
+        cargo hack check --each-feature --locked --version-range 1.81..=1.81 --ignore-private --package env_filter --all-targets --keep-going
   minimal-versions:
     name: Minimal versions
     strategy:
