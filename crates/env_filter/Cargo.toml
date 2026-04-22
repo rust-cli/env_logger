@@ -9,7 +9,6 @@ keywords = ["logging", "log", "logger"]
 repository.workspace = true
 license.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 include.workspace = true
 
 [package.metadata.docs.rs]
@@ -26,12 +25,13 @@ pre-release-replacements = [
 ]
 
 [features]
-default = ["regex"]
+default = ["std", "regex"]
 regex = ["dep:regex"]
+std = ["regex/std"]
 
 [dependencies]
-log = { version = "0.4.29", features = ["std"] }
-regex = { version = "1.12.3", optional = true, default-features=false, features=["std", "perf"] }
+log = { version = "0.4.29", default-features = false }
+regex = { version = "1.12.3", optional = true, default-features=false, features=["perf"] }
 
 [dev-dependencies]
 snapbox = "1.0"

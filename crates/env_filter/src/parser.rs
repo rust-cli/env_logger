@@ -1,6 +1,7 @@
+use alloc::{borrow::ToOwned, format, string::String, vec::Vec};
+use core::fmt::{Display, Formatter};
+
 use log::LevelFilter;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 
 use crate::Directive;
 use crate::FilterOp;
@@ -46,12 +47,17 @@ pub struct ParseError {
 }
 
 impl Display for ParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "error parsing logger filter: {}", self.details)
     }
 }
 
-impl Error for ParseError {}
+#[cfg(feature = "std")]
+#[allow(clippy::std_instead_of_core)]
+impl std::error::Error for ParseError {}
+
+#[cfg(not(feature = "std"))]
+impl core::error::Error for ParseError {}
 
 /// Parse a logging specification string (e.g: `crate1,crate2::mod3,crate3::x=error/foo`)
 /// and return a vector with log directives.
@@ -115,9 +121,13 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
 
 #[cfg(test)]
 mod tests {
+    use alloc::{borrow::ToOwned, string::ToString};
+
     use crate::ParseError;
     use log::LevelFilter;
-    use snapbox::{assert_data_eq, str, Data, IntoData};
+    #[cfg(feature = "std")]
+    use snapbox::{assert_data_eq, str};
+    use snapbox::{Data, IntoData};
 
     use super::{parse_spec, ParseResult};
 
@@ -164,6 +174,7 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(
             &errors[0],
             str!["invalid logging spec 'crate1::mod1=warn=info'"]
@@ -185,6 +196,7 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(&errors[0], str!["invalid logging spec 'noNumber'"]);
     }
 
@@ -203,6 +215,7 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(&errors[0], str!["invalid logging spec 'wrong'"]);
     }
 
@@ -221,6 +234,7 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(&errors[0], str!["invalid logging spec 'wrong'"]);
     }
 
@@ -394,6 +408,7 @@ mod tests {
         assert!(filter.is_some() && filter.unwrap().to_string() == "a.c");
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(
             &errors[0],
             str!["invalid logging spec 'crate1::mod1=error=warn'"]
@@ -425,6 +440,7 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 1);
+        #[cfg(feature = "std")]
         assert_data_eq!(
             &errors[0],
             str!["invalid logging spec 'debug/abc/a.c' (too many '/'s)"]
@@ -446,14 +462,17 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 2);
-        assert_data_eq!(
-            &errors[0],
-            str!["invalid logging spec 'crate1::mod1=warn=info'"]
-        );
-        assert_data_eq!(
-            &errors[1],
-            str!["invalid logging spec 'crate3=error=error'"]
-        );
+        #[cfg(feature = "std")]
+        {
+            assert_data_eq!(
+                &errors[0],
+                str!["invalid logging spec 'crate1::mod1=warn=info'"]
+            );
+            assert_data_eq!(
+                &errors[1],
+                str!["invalid logging spec 'crate3=error=error'"]
+            );
+        }
     }
 
     #[test]
@@ -471,8 +490,11 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 2);
-        assert_data_eq!(&errors[0], str!["invalid logging spec 'noNumber'"]);
-        assert_data_eq!(&errors[1], str!["invalid logging spec 'invalid'"]);
+        #[cfg(feature = "std")]
+        {
+            assert_data_eq!(&errors[0], str!["invalid logging spec 'noNumber'"]);
+            assert_data_eq!(&errors[1], str!["invalid logging spec 'invalid'"]);
+        }
     }
 
     #[test]
@@ -490,18 +512,23 @@ mod tests {
         assert!(filter.is_none());
 
         assert_eq!(errors.len(), 2);
-        assert_data_eq!(
-            &errors[0],
-            str!["invalid logging spec 'crate1::mod1=debug=info'"]
-        );
-        assert_data_eq!(&errors[1], str!["invalid logging spec 'invalid'"]);
+        #[cfg(feature = "std")]
+        {
+            assert_data_eq!(
+                &errors[0],
+                str!["invalid logging spec 'crate1::mod1=debug=info'"]
+            );
+            assert_data_eq!(&errors[1], str!["invalid logging spec 'invalid'"]);
+        }
     }
 
     #[test]
     fn parse_error_message_single_error() {
+        #[allow(unused_variables)]
         let error = parse_spec("crate1::mod1=debug=info,crate2=debug")
             .ok()
             .unwrap_err();
+        #[cfg(feature = "std")]
         assert_data_eq!(
             error,
             str!["error parsing logger filter: invalid logging spec 'crate1::mod1=debug=info'"]
@@ -510,9 +537,11 @@ mod tests {
 
     #[test]
     fn parse_error_message_multiple_errors() {
+        #[allow(unused_variables)]
         let error = parse_spec("crate1::mod1=debug=info,crate2=debug,crate3=invalid")
             .ok()
             .unwrap_err();
+        #[cfg(feature = "std")]
         assert_data_eq!(
             error,
             str!["error parsing logger filter: invalid logging spec 'crate1::mod1=debug=info'"]
