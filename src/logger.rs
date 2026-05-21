@@ -336,6 +336,22 @@ impl Builder {
         self
     }
 
+    /// Whether or not to prepend systemd journal priority prefixes.
+    ///
+    /// Defaults to [`Auto`](fmt::JournalPrefix::Auto), which enables prefixes
+    /// when `JOURNAL_STREAM` is set.
+    ///
+    /// ```
+    /// use env_logger::{Builder, fmt::JournalPrefix};
+    ///
+    /// let mut builder = Builder::new();
+    /// builder.format_journal_prefix(JournalPrefix::Disable);
+    /// ```
+    pub fn format_journal_prefix(&mut self, value: fmt::JournalPrefix) -> &mut Self {
+        self.format.journal_prefix = value;
+        self
+    }
+
     /// Set the format for structured key/value pairs in the log record
     ///
     /// With the default format, this function is called for each record and should format
@@ -1054,5 +1070,74 @@ mod tests {
         builder.parse_env(env);
 
         assert_eq!(builder.filter.build().filter(), LevelFilter::Debug);
+    }
+
+    #[test]
+    fn journal_prefix_auto_enabled_when_journal_stream_set() {
+        env::set_var("JOURNAL_STREAM", "8:12345");
+
+        let buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let buf2 = buf.clone();
+
+        let mut builder = Builder::new();
+        builder
+            .target(fmt::Target::Pipe(Box::new(SharedBuf(buf2))))
+            .format_timestamp(None)
+            .format_journal_prefix(fmt::JournalPrefix::Auto)
+            .filter_level(LevelFilter::Info);
+        let logger = builder.build();
+
+        logger.log(
+            &Record::builder()
+                .args(format_args!("hello"))
+                .level(log::Level::Warn)
+                .target("")
+                .build(),
+        );
+
+        let output = String::from_utf8(buf.lock().unwrap().clone()).unwrap();
+        assert!(output.starts_with("<4>"), "expected journal prefix, got: {output}");
+
+        env::remove_var("JOURNAL_STREAM");
+    }
+
+    #[test]
+    fn journal_prefix_auto_disabled_when_journal_stream_unset() {
+        env::remove_var("JOURNAL_STREAM");
+
+        let buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let buf2 = buf.clone();
+
+        let mut builder = Builder::new();
+        builder
+            .target(fmt::Target::Pipe(Box::new(SharedBuf(buf2))))
+            .format_timestamp(None)
+            .format_journal_prefix(fmt::JournalPrefix::Auto)
+            .filter_level(LevelFilter::Info);
+        let logger = builder.build();
+
+        logger.log(
+            &Record::builder()
+                .args(format_args!("hello"))
+                .level(log::Level::Warn)
+                .target("")
+                .build(),
+        );
+
+        let output = String::from_utf8(buf.lock().unwrap().clone()).unwrap();
+        assert!(!output.starts_with("<"), "unexpected journal prefix, got: {output}");
+    }
+
+    #[derive(Clone)]
+    struct SharedBuf(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+
+    impl io::Write for SharedBuf {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
     }
 }

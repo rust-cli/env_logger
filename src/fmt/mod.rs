@@ -63,7 +63,6 @@ use std::io::prelude::Write;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
-#[cfg(feature = "color")]
 use log::Level;
 use log::Record;
 
@@ -83,6 +82,18 @@ pub use crate::writer::Target;
 pub use crate::writer::WriteStyle;
 
 use crate::writer::{Buffer, Writer};
+
+/// Controls whether systemd journal priority prefixes are prepended to log lines.
+#[derive(Copy, Clone, Debug, Default)]
+pub enum JournalPrefix {
+    /// Prepend `<N>` prefix based on log level when `JOURNAL_STREAM` is set.
+    #[default]
+    Auto,
+    /// Always prepend `<N>` prefix.
+    Enable,
+    /// Never prepend prefix.
+    Disable,
+}
 
 /// Formatting precision of timestamps.
 ///
@@ -218,6 +229,7 @@ pub(crate) type FormatFn = Box<dyn RecordFormat + Sync + Send>;
 pub(crate) struct Builder {
     pub(crate) default_format: ConfigurableFormat,
     pub(crate) custom_format: Option<FormatFn>,
+    pub(crate) journal_prefix: JournalPrefix,
     built: bool,
 }
 
@@ -241,7 +253,13 @@ impl Builder {
         if let Some(fmt) = built.custom_format {
             fmt
         } else {
-            Box::new(built.default_format)
+            let mut format = built.default_format;
+            format.journal_prefix = match built.journal_prefix {
+                JournalPrefix::Enable => true,
+                JournalPrefix::Disable => false,
+                JournalPrefix::Auto => std::env::var_os("JOURNAL_STREAM").is_some(),
+            };
+            Box::new(format)
         }
     }
 }
@@ -286,6 +304,7 @@ pub struct ConfigurableFormat {
     pub(crate) source_line_number: bool,
     pub(crate) indent: Option<usize>,
     pub(crate) suffix: &'static str,
+    pub(crate) journal_prefix: bool,
     #[cfg(feature = "kv")]
     pub(crate) kv_format: Option<Box<KvFormatFn>>,
 }
@@ -355,6 +374,12 @@ impl ConfigurableFormat {
         self
     }
 
+    /// Whether or not to prepend systemd journal priority prefixes (e.g. `<3>` for error).
+    pub fn journal_prefix(&mut self, write: bool) -> &mut Self {
+        self.journal_prefix = write;
+        self
+    }
+
     /// Set the format for structured key/value pairs in the log record
     ///
     /// With the default format, this function is called for each record and should format
@@ -386,6 +411,7 @@ impl Default for ConfigurableFormat {
             source_line_number: false,
             indent: Some(4),
             suffix: "\n",
+            journal_prefix: false,
             #[cfg(feature = "kv")]
             kv_format: None,
         }
@@ -409,6 +435,7 @@ struct ConfigurableFormatWriter<'a> {
 
 impl ConfigurableFormatWriter<'_> {
     fn write(mut self, record: &Record<'_>) -> io::Result<()> {
+        self.write_journal_prefix(record)?;
         self.write_timestamp()?;
         self.write_level(record)?;
         self.write_module_path(record)?;
@@ -420,6 +447,21 @@ impl ConfigurableFormatWriter<'_> {
         #[cfg(feature = "kv")]
         self.write_kv(record)?;
         write!(self.buf, "{}", self.format.suffix)
+    }
+
+    fn write_journal_prefix(&mut self, record: &Record<'_>) -> io::Result<()> {
+        if !self.format.journal_prefix {
+            return Ok(());
+        }
+
+        let priority = match record.level() {
+            Level::Error => 3,
+            Level::Warn => 4,
+            Level::Info => 6,
+            Level::Debug | Level::Trace => 7,
+        };
+
+        write!(self.buf, "<{priority}>")
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
@@ -672,6 +714,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: None,
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -696,6 +739,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: None,
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -720,6 +764,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: Some(4),
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -744,6 +789,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: Some(0),
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -768,6 +814,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: Some(4),
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -792,6 +839,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: None,
                 suffix: "\n\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -816,6 +864,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: Some(4),
                 suffix: "\n\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -842,6 +891,7 @@ mod tests {
                     kv_format: Some(Box::new(hidden_kv_format)),
                     indent: None,
                     suffix: "\n",
+                    journal_prefix: false,
                 },
                 written_header_value: false,
                 buf: &mut f,
@@ -867,6 +917,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: None,
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -893,6 +944,7 @@ mod tests {
                     kv_format: Some(Box::new(hidden_kv_format)),
                     indent: None,
                     suffix: "\n",
+                    journal_prefix: false,
                 },
                 written_header_value: false,
                 buf: &mut f,
@@ -918,6 +970,7 @@ mod tests {
                 kv_format: Some(Box::new(hidden_kv_format)),
                 indent: None,
                 suffix: "\n",
+                journal_prefix: false,
             },
             written_header_value: false,
             buf: &mut f,
@@ -998,5 +1051,91 @@ mod tests {
             "[INFO  test::path test.rs:42 target] log\nmessage a=1 b=2\n",
             written
         );
+    }
+
+    #[test]
+    fn format_journal_prefix_enabled() {
+        let mut f = formatter();
+
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
+                timestamp: None,
+                module_path: false,
+                target: false,
+                level: true,
+                source_file: false,
+                source_line_number: false,
+                #[cfg(feature = "kv")]
+                kv_format: Some(Box::new(hidden_kv_format)),
+                indent: None,
+                suffix: "\n",
+                journal_prefix: true,
+            },
+            written_header_value: false,
+            buf: &mut f,
+        });
+
+        assert_eq!("<6>[INFO ] log\nmessage\n", written);
+    }
+
+    #[test]
+    fn format_journal_prefix_error_level() {
+        let mut f = formatter();
+
+        let record = Record::builder()
+            .args(format_args!("oops"))
+            .level(Level::Error)
+            .build();
+
+        let buf = f.buf.clone();
+
+        let fmt = ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
+                timestamp: None,
+                module_path: false,
+                target: false,
+                level: false,
+                source_file: false,
+                source_line_number: false,
+                #[cfg(feature = "kv")]
+                kv_format: Some(Box::new(hidden_kv_format)),
+                indent: None,
+                suffix: "\n",
+                journal_prefix: true,
+            },
+            written_header_value: false,
+            buf: &mut f,
+        };
+
+        fmt.write(&record).unwrap();
+        let buf = buf.borrow();
+        let written = String::from_utf8(buf.as_bytes().to_vec()).unwrap();
+
+        assert_eq!("<3>oops\n", written);
+    }
+
+    #[test]
+    fn format_journal_prefix_disabled() {
+        let mut f = formatter();
+
+        let written = write(ConfigurableFormatWriter {
+            format: &ConfigurableFormat {
+                timestamp: None,
+                module_path: false,
+                target: false,
+                level: true,
+                source_file: false,
+                source_line_number: false,
+                #[cfg(feature = "kv")]
+                kv_format: Some(Box::new(hidden_kv_format)),
+                indent: None,
+                suffix: "\n",
+                journal_prefix: false,
+            },
+            written_header_value: false,
+            buf: &mut f,
+        });
+
+        assert_eq!("[INFO ] log\nmessage\n", written);
     }
 }
