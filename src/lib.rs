@@ -253,10 +253,10 @@
 //! use std::io::Write;
 //!
 //! env_logger::builder()
-//!     .format(|buf, record| {
+//!     .build_with_format_fn(|buf, record| {
 //!         writeln!(buf, "{}: {}", record.level(), record.args())
 //!     })
-//!     .init();
+//!     .try_init().unwrap();
 //! ```
 //!
 //! See the [`fmt`] module for more details about custom formats.

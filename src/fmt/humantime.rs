@@ -15,7 +15,7 @@ impl Formatter {
     ///
     /// let mut builder = env_logger::Builder::new();
     ///
-    /// builder.format(|buf, record| {
+    /// builder.build_with_format_fn(|buf, record| {
     ///     let ts = buf.timestamp();
     ///
     ///     writeln!(buf, "{}: {}: {}", ts, record.level(), record.args())

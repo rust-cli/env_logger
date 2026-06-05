@@ -3,7 +3,7 @@ use std::io::Write;
 fn main() {
     match std::env::var("RUST_LOG_STYLE") {
         Ok(s) if s == "SYSTEMD" => env_logger::builder()
-            .format(|buf, record| {
+            .build_with_format_fn(|buf, record| {
                 writeln!(
                     buf,
                     "<{}>{}: {}",
@@ -18,7 +18,8 @@ fn main() {
                     record.args()
                 )
             })
-            .init(),
+            .try_init()
+            .unwrap(),
         _ => env_logger::init(),
     };
 }
