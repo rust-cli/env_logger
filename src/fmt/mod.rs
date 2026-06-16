@@ -199,7 +199,18 @@ impl fmt::Debug for Formatter {
     }
 }
 
-pub(crate) trait RecordFormat {
+/// Formats a log [`Record`] to be outputted
+///
+/// This is called on each record logged and should format the
+/// log record and output it to the given [`Formatter`].
+///
+/// This is expected to output the content directly to the
+/// [`Formatter`] so that implementations can use the [`std::fmt`] macros
+/// to format and output without intermediate heap allocations.
+///
+/// When the `color` feature is enabled, styling via ANSI escape codes is supported and the
+/// output will automatically respect [`Builder::write_style`].
+pub trait RecordFormat {
     fn format(&self, formatter: &mut Formatter, record: &Record<'_>) -> io::Result<()>;
 }
 
