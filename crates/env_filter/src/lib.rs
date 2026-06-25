@@ -11,6 +11,7 @@
 //! logged based on the parsed filters when log records are received.
 //!
 //! ```
+//! # #[cfg(feature = "std")] {
 //! use env_filter::Filter;
 //! use log::{Log, Metadata, Record};
 //!
@@ -35,6 +36,7 @@
 //! }
 //!
 //! let logger = env_filter::FilteredLog::new(PrintLogger, builder.build());
+//! # }
 //! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
