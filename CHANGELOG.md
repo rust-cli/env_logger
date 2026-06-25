@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Internal
+
+- Updated `env_filter`
+
 ## [0.11.10] - 2026-03-23
 
 ### Internal
