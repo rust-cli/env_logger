@@ -105,7 +105,7 @@ pub enum TimestampPrecision {
 /// The default timestamp precision is seconds.
 impl Default for TimestampPrecision {
     fn default() -> Self {
-        TimestampPrecision::Seconds
+        Self::Seconds
     }
 }
 
@@ -136,7 +136,7 @@ pub struct Formatter {
 
 impl Formatter {
     pub(crate) fn new(writer: &Writer) -> Self {
-        Formatter {
+        Self {
             buf: Rc::new(RefCell::new(writer.buffer())),
             write_style: writer.write_style(),
         }
@@ -232,7 +232,7 @@ impl Builder {
 
         let built = mem::replace(
             self,
-            Builder {
+            Self {
                 built: true,
                 ..Default::default()
             },
@@ -929,7 +929,7 @@ mod tests {
     #[cfg(feature = "kv")]
     #[test]
     fn format_kv_default() {
-        let kvs = &[("a", 1u32), ("b", 2u32)][..];
+        let kvs = &[("a", 1_u32), ("b", 2_u32)][..];
         let mut f = formatter();
         let record = Record::builder()
             .args(format_args!("log message"))
@@ -963,7 +963,7 @@ mod tests {
     #[cfg(feature = "kv")]
     #[test]
     fn format_kv_default_full() {
-        let kvs = &[("a", 1u32), ("b", 2u32)][..];
+        let kvs = &[("a", 1_u32), ("b", 2_u32)][..];
         let mut f = formatter();
         let record = Record::builder()
             .args(format_args!("log\nmessage"))

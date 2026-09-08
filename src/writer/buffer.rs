@@ -10,7 +10,7 @@ pub(crate) struct BufferWriter {
 
 impl BufferWriter {
     pub(crate) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
-        BufferWriter {
+        Self {
             target: if is_test {
                 WritableTarget::PrintStderr
             } else {
@@ -21,7 +21,7 @@ impl BufferWriter {
     }
 
     pub(crate) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
-        BufferWriter {
+        Self {
             target: if is_test {
                 WritableTarget::PrintStdout
             } else {
@@ -35,7 +35,7 @@ impl BufferWriter {
         pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
         write_style: WriteStyle,
     ) -> Self {
-        BufferWriter {
+        Self {
             target: WritableTarget::Pipe(pipe),
             write_style,
         }

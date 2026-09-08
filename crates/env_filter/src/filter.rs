@@ -40,8 +40,8 @@ pub struct Builder {
 
 impl Builder {
     /// Initializes the filter builder with defaults.
-    pub fn new() -> Builder {
-        Builder {
+    pub fn new() -> Self {
+        Self {
             directives: Vec::new(),
             filter: None,
             built: false,
@@ -50,8 +50,8 @@ impl Builder {
 
     /// Initializes the filter builder from an environment.
     #[cfg(feature = "std")]
-    pub fn from_env(env: &str) -> Builder {
-        let mut builder = Builder::new();
+    pub fn from_env(env: &str) -> Self {
+        let mut builder = Self::new();
 
         if let Ok(s) = std::env::var(env) {
             builder.parse(&s);
@@ -171,7 +171,7 @@ impl Builder {
 
 impl Default for Builder {
     fn default() -> Self {
-        Builder::new()
+        Self::new()
     }
 }
 
