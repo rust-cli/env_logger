@@ -38,9 +38,9 @@ impl From<anstream::ColorChoice> for WriteStyle {
 impl From<WriteStyle> for anstream::ColorChoice {
     fn from(choice: WriteStyle) -> Self {
         match choice {
-            WriteStyle::Auto => anstream::ColorChoice::Auto,
-            WriteStyle::Always => anstream::ColorChoice::Always,
-            WriteStyle::Never => anstream::ColorChoice::Never,
+            WriteStyle::Auto => Self::Auto,
+            WriteStyle::Always => Self::Always,
+            WriteStyle::Never => Self::Never,
         }
     }
 }
@@ -79,7 +79,7 @@ pub(crate) struct Builder {
 impl Builder {
     /// Initialize the writer builder with defaults.
     pub(crate) fn new() -> Self {
-        Builder {
+        Self {
             target: Default::default(),
             write_style: Default::default(),
             is_test: false,
@@ -149,7 +149,7 @@ impl Builder {
 
 impl Default for Builder {
     fn default() -> Self {
-        Builder::new()
+        Self::new()
     }
 }
 

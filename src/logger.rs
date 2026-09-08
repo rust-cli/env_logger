@@ -69,7 +69,7 @@ impl Builder {
     /// [`write_style`]: #method.write_style
     /// [`from_env`]: #method.from_env
     /// [`from_default_env`]: #method.from_default_env
-    pub fn new() -> Builder {
+    pub fn new() -> Self {
         Default::default()
     }
 
@@ -105,7 +105,7 @@ impl Builder {
     where
         E: Into<Env<'a>>,
     {
-        let mut builder = Builder::new();
+        let mut builder = Self::new();
         builder.parse_env(env);
         builder
     }
