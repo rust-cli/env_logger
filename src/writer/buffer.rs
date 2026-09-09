@@ -56,6 +56,8 @@ impl BufferWriter {
         use std::io::Write as _;
 
         let buf = buf.as_bytes();
+        #[cfg(not(feature = "color"))]
+        let buf = &escape_controls(buf);
         match &self.target {
             WritableTarget::WriteStdout => {
                 let stream = io::stdout();
@@ -102,6 +104,44 @@ impl BufferWriter {
 
         Ok(())
     }
+}
+
+/// Escape control characters as `\xNN`, so that logging untrusted input can't
+/// drive the terminal of whoever later reads the output. This build emits no
+/// styling of its own, so unlike `anstream` it needs no VT parser to do it.
+#[cfg(not(feature = "color"))]
+fn escape_controls(buf: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    // Bitwise fold rather than `any`: short-circuiting would force a scalar loop.
+    let has_control = buf.iter().fold(false, |acc, &b| acc | is_control(b));
+    if !has_control {
+        return std::borrow::Cow::Borrowed(buf);
+    }
+
+    // Only records that actually carry controls pay for a copy, and the scan
+    // above found at least one, each of which grows the record by 3 bytes.
+    let mut escaped = Vec::with_capacity(buf.len() + 3);
+    for &byte in buf {
+        if is_control(byte) {
+            let (hi, lo) = (usize::from(byte >> 4), usize::from(byte & 0xf));
+            escaped.extend_from_slice(&[b'\\', b'x', HEX[hi], HEX[lo]]);
+        } else {
+            escaped.push(byte);
+        }
+    }
+    std::borrow::Cow::Owned(escaped)
+}
+
+/// Control is all of C0 plus DEL, minus `\n` and `\t`, which the format itself
+/// relies on. Stricter than `anstream`, whose strip passes `\r`, VT and FF.
+///
+/// Multi-byte UTF-8 isn't flagged, having no byte in the tested ASCII range,
+/// nor is raw C1; records come from `str`, so only a custom format emits that.
+#[cfg(not(feature = "color"))]
+#[inline]
+fn is_control(byte: u8) -> bool {
+    ((byte < 0x20) & (byte != b'\n') & (byte != b'\t')) | (byte == 0x7f)
 }
 
 #[cfg(feature = "color")]
