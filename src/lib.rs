@@ -218,9 +218,11 @@
 //! - In the application, calling [`Builder::write_style(Never)`][Builder::write_style] to have all ANSI escape codes stripped
 //! - In the application, [stripping ANSI escape codes](https://docs.rs/anstream/latest/anstream/adapter/fn.strip_str.html)
 //!   from user inputs
+//! - Deactivating the build-time feature `color`, which escapes control characters as `\xNN`
+//!   rather than stripping them, and also covers the `\r`, VT and FF that stripping passes on
 //!
-//! Note: deactivating the build-time feature `color` is not a mitigation as that removes all ANSI escape code
-//! stripping from `env_logger`.
+//! Note: `\n` is never escaped, so untrusted input can still read as an extra record. The
+//! default [indentation][Builder::format_indent] offsets such lines by four spaces.
 //!
 //! </div>
 //!
