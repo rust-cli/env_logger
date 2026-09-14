@@ -28,11 +28,11 @@ pre-release-replacements = [
 [features]
 default = ["std", "regex"]
 regex = ["dep:regex"]
-std = ["log/std", "regex?/std"]
+std = ["log/std"]
 
 [dependencies]
 log = { version = "0.4.29" }
-regex = { version = "1.12.3", optional = true, default-features=false, features=["perf"] }
+regex = { version = "1.12.3", optional = true, default-features=false, features=["std", "perf"] }
 
 [dev-dependencies]
 snapbox = "1.0"
