@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Make `impl Error for ParseError` available with `no_std`
+
+### Compatibility
+
+- Updated MSRV to 1.85
+
 ## [2.0.0] - 2026-06-25
 
 ### Features
