@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, reason = "in test")]
 
 use std::env;
 use std::process;

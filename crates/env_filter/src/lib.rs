@@ -55,8 +55,8 @@ mod filtered_log;
 mod op;
 mod parser;
 
-use directive::enabled;
 use directive::Directive;
+use directive::enabled;
 use op::FilterOp;
 use parser::parse_spec;
 

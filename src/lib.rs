@@ -281,7 +281,10 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(clippy::print_stderr)]
 #![warn(clippy::print_stdout)]
-#![allow(clippy::test_attr_in_doctest)]
+#![allow(
+    clippy::test_attr_in_doctest,
+    reason = "documenting the writing of tests"
+)]
 
 mod logger;
 mod writer;

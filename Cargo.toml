@@ -5,8 +5,8 @@ members = ["crates/*"]
 [workspace.package]
 repository = "https://github.com/rust-cli/env_logger"
 license = "MIT OR Apache-2.0"
-edition = "2021"
-rust-version = "1.71"  # MSRV
+edition = "2024"
+rust-version = "1.85"  # MSRV
 include = [
   "/build.rs",
   "/src/**/*",
@@ -112,7 +112,7 @@ panic = "abort"
 panic = "abort"
 codegen-units = 1
 lto = true
-# debug = "line-tables-only"  # requires Cargo 1.71
+debug = "line-tables-only"
 
 [package]
 name = "env_logger"
@@ -155,7 +155,7 @@ unstable-kv = ["kv"]
 [dependencies]
 log = { version = "0.4.29", features = ["std"] }
 env_filter = { version = "2.0.0", path = "crates/env_filter", default-features = false, features = ["std"] }
-jiff = { version = "0.2.22", default-features = false, features = ["std"], optional = true }
+jiff = { version = "1.0.1", default-features = false, features = ["std"], optional = true }
 anstream = { version = "1.0.0", default-features = false, features = ["wincon"], optional = true }
 anstyle = { version = "1.0.13", optional = true }
 

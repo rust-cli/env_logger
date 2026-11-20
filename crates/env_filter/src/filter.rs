@@ -3,12 +3,12 @@ use core::{fmt, mem};
 
 use log::{LevelFilter, Metadata, Record};
 
-use crate::enabled;
-use crate::parse_spec;
-use crate::parser::ParseResult;
 use crate::Directive;
 use crate::FilterOp;
 use crate::ParseError;
+use crate::enabled;
+use crate::parse_spec;
+use crate::parser::ParseResult;
 
 /// A builder for a log filter.
 ///
@@ -102,7 +102,7 @@ impl Builder {
     /// [Enabling Logging]: ../index.html#enabling-logging
     #[cfg(feature = "std")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
-        #![allow(clippy::print_stderr)] // compatibility
+        #![allow(clippy::print_stderr, reason = "compatibility")]
 
         let ParseResult {
             directives,
@@ -264,7 +264,7 @@ mod tests {
     use log::{Level, LevelFilter};
     use snapbox::{assert_data_eq, str};
 
-    use super::{enabled, Builder, Directive, Filter};
+    use super::{Builder, Directive, Filter, enabled};
 
     fn make_logger_filter(dirs: Vec<Directive>) -> Filter {
         let mut logger = Builder::new().build();

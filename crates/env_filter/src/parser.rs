@@ -52,8 +52,7 @@ impl Display for ParseError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseError {}
+impl core::error::Error for ParseError {}
 
 /// Parse a logging specification string (e.g: `crate1,crate2::mod3,crate3::x=error/foo`)
 /// and return a vector with log directives.
@@ -119,9 +118,9 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
 mod tests {
     use crate::ParseError;
     use log::LevelFilter;
-    use snapbox::{assert_data_eq, str, Data, IntoData};
+    use snapbox::{Data, IntoData, assert_data_eq, str};
 
-    use super::{parse_spec, ParseResult};
+    use super::{ParseResult, parse_spec};
 
     impl IntoData for ParseError {
         fn into_data(self) -> Data {
