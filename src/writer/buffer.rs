@@ -50,8 +50,8 @@ impl BufferWriter {
     }
 
     pub(crate) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        #![allow(clippy::print_stdout)] // enabled for tests only
-        #![allow(clippy::print_stderr)] // enabled for tests only
+        #![allow(clippy::print_stdout, reason = "enabled for tests only")]
+        #![allow(clippy::print_stderr, reason = "enabled for tests only")]
 
         use std::io::Write as _;
 

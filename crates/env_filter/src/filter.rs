@@ -102,7 +102,7 @@ impl Builder {
     /// [Enabling Logging]: ../index.html#enabling-logging
     #[cfg(feature = "std")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
-        #![allow(clippy::print_stderr)] // compatibility
+        #![allow(clippy::print_stderr, reason = "compatibility")]
 
         let ParseResult {
             directives,

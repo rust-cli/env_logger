@@ -10,7 +10,7 @@ pub(crate) use buffer::Buffer;
 pub use target::Target;
 
 /// Whether or not to print styles to the target.
-#[allow(clippy::exhaustive_enums)] // By definition don't need more
+#[allow(clippy::exhaustive_enums, reason = "by definition don't need more")]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Default)]
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
@@ -109,7 +109,6 @@ impl Builder {
     }
 
     /// Whether or not to capture logs for `cargo test`.
-    #[allow(clippy::wrong_self_convention)]
     pub(crate) fn is_test(&mut self, is_test: bool) -> &mut Self {
         self.is_test = is_test;
         self
