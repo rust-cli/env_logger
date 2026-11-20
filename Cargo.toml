@@ -116,7 +116,7 @@ debug = "line-tables-only"
 
 [package]
 name = "env_logger"
-version = "0.11.11"
+version = "0.11.12"
 description = """
 A logging implementation for `log` which is configured via an environment
 variable.
