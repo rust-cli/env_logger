@@ -118,9 +118,9 @@ pub(crate) fn parse_spec(spec: &str) -> ParseResult {
 mod tests {
     use crate::ParseError;
     use log::LevelFilter;
-    use snapbox::{assert_data_eq, str, Data, IntoData};
+    use snapbox::{Data, IntoData, assert_data_eq, str};
 
-    use super::{parse_spec, ParseResult};
+    use super::{ParseResult, parse_spec};
 
     impl IntoData for ParseError {
         fn into_data(self) -> Data {
