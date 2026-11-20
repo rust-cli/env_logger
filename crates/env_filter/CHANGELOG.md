@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [2.1.0] - 2026-11-20
+
 ### Features
 
 - Make `impl Error for ParseError` available with `no_std`
@@ -46,7 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.1.0] - 2024-01-19
 
 <!-- next-url -->
-[Unreleased]: https://github.com/rust-cli/env_logger/compare/env_filter-v2.0.0...HEAD
+[Unreleased]: https://github.com/rust-cli/env_logger/compare/env_filter-v2.1.0...HEAD
+[2.1.0]: https://github.com/rust-cli/env_logger/compare/env_filter-v2.0.0...env_filter-v2.1.0
 [2.0.0]: https://github.com/rust-cli/env_logger/compare/env_filter-v1.0.1...env_filter-v2.0.0
 [1.0.1]: https://github.com/rust-cli/env_logger/compare/env_filter-v1.0.0...env_filter-v1.0.1
 [1.0.0]: https://github.com/rust-cli/env_logger/compare/env_filter-v0.1.4...env_filter-v1.0.0
